@@ -1,0 +1,25 @@
+.question{
+    position:absolute;
+    display: flex;
+    background: white;
+    border-radius: 20px;
+    border: 2px #ddd solid;
+    padding: 20px;
+    flex-direction: column;
+    top: 120px;
+    left: 559.531px;
+    transform: translate(-0px,-20px)
+}
+
+.question-title{
+    display: block;
+}
+
+.question-content{
+    display: block;
+}
+
+.documents{
+    position: absolute;
+    top:0;
+}

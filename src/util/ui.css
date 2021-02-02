@@ -1,0 +1,29 @@
+  /* since nested groupes are not supported we have to use 
+     regular css for the nested dropdowns 
+  */
+  .dropdown li>ul                 { transform: translatex(100%) scale(0) }
+  .dropdown li:hover>ul           { transform: translatex(101%) scale(1) }
+  .dropdown li > button svg       { transform: rotate(-90deg) }
+  .dropdown li:hover > button svg { transform: rotate(-270deg) }
+
+  /* Below styles fake what can be achieved with the tailwind config
+     you need to add the group-hover variant to scale and define your custom
+     min width style.
+  	 See https://codesandbox.io/s/tailwindcss-multilevel-dropdown-y91j7?file=/index.html
+  	 for implementation with config file
+  */
+  .dropdown.group:hover .group-hover\:scale-100 { transform: scale(1) }
+  .dropdown.group:hover .group-hover\:-rotate-180 { transform: rotate(180deg) }
+  .dropdown .scale-0 { transform: scale(0) }
+  .dropdown .min-w-32 { min-width: 8rem }
+
+
+  .multiselect .top-100 {top: 100%}
+  .multiselect .invisible {transform: scale(0);}
+  .multiselect .visible {transform: scale(1);}
+  .multiselect .bottom-100 {bottom: 100%}
+  .multiselect .max-h-select {
+      max-height: 300px;
+  }
+
+  .multiselect .rotate180{transform: rotate(-180deg) }
