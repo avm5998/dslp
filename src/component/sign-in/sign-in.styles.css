@@ -1,0 +1,16 @@
+
+.sign-in {
+    font-family: sans-serif;
+    width: 25vw;
+    display: flex;
+    flex-direction: column;
+}
+.sign-in .title {
+    margin: 10px 0;
+    font-size: 30px;
+    font-family: sans-serif;
+}
+.sign-in .buttons {
+    display: flex;
+    justify-content: space-between;
+}
