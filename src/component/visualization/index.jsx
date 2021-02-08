@@ -7,6 +7,7 @@ import { useForm, initialFormCheckbox } from '../../util/util'
 import { elementIsVisibleInViewport, fetchByJSON } from '../../util/util';
 import NoData from '../common/nodata'
 import placeholderImg from '../../assets/images/placeholder.jpg'
+import Help from '../common/help'
 
 const PageModal = ({ isOpen, setIsOpen }) => {
   return (<Modal isOpen={isOpen} setIsOpen={setIsOpen}>
@@ -261,6 +262,7 @@ const Visualization = () => {
       </div>
       {dataset.loaded ?
         <>
+          <Help url={"menu/data_visualization/display_correlations.html"}/>
           <Variables tabpanelIndex={0} tabpanel={tabpanel} />
           <Interactions tabpanelIndex={1} tabpanel={tabpanel} />
           <Correlations tabpanelIndex={2} tabpanel={tabpanel} />

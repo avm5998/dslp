@@ -6,6 +6,7 @@ import { actions as DataSetActions } from '../../reducer/dataset'
 import { useTable, usePagination, useSortBy } from 'react-table'
 import Table from '../common/table'
 import './index.css'
+import Help from '../common/help'
 
 const NumericComparators = ['<', '=', '>']
 const CategoricalComparators = ['=']
@@ -134,6 +135,7 @@ const Page = () => {
 
             </div>
             <Table PageSize={10} />
+            <Help url={"menu/data_querying"}/>
         </div>
     </>)
 }
