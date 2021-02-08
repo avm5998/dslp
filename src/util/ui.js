@@ -287,7 +287,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
 }
 
 
-export function Modal({ isOpen, setIsOpen, duration = 300, children, contentStyleText='' }) {
+export function Modal({ isOpen, setIsOpen, duration = 300, children, onClose=()=>{},contentStyleText='' ,style={}}) {
     let modalBg = useRef()
     let [hidden, setHidden] = useState(true)
     let [realOpen, setIsRealOpen] = useState(false)//if hidden and opacity changed simontaneously, animation fails
@@ -304,11 +304,13 @@ export function Modal({ isOpen, setIsOpen, duration = 300, children, contentStyl
     }, [isOpen])
 
     return (<div ref={modalBg} onClick={e => {
-        if (e.target === modalBg.current)
+        if (e.target === modalBg.current){
+            onClose()
             setIsOpen(false)
+        }
     }
     } className={`modal-bg transition-opacity duration-${duration} pt-16 fixed w-full h-full left-0 top-0 m-auto overflow-auto flex justify-center items-center ${hidden ? 'hidden' : ''} ${realOpen ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,.3)', zIndex:1}}>
-        <div className={`modal-content relative m-auto bg-gray-100 w-auto ${contentStyleText} shadow-lg`}>
+        <div className={`modal-content relative m-auto bg-gray-100 w-auto ${contentStyleText} shadow-lg`} style={style}>
             {children}
         </div>
     </div>)

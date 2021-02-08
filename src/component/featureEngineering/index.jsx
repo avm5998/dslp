@@ -47,7 +47,7 @@ const FeatureEngineering = () => {
                     <div className="flex flex-col">
                         {dataset.cate_cols.map(name =>
                             <div className='flex flex-row w-full' key={name}>
-                                <div className='px-10 w-1/3 flex flex-start items-center'>{name + ':'}</div>
+                                <div className='px-10 w-1/3 label-left'>{name + ':'}</div>
                                 <DropDown customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" text={ChangeOptions[currentOption[name] || 0]} items={ChangeOptions.map((operation, i) => ({
                                     name: operation, onClick(e) {
                                         setSubOption(option, subOption, { key: name, value: operation })

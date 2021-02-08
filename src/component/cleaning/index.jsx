@@ -1,101 +1,191 @@
-import React, { useRef, useEffect, useCallback,useState } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { fetch, fetchByJSON, GetDataFrameInfo } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
-import { Button, MultiSelect, DropDown } from '../../util/ui'
+import { Button, MultiSelect, DropDown, Modal } from '../../util/ui'
 import Table from '../common/table'
+import { data } from 'autoprefixer';
 
-const getQString = (subOption, condition)=>{
+const getQString = (subOption, condition) => {
     return ''
 }
 
-const getDesc = (subOption,qString)=>{
+const getDesc = (subOption, qString) => {
 
 }
 
 const Cleaning = () => {
-    let cleaningCondition = useRef({})
-    let [subOption,setSubOption] = useState(-1)
-    let [subOptionText, setSubOptionText] = useState('Select cleaning type')
+    let [option, setOption] = useState(-1)
+    let [optionText, setOptionText] = useState('Select cleaning type')
     let dataset = useSelector(state => state.dataset)
+    const getDefaultSubOptions = useCallback(() => {
+        let res = [...Array(6).keys()].map(e => ({}))
+        res[4].refs = {}
+        res[5].belowRefs = {}
+        res[5].aboveRefs = {}
+        return res
+    }, [])
+    let cleaningCondition = useRef(getDefaultSubOptions())
+    let [subOptionText, setSubOptionText] = useState('Input values')
+    let [showSubOptionModal, setShowSubOptionModal] = useState(false)
 
-    useEffect(()=>{
+    useEffect(() => {
         queryCleaner()
-    },[dataset.dataCleaners])
+    }, [dataset.dataCleaners])
 
     const onConfirm = (e) => {
-        if(subOption === -1) return
-        let qString = getQString(subOption, cleaningCondition.current)
+        if (option === -1) return
+        let qString = getQString(option, cleaningCondition.current)
         let cleaners = [...dataset.dataCleaners]
-        let exist = filters.some(f => f.subOption === subOption && f.qString === qString)
-        if(exist) return
+        let exist = filters.some(f => f.subOption === option && f.qString === qString)
+        if (exist) return
         cleaners.push({
-            subOption,
+            subOption: option,
             qString,
-            desc:getDesc(subOption,qString)
+            desc: getDesc(option, qString)
         })
 
         dispatch(DataSetActions.setCleaners(cleaners))
-
     }
 
-    const queryCleaner = async ()=>{
-        let res = await fetchByJSON('/clean', {
-            cleaners: JSON.stringify(dataset.cleaners),
-            cacheResult: true,
-            filename: dataset.filename
-        })
-        
-        let json = await res.json()
-        dispatch(DataSetActions.setData({
-            data: JSON.parse(json.data),
-            cols: json.cols,
-            num_cols: json.num_cols,
-            col_lists: json.col_lists,
-            cate_cols: json.cate_cols,
-            cate_lists: json.cate_lists,
-            num_lists: json.num_lists
-        }))
+    const onConfirmSubOption = () => {
+        if (option === 4) {
+            let res = []
+            let refs = cleaningCondition.current[4].refs
+            for (let p in refs) {
+                let value = refs[p].value
+
+                if (value)
+                    res.push({
+                        key: p,
+                        value: refs[p].value
+                    })
+            }
+            cleaningCondition.current[4].res = res
+            if (res.length) setSubOptionText('Edit values')
+        } else {
+            let res = {}
+            let belowRefs = cleaningCondition.current[5].belowRefs
+            let aboveRefs = cleaningCondition.current[5].aboveRefs
+
+            for (let p in belowRefs) {
+                let value = belowRefs[p].value
+
+                if (value){
+                    res[p] = res[p] || {}
+                    res[p].below = value
+                }
+            }
+
+            for (let p in aboveRefs) {
+                let value = aboveRefs[p].value
+
+                if (value){
+                    res[p] = res[p] || {}
+                    res[p].above = value
+                }
+            }
+
+            if (Object.keys(res).length) setSubOptionText('Edit values')
+        }
+
+        console.log(cleaningCondition.current);
+        setShowSubOptionModal(false)
+    }
+
+    const queryCleaner = async () => {
+        // let res = await fetchByJSON('/clean', {
+        //     cleaners: JSON.stringify(dataset.cleaners),
+        //     cacheResult: true,
+        //     filename: dataset.filename
+        // })
+
+        // let json = await res.json()
+        // dispatch(DataSetActions.setData({
+        //     data: JSON.parse(json.data),
+        //     cols: json.cols,
+        //     num_cols: json.num_cols,
+        //     col_lists: json.col_lists,
+        //     cate_cols: json.cate_cols,
+        //     cate_lists: json.cate_lists,
+        //     num_lists: json.num_lists
+        // }))
     }
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
+        <Modal isOpen={showSubOptionModal} setIsOpen={setShowSubOptionModal} onClose={onConfirmSubOption} contentStyleText="mx-auto mt-20" style={{ maxWidth: '35%' }}>
+            <div className='p-5 flex flex-col'>
+                <div className="flex flex-col">
+                    <div className={`${option === 4 ? '' : 'hidden'}`}>
+                        {dataset.cols.map(name => <div key={name} className="flex flex-row justify-between w-full">
+                            <div className='py-3 px-10 label-left'>{name + ':'}</div>
+                            <div className='py-3 label-right'>
+                                <input ref={ref => cleaningCondition.current[4].refs[name] = ref} className='p-2 focus:outline-none rounded-sm' placeholder="Specified Value" />
+                            </div>
+                        </div>)}
+                    </div>
+                    <div className={`${option === 5 ? '' : 'hidden'}`}>
+                        {dataset.num_cols.map(name => <div key={name} className="inline-block w-full">
+                            <div className='py-3 px-10 inline-block float-left'>{name + ':'}</div>
+                            <div className='py-3 inline-block float-right'>
+                                <select ref={ref => cleaningCondition.current[5].belowRefs[name] = ref} className='p-2 focus:outline-none rounded-sm' placeholder="Remove Below">
+                                    <option value="">-</option><option value="5%">5%</option><option value="10%">10%</option><option value="15%">15%</option>
+                                </select>
+                            </div>
+                            <div className='py-3 inline-block float-right'>
+                                <select ref={ref => cleaningCondition.current[5].aboveRefs[name] = ref} className='p-2 focus:outline-none rounded-sm' placeholder="Remove Above">
+                                    <option value="">-</option><option value="85%">85%</option><option value="90%">90%</option><option value="95%">95%</option>
+                                </select>
+                            </div>
+                        </div>)}
+                    </div>
+                </div>
+                <div className="flex justify-end m-3 mt-10">
+                    <Button text='Confirm' customStyle='bordered-light' onClick={onConfirmSubOption} />
+                </div>
+            </div>
+        </Modal>
+
         <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
 
             <div className='mx-5 my-10 w-5/12'>
-                <DropDown text={subOptionText} customStyle='h-10 w-72' customUlStyle={'w-72'} items={
-                ['Remove N/A Rows','Remove N/A Columns','Replace N/A By Mean' ,'Replace N/A By Median','Replace N/A By Specific Value','Remove Outliers'].map((item,i)=>({name:item,onClick(e){
-                {/*0                      1                2                       3                        4                            5 */}
-                setSubOption(i)
-                setSubOptionText(item)
-            }}))} />
+                <DropDown text={optionText} customStyle='h-10 w-72' customUlStyle={'w-72'} items={
+                    ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'].map((item, i) => ({
+                        name: item, onClick(e) {
+                            {/*0                      1                2                       3                        4                            5 */ }
+                            setOption(i)
+                            setOptionText(item)
+                            if (i === 4 || i === 5) {
+                                setShowSubOptionModal(true)
+                            }
+                        }
+                    }))} />
+            </div>
+            <div className='mx-5 my-10 w-5/12'>
+                {/* Select a column and apply a cleaner */}
+                {(option === 2 || option === 3) ? <MultiSelect selections={dataset.num_cols}
+                    onSelect={(e) => {
+                        cleaningCondition.current[option].options = e
+                    }}
+                /> : ''}
+
+
+                {/* Replace N/A By Specific Value, open a modal which contains col names and inputs */}
+                {/* Remove Outliers, open a modal which contains col names and inputs */}
+                {(option === 4 || option === 5) ?
+                    <>
+                        <Button onClick={() => setShowSubOptionModal(s => !s)} text={subOptionText} customStyle={'h-10 w-60 ml-10'} />
+                    </>
+                    : ''}
             </div>
 
             <div className='mx-5 my-10 w-5/12'>
-                {(subOption === 2 || subOption === 3)?<MultiSelect selections={dataset.num_cols}
-                onSelect={(e)=>{
-                    cleaningCondition.current = e
-                }}
-                />:''}
-                {/* {subOption === 4 ?
-                <>
-                <DropDown items={dataset.num_cols.map(e=>({
-                    name:e,
-                    onClick(){
-
-                    }
-                }))}/>
-                <input/>
-                </>
-                :''} */}
-            </div>
-
-            <div className='mx-5 my-10 w-5/12'>
-                <Button text='Confirm' onClick={onConfirm}/>
+                <Button text='Confirm' onClick={onConfirm} />
             </div>
         </div>
-        <Table PageSize={10}/>
+        <Table PageSize={10} />
     </div>)
 }
 

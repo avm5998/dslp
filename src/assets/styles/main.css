@@ -7,6 +7,20 @@
     border:2px solid #eee;
     border-radius:0.5rem;
   }
+
+  .label-left{
+    @apply flex justify-start items-center;
+  }
+
+  .label-right{
+    @apply flex justify-end items-center;
+  }
+
+  /* @variants responsive{
+    .no-outline{
+      @apply focus:outline-none outline-none;
+    }
+  } */
 }
 
 body, html {
