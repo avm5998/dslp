@@ -325,6 +325,58 @@ def query():
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
+MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+
+@app.route('/clean', methods=['POST']) #/query
+@cross_origin()
+def cond_clean_json(filename):
+    web = []
+    params = request.json
+    cacheResult = params['cacheResult']
+    autoReplace = params['autoReplace']
+    filename = params['filename']
+    cleaners = json.loads(params['cleaners'])
+    df = _getCache(filename)
+    print(cleaners)
+
+    if autoReplace:
+        ndf = ndf.replace(MISSING_VALUES, np.nan)
+        
+    for filter in filters:
+        subOption = filter['subOption']
+        # 0 Remove N/A Rows
+        # 1 Remove N/A Columns
+        # 2 Replace N/A By Mean 
+        # 3 Replace N/A By Median 
+        # 4 Replace N/A By Specific Value 
+        # 5 Remove Outliers 
+        if subOption == 2:
+            condition = filter['condition']
+            for col in range(condition.cols):
+                df[col].fillna(df[col].astype(float).mean(), inplace=True)
+        elif subOption == 3:
+            condition = filter['condition']
+            for col in range(condition.cols):
+                df[col].fillna(df[col].astype(float).median(), inplace=True)
+        elif subOption == 4:
+            condition = filter['condition']
+            for items in range(condition.items):
+                df[item.col].fillna(item.val, inplace=True)
+                
+    for filter in filters:
+        subOption = filter['subOption']
+        if subOption == 0:
+            ndf = ndf.dropna(axis=0)
+        elif subOption == 1:
+            ndf = ndf.dropna(axis=1)
+       
+    if cacheResult:
+        _setCache(EditedPrefix+filename,ndf)
+    cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
+    return jsonify(data=ndf.to_json(),
+    cols = cols,col_lists = col_lists, num_cols = num_cols, 
+    cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

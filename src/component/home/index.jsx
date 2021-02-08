@@ -23,7 +23,7 @@ const Home = (props) => {
     })
 
     let json = await res.json()
-
+    
     if (json.success) {
       dispatch(DataSetActions.setData({ 
         filename, 
@@ -48,7 +48,6 @@ const Home = (props) => {
     })
 
     let json = await res.json()
-    console.log(json);
     dispatch(DataSetActions.setProfile({ html: json.html }))
     dispatch(push('/visualization'))
   }

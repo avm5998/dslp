@@ -13,7 +13,7 @@ export function Button({
     </button>
 }
 
-export function MultiSelect({ selections, onSelect, passiveMode = false, getDesc = e => e, customStyle = '' }) {
+export function MultiSelect({ selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customStyle = '' }) {
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
@@ -23,6 +23,9 @@ export function MultiSelect({ selections, onSelect, passiveMode = false, getDesc
             menuRef.current.classList.add('invisible')
             setSelected([...selections])
         }
+
+        if(!defaultOpen)
+            toggleMenu()
     }, [selections])
 
     const toggleMenu = () => {
@@ -104,7 +107,7 @@ export function DropDown({
     let buttonRef = useRef(null)
 
     return (<div className="w-full dropdown group inline-block">
-        <button ref={buttonRef} className={`${customStyle} outline-none focus:outline-none border px-3 py-1 bg-white rounded-sm flex items-center min-w-32`}>
+        <button ref={buttonRef} className={`outline-none focus:outline-none border px-3 py-1 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
             <span className="pr-1 text-gray-400 flex-1">{text}</span>
             <span className={`${hideArrow ? 'hidden' : ''}`}>
                 <svg className="fill-current h-4 w-4 transform group-hover:-rotate-180 transition duration-150 ease-in-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -142,7 +145,7 @@ export function DropDown({
                             return
                         }
 
-                        let res = item.onClick()
+                        let res = item.onClick(e)
                         if (res === false) {//hide dropdown
                             ulRef.current.style.display = 'none'
                             setTimeout(() => {
@@ -284,7 +287,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
 }
 
 
-export function Modal({ isOpen, setIsOpen, duration = 300, children }) {
+export function Modal({ isOpen, setIsOpen, duration = 300, children, contentStyleText='' }) {
     let modalBg = useRef()
     let [hidden, setHidden] = useState(true)
     let [realOpen, setIsRealOpen] = useState(false)//if hidden and opacity changed simontaneously, animation fails
@@ -304,8 +307,8 @@ export function Modal({ isOpen, setIsOpen, duration = 300, children }) {
         if (e.target === modalBg.current)
             setIsOpen(false)
     }
-    } className={`modal-bg transition-opacity duration-${duration} pt-16 fixed w-full h-full left-0 top-0 overflow-auto flex justify-center items-center ${hidden ? 'hidden' : ''} ${realOpen ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,.3)' }}>
-        <div className="modal-content relative m-auto bg-gray-100 w-4/5 shadow-lg">
+    } className={`modal-bg transition-opacity duration-${duration} pt-16 fixed w-full h-full left-0 top-0 m-auto overflow-auto flex justify-center items-center ${hidden ? 'hidden' : ''} ${realOpen ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,.3)', zIndex:1}}>
+        <div className={`modal-content relative m-auto bg-gray-100 w-auto ${contentStyleText} shadow-lg`}>
             {children}
         </div>
     </div>)

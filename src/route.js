@@ -7,7 +7,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
-
+import Cleaning from './component/cleaning'
+import FeatureEngineering from './component/featureEngineering';
 //add all solid icon-fonts
 library.add(fas)
 
@@ -16,6 +17,8 @@ const Menu = {
         { text: 'Upload Data', icon: 'home', to: '/' },
         { text: 'Visualization', icon: 'chart-area', to: '/visualization' },
         { text: 'Query', icon: 'search', to: '/query' },
+        { text: 'Clean', icon: 'search', to: '/clean' },
+        { text: 'Feature Engineering', icon: 'search', to: '/featureEngineering' },
     ]
 }
 
@@ -71,6 +74,8 @@ const Routes = () => {
                     <Route exact path='/' component={Home} />
                     <Route path='/visualization' component={Visualization} />
                     <Route path='/query' component={Query} />
+                    <Route path='/clean' component={Cleaning} />
+                    <Route path='/featureEngineering' component={FeatureEngineering} />
                 </Switch>
             </div>
         </div>
