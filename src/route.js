@@ -9,6 +9,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 import Cleaning from './component/cleaning'
 import FeatureEngineering from './component/featureEngineering';
+import SignIn from './component/sign-in/sign-in.component'
 //add all solid icon-fonts
 library.add(fas)
 
@@ -19,6 +20,7 @@ const Menu = {
         { text: 'Query', icon: 'search', to: '/query' },
         { text: 'Clean', icon: 'search', to: '/clean' },
         { text: 'Feature Engineering', icon: 'search', to: '/featureEngineering' },
+        { text: 'Sign In', icon: 'sign-in-alt', to: '/signin' }
     ]
 }
 
@@ -76,6 +78,7 @@ const Routes = () => {
                     <Route path='/query' component={Query} />
                     <Route path='/clean' component={Cleaning} />
                     <Route path='/featureEngineering' component={FeatureEngineering} />
+                    <Route path='/signin' component={SignIn} />
                 </Switch>
             </div>
         </div>
