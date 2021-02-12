@@ -4,6 +4,7 @@
     width: 25vw;
     display: flex;
     flex-direction: column;
+    margin: auto;
 }
 .sign-in .title {
     margin: 10px 0;

@@ -9,7 +9,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 import Cleaning from './component/cleaning'
 import FeatureEngineering from './component/featureEngineering';
-import SignIn from './component/sign-in/sign-in.component'
+import SignInAndSignUpPage from './pages/sign-in-and-sign-up/sign-in-and-sign-up.component'
 //add all solid icon-fonts
 library.add(fas)
 
@@ -72,13 +72,14 @@ const Routes = () => {
             </div>
 
             <div className='w-10/12 absolute right-0'>
+                                    
                 <Switch>
                     <Route exact path='/' component={Home} />
                     <Route path='/visualization' component={Visualization} />
                     <Route path='/query' component={Query} />
                     <Route path='/clean' component={Cleaning} />
                     <Route path='/featureEngineering' component={FeatureEngineering} />
-                    <Route path='/signin' component={SignIn} />
+                    <Route path='/signin' component={SignInAndSignUpPage} />
                 </Switch>
             </div>
         </div>
