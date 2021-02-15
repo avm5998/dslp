@@ -9,7 +9,10 @@ import { fas } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 import Cleaning from './component/cleaning'
 import FeatureEngineering from './component/featureEngineering';
+import Preprocessing from './component/preprocessing';
+import FeatureSelection from './component/featureSelection';
 import SignInAndSignUpPage from './pages/sign-in-and-sign-up/sign-in-and-sign-up.component'
+import Analysis from './component/analysis';
 //add all solid icon-fonts
 library.add(fas)
 
@@ -20,8 +23,11 @@ const Menu = {
         { text: 'Query', icon: 'search', to: '/query' },
         { text: 'Clean', icon: 'search', to: '/clean' },
         { text: 'Feature Engineering', icon: 'search', to: '/featureEngineering' },
-        { text: 'Sign In', icon: 'sign-in-alt', to: '/signin' }
-    ]
+        { text: 'Feature Selection', icon: 'search', to: '/featureSelection' },
+        { text: 'Preprossing', icon: 'search', to: '/preprocessing' },
+        { text: 'Sign In', icon: 'sign-in-alt', to: '/signin' },
+        { text: 'Analysis', icon: 'sign-in-alt', to: '/analysis' }
+    ],
 }
 
 const Routes = () => {
@@ -79,7 +85,10 @@ const Routes = () => {
                     <Route path='/query' component={Query} />
                     <Route path='/clean' component={Cleaning} />
                     <Route path='/featureEngineering' component={FeatureEngineering} />
+                    <Route path='/preprocessing' component={Preprocessing} />
                     <Route path='/signin' component={SignInAndSignUpPage} />
+                    <Route path='/featureSelection' component={FeatureSelection} />
+                    <Route path='/analysis' component={Analysis} />
                 </Switch>
             </div>
         </div>

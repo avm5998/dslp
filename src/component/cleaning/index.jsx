@@ -122,7 +122,7 @@ const Cleaning = () => {
                         {dataset.cols.map(name => <div key={name} className="flex flex-row justify-between w-full">
                             <div className='py-3 px-10 label-left'>{name + ':'}</div>
                             <div className='py-3 label-right'>
-                                <input ref={ref => cleaningCondition.current[4].refs[name] = ref} className='p-2 focus:outline-none rounded-sm' placeholder="Specified Value" />
+                                <input ref={ref => cleaningCondition.current[4].refs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Specified Value" />
                             </div>
                         </div>)}
                     </div>
@@ -130,12 +130,12 @@ const Cleaning = () => {
                         {dataset.num_cols.map(name => <div key={name} className="inline-block w-full">
                             <div className='py-3 px-10 inline-block float-left'>{name + ':'}</div>
                             <div className='py-3 inline-block float-right'>
-                                <select ref={ref => cleaningCondition.current[5].belowRefs[name] = ref} className='p-2 focus:outline-none rounded-sm' placeholder="Remove Below">
+                                <select ref={ref => cleaningCondition.current[5].belowRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Below">
                                     <option value="">-</option><option value="5%">5%</option><option value="10%">10%</option><option value="15%">15%</option>
                                 </select>
                             </div>
                             <div className='py-3 inline-block float-right'>
-                                <select ref={ref => cleaningCondition.current[5].aboveRefs[name] = ref} className='p-2 focus:outline-none rounded-sm' placeholder="Remove Above">
+                                <select ref={ref => cleaningCondition.current[5].aboveRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Above">
                                     <option value="">-</option><option value="85%">85%</option><option value="90%">90%</option><option value="95%">95%</option>
                                 </select>
                             </div>
