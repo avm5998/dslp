@@ -3,9 +3,9 @@ import { useThrottle } from './util'
 import './ui.css'
 
 export function Button({
-    text, onClick = () => { }, disabled = false, disabledText = text, hoverAnimation = true, customStyle = ''
+    id, text, onClick = () => { }, disabled = false, disabledText = text, hoverAnimation = true, customStyle = ''
 }) {
-    return <button onClick={onClick} disabled={disabled} className={`${customStyle} 
+    return <button id={id} onClick={onClick} disabled={disabled} className={`${customStyle} 
     bg-transparent ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
             `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500' : 'bg-blue-400 text-white border-transparent'} cursor-pointer `} 
     rounded font-semibold py-2 px-4 border focus:outline-none`}>
@@ -98,6 +98,7 @@ export function MultiSelect({ defaultText='', wrapSelection = true, selections, 
 }
 
 export function DropDown({
+    id,
     text,
     defaultText=undefined,
     items = [],
@@ -125,7 +126,7 @@ export function DropDown({
 
     let hasControl = defaultText!==undefined //give control to component itself
     return (<div className="w-full dropdown group inline-block">
-        <button onClick={()=>{
+        <button id={id} onClick={()=>{
                     if(!showOnHover){
                         setOpenUl(s=>!s)
                     }

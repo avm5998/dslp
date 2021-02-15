@@ -7,6 +7,7 @@ import { actions as DataSetActions } from '../../reducer/dataset'
 import { Button, MultiSelect, DropDown, Modal } from '../../util/ui'
 import Table from '../common/table'
 import { data } from 'autoprefixer';
+import Tip from '../common/tip'
 
 const getQString = (subOption, condition) => {
     return ''
@@ -115,6 +116,12 @@ const Cleaning = () => {
     }
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
+        <Tip info={{
+            '#confirmBtn':'Just confirm your data',
+            '#dropdownClean':`What is data cleaning?
+            Data cleaning is the process of fixing or removing incorrect, corrupted, incorrectly formatted, duplicate, or incomplete data within a dataset.
+            When combining multiple data sources, there are many opportunities for data to be duplicated or mislabeled. If data is incorrect, outcomes and algorithms are unreliable, even though they may look correct. There is no one absolute way to prescribe the exact steps in the data cleaning process because the processes will vary from dataset to dataset. But it is crucial to establish a template for your data cleaning process so you know you are doing it the right way every time.`,
+    }}/>
         <Modal isOpen={showSubOptionModal} setIsOpen={setShowSubOptionModal} onClose={onConfirmSubOption} contentStyleText="mx-auto mt-20" style={{ maxWidth: '35%' }}>
             <div className='p-5 flex flex-col'>
                 <div className="flex flex-col">
@@ -151,7 +158,7 @@ const Cleaning = () => {
         <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
 
             <div className='mx-5 my-10 w-5/12'>
-                <DropDown text={optionText} customStyle='h-10 w-72' customUlStyle={'w-72'} items={
+                <DropDown id="dropdownClean" text={optionText} customStyle='h-10 w-72' customUlStyle={'w-72'} items={
                     ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'].map((item, i) => ({
                         name: item, onClick(e) {
                             {/*0                      1                2                       3                        4                            5 */ }
@@ -182,7 +189,7 @@ const Cleaning = () => {
             </div>
 
             <div className='mx-5 my-10 w-5/12'>
-                <Button text='Confirm' onClick={onConfirm} />
+                <Button id='confirmBtn' text='Confirm' onClick={onConfirm} />
             </div>
         </div>
         <Table PageSize={10} />
