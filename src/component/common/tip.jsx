@@ -30,6 +30,7 @@ const Tip = ({ info, styleText = '' }) => {
             if (element) {
                 let rect = positionBinder.current[selector]
                 let overlapped = document.createElement('div')
+                overlapped.style.cursor = 'pointer'
                 overlapped.style.position = 'absolute'
                 overlapped.style.zIndex = 1001
                 overlapped.style.width = rect.width + 'px'
