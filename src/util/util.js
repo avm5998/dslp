@@ -113,37 +113,38 @@ function getInitialForm(fields) {
     return form
 }
 
-export function initialFormRadio(args){
-    return initialFormCheckbox({...args,
-        handleType:HandleType.Radio,
-        maxSelection:1,
-        minSelection:1,
+export function initialFormRadio(args) {
+    return initialFormCheckbox({
+        ...args,
+        handleType: HandleType.Radio,
+        maxSelection: 1,
+        minSelection: 1,
     })
 }
 
-export function initialFormCheckbox({handleType = HandleType.Checkbox, type, subTypes, minSelection = 0, maxSelection = subTypes.length, defaultCheckedSubTypes = []}) {
+export function initialFormCheckbox({ handleType = HandleType.Checkbox, type, subTypes, minSelection = 0, maxSelection = subTypes.length, defaultCheckedSubTypes = [] }) {
     let res = {}
 
     subTypes.forEach(subType => Object.assign(res, {
         [`${type}_${subType}`]: {
             handleType: handleType,
             valueProperty: 'checked',
-            onChangeProperty:'onClick',
+            onChangeProperty: 'onClick',
             attrs: {
                 name: type,
-                checked:defaultCheckedSubTypes.indexOf(subType)!==-1,
-                defaultChecked: defaultCheckedSubTypes.indexOf(subType)!==-1
+                checked: defaultCheckedSubTypes.indexOf(subType) !== -1,
+                defaultChecked: defaultCheckedSubTypes.indexOf(subType) !== -1
             },
             getValue(e) {
                 return e.target.checked
             },
-            shouldPreventDefault(form,formRef,e){
+            shouldPreventDefault(form, formRef, e) {
                 let element = formRef.current || document
-                let selectedCount = [...element.querySelectorAll(`[name=${type}]`)].reduce((p,c)=>p+c.checked,0)
+                let selectedCount = [...element.querySelectorAll(`[name=${type}]`)].reduce((p, c) => p + c.checked, 0)
 
-                if(e.target.checked){
+                if (e.target.checked) {
                     return selectedCount > maxSelection
-                }else{
+                } else {
                     return selectedCount < minSelection
                 }
             }
@@ -152,7 +153,7 @@ export function initialFormCheckbox({handleType = HandleType.Checkbox, type, sub
     return res
 }
 
-export function useForm({fields, checkForm = ()=>true, onSubmit, onSubmitSuccess = ()=>{}, onSubmitFail = ()=>{}, submitOnChange = false}) {
+export function useForm({ fields, checkForm = () => true, onSubmit, onSubmitSuccess = () => { }, onSubmitFail = () => { }, submitOnChange = false }) {
     // let example = {
     //   name:{
     //     valueProperty:'value',
@@ -165,7 +166,7 @@ export function useForm({fields, checkForm = ()=>true, onSubmit, onSubmitSuccess
     //   }
     // }
     console.assert(!(fields && (fields.getData instanceof Object)))
-    const initialForm = useMemo(()=>getInitialForm(fields),[])
+    const initialForm = useMemo(() => getInitialForm(fields), [])
     let submitingForm = useRef(false)
     let [form, setForm] = useState(initialForm) // only use a single form instead form + form data
     let formRef = useRef()
@@ -183,8 +184,8 @@ export function useForm({fields, checkForm = ()=>true, onSubmit, onSubmitSuccess
             let attrObject = {}
 
             attrObject[onChangeProperty] = e => {
-                if(field.shouldPreventDefault instanceof Function){
-                    if (field.shouldPreventDefault(form,formRef,e)){
+                if (field.shouldPreventDefault instanceof Function) {
+                    if (field.shouldPreventDefault(form, formRef, e)) {
                         e.preventDefault()
                         return
                     }
@@ -201,18 +202,18 @@ export function useForm({fields, checkForm = ()=>true, onSubmit, onSubmitSuccess
 
     //using submitOnChange to determine whether to submit the form once it changed
     //cause it is triggered by form's change, its value is updated
-    useEffect(()=>{
-        if (firstInit.current){
+    useEffect(() => {
+        if (firstInit.current) {
             firstInit.current = false
             return
         }
 
         if (submitOnChange && form.onSubmit) form.onSubmit()
-    },[form])
+    }, [form])
 
     //update onSubmit on each render cause "checkForm" usually uses current state as variables
-    form.onSubmit = (e)=>{
-        if(!checkForm()) return
+    form.onSubmit = (e) => {
+        if (!checkForm()) return
         if (submitingForm.current) return
         submitingForm.current = true
         onSubmit(e).then((res) => {
@@ -223,21 +224,114 @@ export function useForm({fields, checkForm = ()=>true, onSubmit, onSubmitSuccess
             submitingForm.current = false
         })
     }
-    
-    return {form, formRef, setForm, submitingForm}
+
+    return { form, formRef, setForm, submitingForm }
 }
 
+//no real time effects
+export function useSimpleForm(initialResult = {}) {
+    let checkboxRefs = useRef([])
+    let inputRefs = useRef([])
+    let selectRefs = useRef([])
+    let result = useRef(initialResult)
 
-export function elementIsVisibleInViewport(el, partiallyVisible = true){
-    if(el.offsetWidth + el.offsetHeight <= 0) return false
+    const getData = useCallback(()=>{
+        let res = result.current
+        for(let checkbox of checkboxRefs.current){
+            let {name,element,item} = checkbox
+            res[name] = res[name] || []
+            if(element.checked){
+                res[name] .push(item)
+            }
+        }
+
+        for(let input of inputRefs.current){
+            let {name,element} = input
+            res[name] = element.value || ''
+        }
+
+        for(let select of selectRefs.current){
+            let {name,element} = select
+            res[name] = element.value || ''
+        }
+
+        return res
+    },[]) 
+
+    return {
+        getData,
+        result:result.current,
+        checkbox: {
+            ref: ref => {
+                if(!ref) return
+
+                let exist = false
+                for(let checkbox of checkboxRefs.current){
+                    if(checkbox.item === ref.getAttribute('item') && checkbox.name === ref.getAttribute('name')){
+                        exist = true
+                        break
+                    }
+                }
+
+                if (!exist)
+                    checkboxRefs.current.push({
+                        element: ref,
+                        item: ref.getAttribute('item'),
+                        name: ref.getAttribute('name') || ('checkbox_' + checkboxRefs.current.length)
+                    })
+            }
+        },
+        input: {
+            ref: ref => {
+                if(!ref) return
+
+                let exist = false
+                for(let input of inputRefs.current){
+                    if(input.name === ref.getAttribute('name')){
+                        exist = true
+                        break
+                    }
+                }
+
+                if (!exist)
+                    inputRefs.current.push({
+                        element: ref,
+                        name: ref.getAttribute('name') || ('input_' + inputRefs.current.length)
+                    })
+            }
+        },
+        select:{
+            ref: ref => {
+                if(!ref) return
+
+                let exist = false
+                for(let select of selectRefs.current){
+                    if(select.name === ref.getAttribute('name')){
+                        exist = true
+                        break
+                    }
+                }
+
+                if (!exist)
+                    selectRefs.current.push({
+                        element: ref,
+                        name: ref.getAttribute('name') || ('select_' + inputRefs.current.length)
+                    })
+            }
+        }
+    }
+}
+
+export function elementIsVisibleInViewport(el, partiallyVisible = true) {
+    if (el.offsetWidth + el.offsetHeight <= 0) return false
     const rect = el.getBoundingClientRect();
     const top = rect.top, left = rect.left, bottom = rect.bottom, right = rect.right
     const innerHeight = window.innerHeight, innerWidth = window.innerWidth
-    return partiallyVisible ? ((top > 0 && top < innerHeight) || (bottom > 0 && bottom < innerHeight)) && ((left > 0 && left < innerWidth) || (right > 0 && right < innerWidth)) : top >= 0 && left >= 0 && bottom <= innerHeight && right <= innerWidth; 
+    return partiallyVisible ? ((top > 0 && top < innerHeight) || (bottom > 0 && bottom < innerHeight)) && ((left > 0 && left < innerWidth) || (right > 0 && right < innerWidth)) : top >= 0 && left >= 0 && bottom <= innerHeight && right <= innerWidth;
 };
 
-export function GetDataFrameInfo (info){
+export function GetDataFrameInfo(info) {
     return {
-      rows:info.split(/\n/).filter(Boolean).slice(1)
+        rows: info.split(/\n/).filter(Boolean).slice(1)
     }
-  }
+}

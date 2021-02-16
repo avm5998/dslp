@@ -301,6 +301,7 @@ def visualization():
 @app.route('/query',methods=['POST'])
 @cross_origin()
 def query():
+    # print("_______________________________________")
     params = request.json
     cacheResult = params['cacheResult']
     filename = params['filename']

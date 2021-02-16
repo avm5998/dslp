@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { forwardRef, useState, useCallback, useRef, useEffect } from 'react'
 import { useThrottle } from './util'
 import './ui.css'
 
 export function Button({
-    text, onClick = () => { }, disabled = false, disabledText = text, hoverAnimation = true, customStyle = ''
+    id, text, onClick = () => { }, disabled = false, disabledText = text, hoverAnimation = true, customStyle = ''
 }) {
-    return <button onClick={onClick} disabled={disabled} className={`${customStyle} 
+    return <button id={id} onClick={onClick} disabled={disabled} className={`${customStyle} 
     bg-transparent ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
             `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500' : 'bg-blue-400 text-white border-transparent'} cursor-pointer `} 
     rounded font-semibold py-2 px-4 border focus:outline-none`}>
@@ -13,7 +13,7 @@ export function Button({
     </button>
 }
 
-export function MultiSelect({ selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customStyle = '' }) {
+export function MultiSelect({ defaultText='', wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customHeight = '',customWidth = '' }) {
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
@@ -33,12 +33,14 @@ export function MultiSelect({ selections, onSelect, passiveMode = false, getDesc
         menuRef.current.classList.toggle('invisible')
     }
 
-    return (<div className="multiselect w-full flex flex-col items-center h-64 mx-auto">
+    return (<div className={`${customHeight?customHeight:'h-64'} multiselect ${customWidth?customWidth:'w-full'} flex flex-col items-center mx-auto`}>
         <div className="w-full">
             <div className="flex flex-col items-center relative">
                 <div className="w-full">
                     <div className="p-1 flex border border-gray-200 bg-white rounded">
-                        <div className="flex flex-auto flex-wrap">
+                        <div className={`flex flex-auto ${wrapSelection?'flex-wrap':'flex-nowrap overflow-hidden'}`} onClick={()=>{
+                                    if(!selected.length) toggleMenu()
+                                }}>
                             {selected.map(e =>
                                 <div key={e} className="flex justify-center items-center m-1 font-medium py-1 px-2 bg-white rounded-full text-blue-700 bg-blue-100 border border-blue-300 ">
                                     <div className="text-xs font-normal leading-none max-w-full flex-initial">{getDesc(e)}</div>
@@ -56,8 +58,8 @@ export function MultiSelect({ selections, onSelect, passiveMode = false, getDesc
                                     </div>
                                 </div>
                             )}
-                            <div className="flex-1">
-                                <input placeholder="" disabled className="bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800" />
+                            <div className="flex-1" >
+                                <input placeholder={selected.length>0?'':defaultText} disabled className={`${!selected.length?'cursor-pointer':''} text-center bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
                         <div className="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200" onClick={toggleMenu}>
@@ -96,21 +98,43 @@ export function MultiSelect({ selections, onSelect, passiveMode = false, getDesc
 }
 
 export function DropDown({
+    id,
     text,
-    items,
+    defaultText=undefined,
+    items = [],
+    onSelect,
     customStyle,
     customUlStyle,
     hideArrow,
+    showOnHover = true,
     disabledRef = {}
 }) {
     let ulRef = useRef(null)
     let buttonRef = useRef(null)
+    let [ulOpen,setOpenUl] = useState(0)
+    let [currentText,setCurrentText] = useState(defaultText)
 
+    if(onSelect){//items must be string array
+        items = items.map((name,i)=>({
+            name,
+            onClick(){
+                onSelect(name,i)
+                return false
+            }
+        }))
+    }
+
+    let hasControl = defaultText!==undefined //give control to component itself
     return (<div className="w-full dropdown group inline-block">
-        <button ref={buttonRef} className={`outline-none focus:outline-none border px-3 py-1 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
-            <span className="pr-1 text-gray-400 flex-1">{text}</span>
-            <span className={`${hideArrow ? 'hidden' : ''}`}>
-                <svg className="fill-current h-4 w-4 transform group-hover:-rotate-180 transition duration-150 ease-in-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+        <button id={id} onClick={()=>{
+                    if(!showOnHover){
+                        setOpenUl(s=>!s)
+                    }
+                }} ref={buttonRef} className={`outline-none focus:outline-none border px-3 py-1 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
+            <span className="pr-1 text-gray-400 flex-1">{hasControl?currentText:text}</span>
+            <span className={`${hideArrow ? 'hidden' : ''}`} >
+                <svg 
+                className={`fill-current h-4 w-4 transform 0 ${showOnHover?'group-hover:-rotate-180':(ulOpen?'-rotate-180':'')} transition duration-150 ease-in-out`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                     <path
                         d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"
                     />
@@ -118,7 +142,7 @@ export function DropDown({
             </span>
         </button>
 
-        <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm transform scale-0 group-hover:scale-100 absolute transition duration-150 ease-in-out origin-top min-w-32`}>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm transform ${showOnHover?'scale-0 group-hover:scale-100':(ulOpen?'scale-100':'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
             {items.map(item => {
 
                 return item.items ?
@@ -135,22 +159,31 @@ export function DropDown({
                         </button>
                         <ul className="bg-white border rounded absolute top-0 right-0 transition duration-150 ease-in-out origin-top-left min-w-32">
                             {item.items.map(subItem =>
-                                <li key={subItem.name} className="text-gray-800 p-3 cursor-pointer px-3 py-1 hover:bg-gray-100" onClick={subItem.onClick}>{subItem.name}</li>
+                                <li key={subItem.name} className="bg-white text-gray-800 p-3 cursor-pointer px-3 py-1 hover:bg-gray-100" onClick={subItem.onClick}>{subItem.name}</li>
                             )}
                         </ul>
                     </li>
-                    : <li key={item.name} className="cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100" onClick={e => {
+                    : <li key={item.name} className={`bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
                         if(disabledRef.current){
                             e.preventDefault()
                             return
                         }
 
                         let res = item.onClick(e)
+
+                        if(hasControl){
+                            setCurrentText(item.name)
+                        }
+
                         if (res === false) {//hide dropdown
-                            ulRef.current.style.display = 'none'
-                            setTimeout(() => {
-                                ulRef.current.style.display = ''
-                            }, 0)
+                            if (!showOnHover){
+                                setOpenUl(s=>!s)
+                            }else{
+                                ulRef.current.style.display = 'none'
+                                setTimeout(() => {
+                                    ulRef.current.style.display = ''
+                                }, 0)
+                            }
                         }
                     }}>{item.name}</li>
             }
@@ -323,7 +356,7 @@ export function Radio({label,name,customStyle='',defaultChecked=false,onChange=(
     </label>)
 }
 
-export function Checkbox({disabledRef = {}, label,name,customStyle='',defaultChecked=false,onClick=()=>{},onChange=()=>{}}) {
+export const Checkbox = forwardRef(({item='', forwardedRef, disabledRef = {}, label,name,customStyle='',defaultChecked=false,onClick=()=>{},onChange=()=>{}}, ref)=>{
     return (
     <label className={`inline-flex items-center ${customStyle}`} onClick={e=>{
         if(disabledRef.current){
@@ -333,13 +366,13 @@ export function Checkbox({disabledRef = {}, label,name,customStyle='',defaultChe
 
         onClick(e)
     }}>
-        <input name={name} onChange={e=>{
+        <input ref={ref} name={name} onChange={e=>{
             if(disabledRef.current){
                 e.preventDefault()
                 return
             }
 
             onChange(e)
-        }} type="checkbox" className="form-checkbox h-5 w-5 bg-gray-100 border-2 border-blue-300" defaultChecked={defaultChecked}/><span className="ml-2 text-gray-700">{label}</span>
+        }} type="checkbox" item={item} className="form-checkbox h-5 w-5 bg-gray-100 border-2 border-blue-300" defaultChecked={defaultChecked}/><span className="ml-2 text-gray-700">{label}</span>
     </label>)
-}
+})
