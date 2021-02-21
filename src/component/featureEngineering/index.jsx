@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Checkbox, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
+import Tip from '../common/tip'
 
 const setSubOption = (option, subOption, condition) => {
     console.log(condition);
@@ -50,6 +51,9 @@ const FeatureEngineering = () => {
 
 
         }} setIsOpen={setShowSubOptionModal} contentStyleText="mx-auto mt-20">
+            <Tip info={{
+                '.Bins':'input to type in Bins'
+            }}/>
             <div className='p-5 flex flex-col'>
 
                 {option === 0 ?
@@ -76,7 +80,7 @@ const FeatureEngineering = () => {
                 {option === 2 ? <div className='grid grid-cols-3'>
                     {dataset.num_cols.map((col,i)=><React.Fragment key={i}>
                         <Checkbox {...checkbox2} label={col} name='suboption_checked' item={col}/>
-                        <input {...input2} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins' name={col+'_Bins'}/>
+                        <input {...input2} className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins' name={col+'_Bins'}/>
                         <input {...input2} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Labels' name={col+'_Labels'}/>
                     </React.Fragment>)}
                 </div> : ''}

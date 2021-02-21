@@ -29,6 +29,9 @@ const Tip = ({ info, styleText = '' }) => {
             let element = document.querySelector(selector)
             if (element) {
                 let rect = positionBinder.current[selector]
+                if(!rect){
+                    rect = document.querySelector(selector).getBoundingClientRect()
+                }
                 let overlapped = document.createElement('div')
                 overlapped.style.cursor = 'pointer'
                 overlapped.style.position = 'absolute'
@@ -47,6 +50,12 @@ const Tip = ({ info, styleText = '' }) => {
                 childBinder.current.push(overlapped)
             }
         }
+
+        return ()=>{
+            for (let child of childBinder.current) {
+                document.body.removeChild(child)
+            }
+        }
     }, [selectTip])
 
     return (<div className={`${styleText ? styleText : 'absolute right-0 top-0'} ${selectTip ? 'w-full h-full' : ''}`} onClick={e => {
@@ -54,9 +63,10 @@ const Tip = ({ info, styleText = '' }) => {
             setShowTipContent(false)
         }
     }} style={{
+        zIndex:1000,
         background: selectTip ? 'rgba(0,0,0,.3)' : 'transparent'
     }}>
-        <div className='fixed right-0 top-0 cursor-pointer bordered-light w-16 h-16 bg-green-300 flex justify-center items-center' onClick={() => {
+        <div className='absolute right-0 top-0 cursor-pointer bordered-light w-16 h-16 bg-green-300 flex justify-center items-center' onClick={() => {
             if(!selectTip){
                 setSelectTip(true)
             }else{
