@@ -1,6 +1,6 @@
 import sys
 import os
-from flask import Flask, render_template, request, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response
+from flask import Flask, render_template, request, Response, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response
 from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 import pymongo
@@ -26,6 +26,15 @@ from sklearn.metrics import confusion_matrix, roc_curve
 from sklearn.decomposition import PCA
 from scipy import stats
 
+# login imports
+# from flask_bcrypt import generate_password_hash, check_password_hash
+from database.db import initialize_db
+from flask_restful import Api
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager
+from resources.errors import errors
+#  
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -48,12 +57,28 @@ from flask_caching import Cache
 matplotlib.use('Agg')
 
 app = Flask(__name__,static_folder="../build")
+
 CORS(app)
+app.config.from_envvar('ENV_FILE_LOCATION')
+from resources.routes import initialize_routes
 app.config['CACHE_TIMEOUT'] = 60*60
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 app.config['UPLOAD_EXTENSIONS'] = ['.pdf', '.csv', '.json']
 app.config['UPLOAD_PATH'] = 'uploads'
 app.config['LOGO_PATH'] = 'static/logo'
+
+api = Api(app)
+api = Api(app, errors=errors)
+bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
+app.config['MONGODB_SETTINGS'] = {
+    'host': 'mongodb://localhost/data_science_learning_platform_database'
+}
+
+initialize_routes(api)
+initialize_db(app)
+
+
 file_descs = {"SSR_TSRPT.pdf": "This is description 1",
               "A_Normalization_Process_to_Standardize_Handwriting_Data_Collected_from_Multiple_Resources_for_Recognition.pdf": "desc2",
               "7580-evidential-deep-learning-to-quantify-classification-uncertainty.pdf": "d3"}
@@ -61,11 +86,17 @@ file_descs = {"SSR_TSRPT.pdf": "This is description 1",
 mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 mongo_db = mongo_client["data_science_learning_platform_database"]
 mongo_collection = mongo_db["files"]
+user_collection = mongo_db["user"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 EditedPrefix = '__EDITED___'
+
+
+
+
+
 
 @app.errorhandler(413)
 def too_large(e):
