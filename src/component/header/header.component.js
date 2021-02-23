@@ -1,54 +1,85 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react';
 import './header.styles.css'
 import ProfileDropdown from '../profile-dropdown/profile-dropdown.component'
+import { Route, Switch, Link } from 'react-router-dom';
+import AuthService from "../../services/auth.service";
 
-const Header = () => {
+const Header = (props) => {
+    let [userDetail, setCurrentUser] = useState({currentUser:undefined})
+    const {currentUser} = userDetail;
+    useEffect(() => {
+        console.log("inside header use effect")
+        const user = props.user;
+        if (user) {
+            setCurrentUser({currentUser: user})
+        }
+
+    }, [ props.user ])
     return (
         
-        <section class="navigation">
-            <div class="nav-container">
-                <div class="brand">
-                <a href="#!">Logo</a>
-                </div>
-                <nav>
-                <div class="nav-mobile"><a id="nav-toggle" href="#!"><span></span></a></div>
-                <ul class="nav-list">
-                    <li>
-                    <a href="#!">About</a>
-                    </li>
-                    <li>
-                    <a href="#!">Docs</a>
-                    </li>
-                    <li>
-                    <a href="#!">        
-                        <img src="src\assets\images\vivek_profile.jpg" className='profile-img'/>
-                    </a>
-                    <ul class="nav-dropdown">
-                        <li>
-                        <a href="#!">Signed in as Vivek</a>
-                        <div className='dropdown-divider'></div>
-                        </li>
+            <section class="navigation">
+                <div class="nav-container">
+                    <div class="brand">
+                    <a href="">Logo</a>
+                    </div>
+                    <nav>
+                        <div class="nav-mobile"><a id="nav-toggle" href=""><span></span></a></div>
+                    
 
-                        <li>
-                        <a href="#!">Your Profile</a>
-                        </li>
-                        <li>
-                        <a href="#!">Settings</a>
-                        </li>
-                        <li>
-                        <div className='dropdown-divider'></div>
-                        <a href="#!">Sign out</a>
-                        </li>
-                    </ul>
-                    </li>
-                </ul>
-                </nav>
-            </div>
-        </section>
+                        {
+                            currentUser?(
+                                <ul class="nav-list">
+                                    <li>
+                                        <a href="">        
+                                            <img src="src\assets\images\vivek_profile.jpg" className='profile-img'/>
+                                        </a>
+                                        <ul class="nav-dropdown">
+                                            <li>
+                                            <a href="">Signed in as {currentUser.id}</a>
+                                            <div className='dropdown-divider'></div>
+                                            </li>
+
+                                            <li>
+                                            <a href="/profile">Your Profile</a>
+                                            </li>
+                                            <li>
+                                            <a href="">Settings</a>
+                                            </li>
+                                            <li>
+                                            <div className='dropdown-divider'></div>
+                                            <Link to={"/login"} className="nav-link">
+                                                Sign out
+                                            </Link>
+                                            </li>
+                                        </ul>       
+                                    </li>
+                                </ul>) :
+                                (
+                                <ul class="nav-list">
+                                    <li>
+                                        <Link to={"/login"} className="nav-link">
+                                            Login
+                                        </Link>
+                        
+                                    </li>
+                                    <li>
+                                    <Link to={"/register"} className="nav-link">
+                                        Register
+                                    </Link>
+                                    </li>
+                                </ul>
+                                )
+                                }
+                    
+                    </nav>
+                </div>
+                    
+            </section>
         
 		
     )
 
 }
+
 
 export default Header

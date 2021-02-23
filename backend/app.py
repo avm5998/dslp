@@ -26,13 +26,18 @@ from sklearn.metrics import confusion_matrix, roc_curve
 from sklearn.decomposition import PCA
 from scipy import stats
 
+
+
 # login imports
 # from flask_bcrypt import generate_password_hash, check_password_hash
 from database.db import initialize_db
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager
 from resources.errors import errors
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
 #  
 
 import matplotlib.pyplot as plt
@@ -149,9 +154,11 @@ def getDataFrameDetails(df):
     for col in cols}
     return cols,col_lists,num_cols,num_lists,cate_cols,cate_lists
 
+
 @app.route('/uploadFile',methods=['POST'])
 @cross_origin()
 def uploadFile():
+    # print(request)
     file = request.files['file']
     forceUpdate = True if 'forceUpdate' in request.form else False
     autoCache = True if 'autoCache' in request.form else False
@@ -358,6 +365,7 @@ def query():
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+
 
 @app.route('/clean', methods=['POST']) #/query
 @cross_origin()

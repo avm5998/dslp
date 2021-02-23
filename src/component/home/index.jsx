@@ -6,9 +6,16 @@ import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Button } from '../../util/ui'
 
+import { Redirect } from 'react-router-dom';
 
+import axios from 'axios';
+import authHeader from '../../services/auth-header';
 
 const Home = (props) => {
+  const { user: currentUser } = useSelector((state) => state.auth);
+  if (!currentUser) {
+    return <Redirect to="/login" />;
+  }
   const dataInput = useRef()
   const dispatch = useDispatch()
   const dataset = useSelector(state => state.dataset)
@@ -16,10 +23,11 @@ const Home = (props) => {
   const uploadFile = async e => {
     const form = document.forms.namedItem("uploadFileForm");
     const data = new FormData(form)
+    console.log(data);
     const filename = document.querySelector('#file').files.item(0).name
     let res = await fetch('/uploadFile', {
       method: 'POST',
-      body: data
+      body: data,
     })
 
     let json = await res.json()

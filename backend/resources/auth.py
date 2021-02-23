@@ -16,7 +16,7 @@ class SignupApi(Resource):
             user.hash_password()
             user.save()
             id = user.id
-            return {'id': str(id)}, 200
+            return {'id': str(id), "message":"Registered successfully"}, 200
         except FieldDoesNotExist:
             raise SchemaValidationError
         except NotUniqueError:
@@ -28,14 +28,14 @@ class LoginApi(Resource):
     def post(self):
         try:
             body = request.get_json()
-            user = User.objects.get(email=body.get('email'))
+            user = User.objects.get(username=body.get('username'))
             authorized = user.check_password(body.get('password'))
             if not authorized:
                 raise UnauthorizedError
  
             expires = datetime.timedelta(days=7)
             access_token = create_access_token(identity=str(user.id), expires_delta=expires)
-            return {'token': access_token}, 200
+            return {'accessToken': access_token, 'id': str(user.id), 'username':str(user.username)}, 200
         except (UnauthorizedError, DoesNotExist):
             raise UnauthorizedError
         except Exception as e:
