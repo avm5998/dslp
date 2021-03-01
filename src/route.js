@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Route, Switch, Link } from 'react-router-dom';
 import Home from './component/home';
-import Visualization from './component/visualization';
+import Summary from './component/visualization';
+import Visualization from './component/visualization_new';
 import Query from './component/query'
 import Header from './component/header/header.component'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -20,6 +21,7 @@ library.add(fas)
 const Menu = {
     'Main': [
         { text: 'Upload Data', icon: 'home', to: '/' },
+        { text: 'Summary', icon: 'chart-area', to: '/summary' },
         { text: 'Visualization', icon: 'chart-area', to: '/visualization' },
         { text: 'Query', icon: 'search', to: '/query' },
         { text: 'Clean', icon: 'search', to: '/clean' },
@@ -45,8 +47,8 @@ const Routes = () => {
     return (
         <div>
             <Header />
-            <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80'>
-                <div className='fixed flex flex-col top-16 left-0 w-2/12 bg-white h-full border-r'>
+            <div className='mt-16 min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80'>
+                <div className='fixed flex flex-col  left-0 w-2/12 bg-white h-full border-r'>
 
                     <div className="flex items-center justify-center h-14 border-b">
                         <div>Awesome data mining</div>
@@ -80,10 +82,11 @@ const Routes = () => {
                     </div>
                 </div>
 
-                <div className='w-10/12 absolute right-0 my-16'>
+                <div className='w-10/12 absolute right-0 '>
                                         
                     <Switch>
                         <Route exact path='/' component={Home} />
+                        <Route path='/summary' component={Summary} />
                         <Route path='/visualization' component={Visualization} />
                         <Route path='/query' component={Query} />
                         <Route path='/clean' component={Cleaning} />

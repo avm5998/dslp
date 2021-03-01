@@ -2,6 +2,27 @@ import ifetch from 'isomorphic-fetch';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { config } from '../config/client'
 
+export function loadScript(url, callback) {
+    var script = document.createElement("script")
+    script.type = "text/javascript";
+    if (script.readyState) {  // only required for IE <9
+        script.onreadystatechange = function () {
+            if (script.readyState === "loaded" || script.readyState === "complete") {
+                script.onreadystatechange = null;
+                callback();
+            }
+        };
+    } else {  //Others
+        script.onload = function () {
+            callback();
+        };
+    }
+
+    script.src = url;
+    document.getElementsByTagName("head")[0].appendChild(script);
+}
+
+
 export async function fetch(url, options) {
     return await ifetch(config.endpoint + url, options)
 }
@@ -235,39 +256,39 @@ export function useSimpleForm(initialResult = {}) {
     let selectRefs = useRef([])
     let result = useRef(initialResult)
 
-    const getData = useCallback(()=>{
+    const getData = useCallback(() => {
         let res = result.current
-        for(let checkbox of checkboxRefs.current){
-            let {name,element,item} = checkbox
+        for (let checkbox of checkboxRefs.current) {
+            let { name, element, item } = checkbox
             res[name] = res[name] || []
-            if(element.checked){
-                res[name] .push(item)
+            if (element.checked) {
+                res[name].push(item)
             }
         }
 
-        for(let input of inputRefs.current){
-            let {name,element} = input
+        for (let input of inputRefs.current) {
+            let { name, element } = input
             res[name] = element.value || ''
         }
 
-        for(let select of selectRefs.current){
-            let {name,element} = select
+        for (let select of selectRefs.current) {
+            let { name, element } = select
             res[name] = element.value || ''
         }
 
         return res
-    },[]) 
+    }, [])
 
     return {
         getData,
-        result:result.current,
+        result: result.current,
         checkbox: {
             ref: ref => {
-                if(!ref) return
+                if (!ref) return
 
                 let exist = false
-                for(let checkbox of checkboxRefs.current){
-                    if(checkbox.item === ref.getAttribute('item') && checkbox.name === ref.getAttribute('name')){
+                for (let checkbox of checkboxRefs.current) {
+                    if (checkbox.item === ref.getAttribute('item') && checkbox.name === ref.getAttribute('name')) {
                         exist = true
                         break
                     }
@@ -283,11 +304,11 @@ export function useSimpleForm(initialResult = {}) {
         },
         input: {
             ref: ref => {
-                if(!ref) return
+                if (!ref) return
 
                 let exist = false
-                for(let input of inputRefs.current){
-                    if(input.name === ref.getAttribute('name')){
+                for (let input of inputRefs.current) {
+                    if (input.name === ref.getAttribute('name')) {
                         exist = true
                         break
                     }
@@ -300,13 +321,13 @@ export function useSimpleForm(initialResult = {}) {
                     })
             }
         },
-        select:{
+        select: {
             ref: ref => {
-                if(!ref) return
+                if (!ref) return
 
                 let exist = false
-                for(let select of selectRefs.current){
-                    if(select.name === ref.getAttribute('name')){
+                for (let select of selectRefs.current) {
+                    if (select.name === ref.getAttribute('name')) {
                         exist = true
                         break
                     }
