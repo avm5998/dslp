@@ -343,6 +343,21 @@ export function useSimpleForm(initialResult = {}) {
     }
 }
 
+export function useToggleGroup(){
+    let components = useRef([])
+    return {
+        ref:(ref)=>{
+            if(ref) components.current.push(ref)
+        },
+        hide:()=>{
+            components.current.forEach(e=>{
+                if(e.hide instanceof Function)
+                    e.hide()
+            })
+        }
+    }
+}
+
 export function elementIsVisibleInViewport(el, partiallyVisible = true) {
     if (el.offsetWidth + el.offsetHeight <= 0) return false
     const rect = el.getBoundingClientRect();

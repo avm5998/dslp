@@ -1,6 +1,7 @@
 import React, { forwardRef, useState, useCallback, useRef, useEffect } from 'react'
 import { useThrottle } from './util'
 import './ui.css'
+import { useImperativeHandle } from 'react'
 
 export function Label({pos = 'left',text=''}){
     return (<div className={`flex items-center${pos==='mid'?'justify-center':pos==='right'?'justify-end':''}`}>{text}</div>)
@@ -18,10 +19,17 @@ export function Button({
     </button>
 }
 
-export function MultiSelect({ defaultText = '', wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customHeight = '', customWidth = '' }) {
+export const MultiSelect = forwardRef(({ controlledOpen = false, openState = false, defaultText = '', wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customHeight = '', customWidth = '' },ref)=> {
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
+
+    useImperativeHandle(ref,()=>({
+        hide:()=>{
+            buttonRef.current.classList.toggle('rotate180')
+            menuRef.current.classList.add('invisible')
+        }
+    }))
 
     useEffect(() => {
         if (passiveMode) {
@@ -33,9 +41,23 @@ export function MultiSelect({ defaultText = '', wrapSelection = true, selections
             toggleMenu()
     }, [selections])
 
-    const toggleMenu = () => {
-        buttonRef.current.classList.toggle('rotate180')
-        menuRef.current.classList.toggle('invisible')
+    useEffect(()=>{
+        if(controlledOpen){
+            toggleMenu(openState)
+        }
+    },[controlledOpen, openState])
+
+    const toggleMenu = (state) => {
+        if(state === undefined){
+            buttonRef.current.classList.toggle('rotate180')
+            menuRef.current.classList.toggle('invisible')
+        }else if(state){
+            buttonRef.current.classList.add('rotate180')
+            menuRef.current.classList.remove('invisible')
+        }else{
+            buttonRef.current.classList.remove('rotate180')
+            menuRef.current.classList.add('invisible')
+        }
     }
 
     return (<div className={`${customHeight ? customHeight : 'h-64'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-center mx-auto`}>
@@ -67,7 +89,7 @@ export function MultiSelect({ defaultText = '', wrapSelection = true, selections
                                 <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} text-center bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
-                        <div className="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200" onClick={toggleMenu}>
+                        <div className="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200" onClick={()=>toggleMenu()}>
                             <button ref={buttonRef} className="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-chevron-up w-4 h-4">
                                     <polyline points="18 15 12 9 6 15"></polyline>
@@ -100,9 +122,9 @@ export function MultiSelect({ defaultText = '', wrapSelection = true, selections
             </div>
         </div>
     </div>)
-}
+})
 
-export function DropDown({
+export const DropDown = forwardRef(({
     id,
     text,
     defaultText = undefined,
@@ -112,12 +134,26 @@ export function DropDown({
     customUlStyle,
     hideArrow,
     showOnHover = true,
+    controlledOpen = false,
+    openState = false,
     disabledRef = {}
-}) {
+},ref)=> {
     let ulRef = useRef(null)
     let buttonRef = useRef(null)
     let [ulOpen, setOpenUl] = useState(0)
     let [currentText, setCurrentText] = useState(defaultText)
+
+    useImperativeHandle(ref,()=>({
+        hide:()=>{
+            setOpenUl(false)
+        }
+    }))
+
+    useEffect(()=>{
+        if(controlledOpen){
+            setOpenUl(openState)
+        }
+    },[controlledOpen,openState])
 
     if (onSelect) {//items must be string array
         items = items.map((name, i) => ({
@@ -195,7 +231,7 @@ export function DropDown({
             )}
         </ul>
     </div>)
-}
+})
 
 export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (number) => {
     return `${number.toFixed(2)}`

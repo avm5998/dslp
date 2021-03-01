@@ -173,7 +173,7 @@ const Routes = (props) => {
                 }
 
                     <div    
-                    className={currentUser? 'w-10/12 absolute right-0 my-16': "flex h-screen flex-col justify-center" }
+                    className={currentUser? 'w-10/12 absolute right-0': "flex h-screen flex-col justify-center" }
                     >
                                             
                         <Switch>

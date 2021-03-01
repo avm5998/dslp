@@ -102,6 +102,24 @@ const devSettings = {
     quiet: false,
   },
   plugins: [
+    new webpack.DefinePlugin({ 'process.env': {
+      "userEnv": JSON.stringify("development")
+    }}),
+    new webpack.HotModuleReplacementPlugin(),
+    new CleanWebpackPlugin(),
+  ]
+}
+
+const devDefaultSettings = {
+  devtool: 'eval-source-map',
+  devServer: {
+    historyApiFallback: true,
+    quiet: false,
+  },
+  plugins: [
+    new webpack.DefinePlugin({ 'process.env': {
+      "userEnv":JSON.stringify("default")
+    }}),
     new webpack.HotModuleReplacementPlugin(),
     new CleanWebpackPlugin(),
   ]
@@ -113,9 +131,6 @@ const prodSettings = {
   },
   devtool: 'source-map',
   plugins: [
-    new webpack.DefinePlugin({ 'process.env': {
-      NODE_ENV: JSON.stringify('production')
-    }}),
     new OptimizeCssAssetsPlugin(),
     new webpack.optimize.OccurrenceOrderPlugin(),
   ]
@@ -130,6 +145,10 @@ process.env.BABEL_ENV = TARGET;
 
 if (TARGET === 'start') {
   module.exports = merge(common, devSettings)
+}
+
+if (TARGET === 'start-default') {
+  module.exports = merge(common, devDefaultSettings)
 }
 
 if (TARGET === 'build' || !TARGET) {
