@@ -26,13 +26,21 @@ from sklearn.metrics import confusion_matrix, roc_curve
 from sklearn.decomposition import PCA
 from scipy import stats
 
+
+
 # login imports
 # from flask_bcrypt import generate_password_hash, check_password_hash
 from database.db import initialize_db
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager
 from resources.errors import errors
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
+from database.models import User
+from bson.objectid import ObjectId
+import collections
 #  
 
 import matplotlib.pyplot as plt
@@ -121,6 +129,32 @@ def describe(filename):
 
     return jsonify(file_name=filename, file_details=file_details, data_snapshot=data_snapshot)
 
+@app.route('/user_files',methods=['GET'])
+@cross_origin()
+@jwt_required()
+def get_user_files():
+    user_id = get_jwt_identity()
+    user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
+    return {'files_list': user_files_list}
+
+
+@app.route('/file/<filename>',methods=['GET'])
+@cross_origin()
+@jwt_required()
+def get_file(filename):
+    user_id = get_jwt_identity()
+    buf = StringIO()
+    data = ''
+    df = _getCache(filename)
+    update_user_files_list(user_id, filename)
+    if df is not None:
+        df.info(buf=buf,verbose=True)
+        data = df.to_json()
+    cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(df)
+
+    return jsonify(success=True, info = buf.getvalue(), data = data, 
+    cols = cols,col_lists = col_lists, num_cols = num_cols, 
+    cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 def getDataFrameDetails(df):
     cols = df.columns.to_list()
@@ -149,16 +183,20 @@ def getDataFrameDetails(df):
     for col in cols}
     return cols,col_lists,num_cols,num_lists,cate_cols,cate_lists
 
+
 @app.route('/uploadFile',methods=['POST'])
 @cross_origin()
+@jwt_required()
 def uploadFile():
+    
     file = request.files['file']
+    #get user id
+    
     forceUpdate = True if 'forceUpdate' in request.form else False
     autoCache = True if 'autoCache' in request.form else False
     
     filename = secure_filename(file.filename)
     file_details = mongo_collection.find_one({"file_name": filename})
-
     if forceUpdate or not file_details:
         if filename:
             file_ext = os.path.splitext(filename)[-1]
@@ -177,9 +215,14 @@ def uploadFile():
             mongo_collection.insert_one({"file_name": filename, "desc": "Default desc", "logo_name": "default_logo.png",
                                     "source_link": "default source link","content":content})
     
+
+    #Updating users list of files to store upto three files
+    # file_name = str(mongo_collection.find_one({"file_name": filename}, {"_id":1})['file_name'])
+    user_id = get_jwt_identity()
+    update_user_files_list(user_id, filename)
+
     buf = StringIO()
     data = ''
-
     if autoCache:
         df = _getCache(filename)
     else:
@@ -192,6 +235,16 @@ def uploadFile():
     return jsonify(success=True, info = buf.getvalue(), data = data, 
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+
+def update_user_files_list(user_id, filename):
+    user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
+    queue = collections.deque(user_files_list)
+    if filename in queue:
+        queue.remove(filename)
+    if len(queue) >= 3:
+        queue.pop()
+    queue.appendleft(filename)   
+    user_collection.update_one({'_id':ObjectId(user_id)}, {'$set':{'files':list(queue)}})
 
 def _setCache(name,df):
     cache.set(name,df,timeout = app.config['CACHE_TIMEOUT'])
@@ -358,6 +411,7 @@ def query():
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+
 
 @app.route('/clean', methods=['POST']) #/query
 @cross_origin()

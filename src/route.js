@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Switch, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from "react-redux";
+import { connect } from "react-redux";
+
+import { Route, Router, Switch, Link, Redirect } from 'react-router-dom';
 import Home from './component/home';
 import Summary from './component/visualization';
 import Visualization from './component/visualization_new';
@@ -8,13 +11,21 @@ import Header from './component/header/header.component'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
-import { useSelector } from 'react-redux'
 import Cleaning from './component/cleaning'
 import FeatureEngineering from './component/featureEngineering';
 import Preprocessing from './component/preprocessing';
 import FeatureSelection from './component/featureSelection';
-import SignInAndSignUpPage from './pages/sign-in-and-sign-up/sign-in-and-sign-up.component'
 import Analysis from './component/analysis';
+
+//Login imports
+import Login from './component/login/login.component'
+import Register from './component/register/register.component'
+import Profile from './component/profile/profile.component'
+
+import { logout } from "./actions/auth";
+import { clearMessage } from "./actions/message";
+
+import { history } from './store';
 //add all solid icon-fonts
 library.add(fas)
 
@@ -33,7 +44,9 @@ const Menu = {
     ],
 }
 
-const Routes = () => {
+const Routes = (props) => {
+    const { user: currentUser } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
     let dataset = useSelector(state => state.dataset)
     let [menuData, setMenuData] = useState(Menu)
 
@@ -41,66 +54,150 @@ const Routes = () => {
         setMenuData(data => {
             data.Main[0].extraText = dataset.filename
             return {...data}
-        })
+        }
+        )
     }, [dataset.filename])
-
+    useEffect(() => {
+        history.listen((location) => {
+          dispatch(clearMessage()); // clear message when changing location
+        });
+      }, [dispatch]);
+    
+    const logOut = () => {
+        dispatch(logout());
+      };
     return (
+        <Router history={history} >
         <div>
-            <Header />
-            <div className='mt-16 min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80'>
-                <div className='fixed flex flex-col  left-0 w-2/12 bg-white h-full border-r'>
-
-                    <div className="flex items-center justify-center h-14 border-b">
-                        <div>Awesome data mining</div>
+            <section class="navigation">
+                <div class="nav-container">
+                    <div class="brand">
+                    <Link to={"/"}>
+                        LOGO
+                    </Link>
                     </div>
-
-                    <div className="overflow-y-auto overflow-x-hidden flex-grow">
-                        <ul className="flex flex-col py-4 space-y-1">
-                            {Object.keys(menuData).map(menu =>
-                                <React.Fragment key={menu}>
-                                    <li className="px-5">
-                                        <div className="flex flex-row items-center h-8">
-                                            <div className="text-sm font-light tracking-wide text-gray-500">{menu}</div>
-                                        </div>
+                    <nav>
+                        <div class="nav-mobile"><a id="nav-toggle" href=""><span></span></a></div>
+            
+                    {currentUser ? (
+                        <ul class="nav-list">
+                                    <li>
+                                        <a href="/login" onClick={logOut}>
+                                                Sign out
+                                        </a>
                                     </li>
+                                    <li>
+                                        <a>        
+                                            <img src="src\assets\images\vivek_profile.jpg" className='profile-img'/>
+                                        </a>
 
-                                    {Menu[menu].map(item =>
-                                        <li key={item.text}>
-                                            <Link to={item.to} className="relative flex flex-row items-center h-11 focus:outline-none hover:bg-gray-50 text-gray-600 hover:text-gray-800 border-l-4 border-transparent hover:border-indigo-500 pr-6">
-                                                <span className="inline-flex justify-center items-center ml-4">
-                                                    <FontAwesomeIcon icon={item.icon} />
-                                                </span>
-                                                <span className="ml-2 text-sm tracking-wide truncate">{item.text}</span>
-                                                <span className="px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-indigo-500 bg-indigo-50 rounded-full">{item.extraText}</span>
-                                            </Link>
-                                        </li>
-                                    )}
-                                </React.Fragment>
-                            )}
 
-                        </ul>
-                    </div>
+                                        <ul class="nav-dropdown">
+                                            <li>
+                                            <a href="">Signed in as {currentUser.username}</a>
+                                            <div className='dropdown-divider'></div>
+                                            </li>
+
+                                            <li>
+                                            <a href="/profile">Your Profile</a>
+                                            </li>
+                                            <li>
+                                            <a href="">Settings</a>
+                                            </li>
+
+                                        </ul>       
+                                    </li>
+                                </ul>
+                    ):
+                    (
+                        <ul class="nav-list">
+                                    <li>
+                                        <Link to={"/login"} >
+                                            Login
+                                        </Link>
+                        
+                                    </li>
+                                    <li>
+                                    <Link to={"/register"} >
+                                        Register
+                                    </Link>
+                                    </li>
+                            </ul>
+                    )
+                    }
+                 </nav>
                 </div>
+                    
+            </section>
 
-                <div className='w-10/12 absolute right-0 '>
-                                        
-                    <Switch>
-                        <Route exact path='/' component={Home} />
-                        <Route path='/summary' component={Summary} />
-                        <Route path='/visualization' component={Visualization} />
-                        <Route path='/query' component={Query} />
-                        <Route path='/clean' component={Cleaning} />
-                        <Route path='/featureEngineering' component={FeatureEngineering} />
-                        <Route path='/preprocessing' component={Preprocessing} />
-                        <Route path='/signin' component={SignInAndSignUpPage} />
-                        <Route path='/featureSelection' component={FeatureSelection} />
-                        <Route path='/analysis' component={Analysis} />
-                    </Switch>
+            (   
+            <div>
+                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80'>
+                {
+                
+                    currentUser &&(
+                        <div className='fixed flex flex-col top-16 left-0 w-2/12 bg-white h-full border-r'>
+
+                            <div className="flex items-center justify-center h-14 border-b">
+                                <div>Awesome data mining</div>
+                            </div>
+
+                            <div className="overflow-y-auto overflow-x-hidden flex-grow">
+                                <ul className="flex flex-col py-4 space-y-1">
+                                    {Object.keys(menuData).map(menu =>
+                                        <React.Fragment key={menu}>
+                                            <li className="px-5">
+                                                <div className="flex flex-row items-center h-8">
+                                                    <div className="text-sm font-light tracking-wide text-gray-500">{menu}</div>
+                                                </div>
+                                            </li>
+
+                                            {Menu[menu].map(item =>
+                                                <li key={item.text}>
+                                                    <Link to={item.to} className="relative flex flex-row items-center h-11 focus:outline-none hover:bg-gray-50 text-gray-600 hover:text-gray-800 border-l-4 border-transparent hover:border-indigo-500 pr-6">
+                                                        <span className="inline-flex justify-center items-center ml-4">
+                                                            <FontAwesomeIcon icon={item.icon} />
+                                                        </span>
+                                                        <span className="ml-2 text-sm tracking-wide truncate">{item.text}</span>
+                                                        <span className="px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-indigo-500 bg-indigo-50 rounded-full">{item.extraText}</span>
+                                                    </Link>
+                                                </li>
+                                            )}
+                                        </React.Fragment>
+                                    )}
+
+                                </ul>
+                            </div>
+                        </div>
+                    )
+                }
+
+                    <div    
+                    className={currentUser? 'w-10/12 absolute right-0 my-16': "flex h-screen flex-col justify-center" }
+                    >
+                                            
+                        <Switch>
+                            <Route path="/login" component={Login}/>
+                            <Route path="/register" component={Register}/>
+                            <Route path="/profile" component={Profile}/>
+                            <Route exact path={['/home', '/']} component={Home} />
+                            <Route path='/visualization' component={Visualization} />
+                            <Route path='/query' component={Query} />
+                            <Route path='/clean' component={Cleaning} />
+                            <Route path='/featureEngineering' component={FeatureEngineering} />
+                            <Route path='/preprocessing' component={Preprocessing} />
+                            <Route path='/featureSelection' component={FeatureSelection} />
+                            <Route path='/analysis' component={Analysis} />
+                            
+                        </Switch>
+                    </div>
                 </div>
             </div>
+            
+
         </div>
-        
+    </Router>
     )
 }
 
-export default Routes
+export default Routes;

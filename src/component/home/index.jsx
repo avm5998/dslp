@@ -1,29 +1,63 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { fetch, fetchByJSON,GetDataFrameInfo } from '../../util/util'
+import {  DropDown } from '../../util/ui'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Button } from '../../util/ui'
 
+import { Redirect } from 'react-router-dom';
 
+import axios from 'axios';
+import authHeader from '../../services/auth-header';
 
 const Home = (props) => {
+  const { user: currentUser } = useSelector((state) => state.auth);
+  
+  if (!currentUser) {
+    return <Redirect to="/login" />;
+  }
   const dataInput = useRef()
   const dispatch = useDispatch()
   const dataset = useSelector(state => state.dataset)
+  const [files_list, setFileList] = useState([])
+  let [selectFile, setFile] = useState('Select previously uploaded files')
+
+  useEffect(async () => {
+    await updateFilesDropdown();
+    // console.log(data.files_list);
+    
+  }, []);
+
+  async function updateFilesDropdown(){
+    const response = await fetch('/user_files', {
+      method: 'GET',
+      headers : authHeader()
+    });
+ 
+    let data = await response.json();
+    setFileList([...data.files_list])
+  }
+    
+  
 
   const uploadFile = async e => {
+    
     const form = document.forms.namedItem("uploadFileForm");
     const data = new FormData(form)
+    data.append("user", currentUser.username);
     const filename = document.querySelector('#file').files.item(0).name
+    console.log("upload")
+    console.log(filename)
+    
     let res = await fetch('/uploadFile', {
       method: 'POST',
-      body: data
+      body: data,
+      headers : authHeader()
     })
-
     let json = await res.json()
-    
+      
     if (json.success) {
       dispatch(DataSetActions.setData({ 
         filename, 
@@ -37,8 +71,34 @@ const Home = (props) => {
         num_lists:json.num_lists
       }))
     }
+    await updateFilesDropdown();
+    setFile(filename)
   }
 
+  async function selectFileOption(filename)  {
+    let res = await fetch('/file/'+filename, {
+      method: 'GET',
+      headers : authHeader()
+    })
+    let json = await res.json()
+
+    if (json.success) {
+      console.log('inside success')
+      dispatch(DataSetActions.setData({ 
+        filename, 
+        info:GetDataFrameInfo(json.info), 
+        data:JSON.parse(json.data),
+        cols:json.cols,
+        num_cols:json.num_cols,
+        col_lists:json.col_lists,
+        cate_cols:json.cate_cols,
+        cate_lists:json.cate_lists,
+        num_lists:json.num_lists
+      }))
+    }
+    await updateFilesDropdown();
+  } 
+  
   const loadProfile = async () => {
     if (!dataset.loaded) return
 
@@ -69,6 +129,17 @@ const Home = (props) => {
           <input type="checkbox" className="form-checkbox h-5 w-5 text-gray-600 rounded" disabled={dataset.loading} name="autoCache" defaultChecked={true} /><span className={`ml-5 ${dataset.loading ? "text-gray-300" : "text-gray-600"}`}>Auto cache</span>
         </label>
       </form>
+      {/* {console.log("dropdown"+files_list)} */}
+      <div className='my-10 w-2/12'>
+          <DropDown className="fileSelect" customStyle='h-10 w-72' customUlStyle={'w-72'} text = {selectFile} items={files_list.map(name => ({
+              name,
+              onClick(e){
+                setFile(name);
+                selectFileOption(name);
+              }
+          }))} />
+          
+      </div>
       <div className="mt-10">
         <Button text="Load Profile" disabled={dataset.loading || !dataset.loaded} disabledText={dataset.loaded ? 'Loading Profile...' : 'Select a datafile(.csv) to see the profile'} onClick={loadProfile} />
       </div>
