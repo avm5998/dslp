@@ -6,8 +6,12 @@ import {
   LOGOUT,
 } from "../actions/types";
 
-const user = JSON.parse(localStorage.getItem("user"));
-
+let user = JSON.parse(localStorage.getItem("user"));
+user = {
+  'id':'123',
+  'username':'username',
+  'accessToken':'123'
+}
 const initialState = user
   ? { isLoggedIn: true, user }
   : { isLoggedIn: false, user: null };

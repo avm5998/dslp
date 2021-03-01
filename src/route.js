@@ -18,9 +18,9 @@ import FeatureSelection from './component/featureSelection';
 import Analysis from './component/analysis';
 
 //Login imports
-import Login from './component/login/login.component'
-import Register from './component/register/register.component'
-import Profile from './component/profile/profile.component'
+// import Login from './component/login/login.component'
+// import Register from './component/register/register.component'
+// import Profile from './component/profile/profile.component'
 
 import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
@@ -177,9 +177,9 @@ const Routes = (props) => {
                     >
                                             
                         <Switch>
-                            <Route path="/login" component={Login}/>
+                            {/* <Route path="/login" component={Login}/>
                             <Route path="/register" component={Register}/>
-                            <Route path="/profile" component={Profile}/>
+                            <Route path="/profile" component={Profile}/> */}
                             <Route exact path={['/home', '/']} component={Home} />
                             <Route path='/visualization' component={Visualization} />
                             <Route path='/query' component={Query} />
