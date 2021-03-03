@@ -6,6 +6,14 @@ import 'echarts-gl'
 import { useDispatch, useSelector } from 'react-redux';
 import {loadScript, useSimpleForm, useToggleGroup} from '../../util/util'
 // import {TooltipComponent} from 'echarts/components';
+import RadarGraph from './radarGraph'
+import AreaGraph from './areaGraph'
+import CandleStickChart from './candleStickChart'
+const Graphs = [
+    RadarGraph,
+    AreaGraph,
+    CandleStickChart,
+]
 
 const Functions = [
     'Distribution',
@@ -42,9 +50,28 @@ const PLOTS = {
     },
 }
 
+let GraphOptionViews = {}
+
+for(let e of Graphs){
+    PLOTS[e.config.name] = {
+        function:e.config.function
+    }
+
+    GraphOptionViews[e.config.name] = e.view
+}
+
 const getEChartOption = (dataset, aggregatedDataset, plotType, options)=>{
     let res = {}
     let hasRes = true
+
+    for(let e of Graphs){
+        if(plotType == e.config.name){ 
+            res = e.config.getOperation({
+                dataset, aggregatedDataset,options
+            })
+            break
+        }
+    }
 
     if (plotType === 'Line Graph'){
         if(options.x && options.y){
@@ -398,6 +425,9 @@ const Page = () => {
         }
     }
 
+
+    let OptionView = GraphOptionViews[currentPlot]
+
     return (<div className='flex flex-col items-center w-full h-screen bg-gray-100' ref={parentRef} onClick={e=>{
         if(e.target === parentRef.current || e.target === document.querySelector('#vis_main div')){
             hideSelections()
@@ -478,6 +508,10 @@ const Page = () => {
                 }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`}/>
             </div>
             </>:''}
+
+            {
+                GraphOptionViews[currentPlot]?<OptionView dataset={dataset} result={result} showOptions={showOptions} confirmOption={confirmOption}/>:''
+            }
         </Modal>
 
         <div className='grid grid-cols-3 w-full gap-8 p-8 h-1/6'>
