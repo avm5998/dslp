@@ -8,16 +8,6 @@ import {
 
 let user = JSON.parse(localStorage.getItem("user"));
 
-const {userEnv} = process.env
-
-if(userEnv === 'default'){
-  user = {
-    'id':'123',
-    'username':'username',
-    'accessToken':'123'
-  }
-}
-
 const initialState = user
   ? { isLoggedIn: true, user }
   : { isLoggedIn: false, user: null };
