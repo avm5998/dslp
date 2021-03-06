@@ -39,7 +39,7 @@ export default function ({PageSize, styleText = '', style = {}}) {
     // console.log(dataset.tableData);
     const pageRange = [...Array(PaginationRange).keys()].map(i => pageIndex + i - (PaginationRange >> 1)).filter(i => i > -1 && i < pageCount)
 
-    return (<div className={`flex flex-col w-full items-center justify-center min-h-full bg-gray-100 mt-8 ${styleText}`} style={style}>
+    return (<div className={`flex flex-col w-full items-center justify-center h-full bg-gray-100 mt-2 ${styleText}`} style={style}>
         {dataset.data && page ?
             <div className='bg-white shadow-2xl rounded-lg p-10 tracking-wide'>
                 <div className="inline-block float-left text-lg py-3 px-6 text-gray-600">

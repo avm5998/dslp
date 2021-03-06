@@ -147,9 +147,8 @@ const Routes = (props) => {
                     
             </section>
 
-            (   
             <div>
-                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80 mt-10'>
+                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80'>
                 {
                 
                     currentUser &&(
@@ -176,7 +175,7 @@ const Routes = (props) => {
                                                             <FontAwesomeIcon icon={item.icon} />
                                                         </span>
                                                         <span className="ml-2 text-sm tracking-wide truncate">{item.text}</span>
-                                                        <span className="px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-indigo-500 bg-indigo-50 rounded-full">{item.extraText}</span>
+                                                        <span className={`${item.extraText?'':'hidden'} px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-indigo-500 bg-indigo-50 rounded-full`}>{item.extraText}</span>
                                                     </Link>
                                                 </li>
                                             )}
@@ -190,9 +189,9 @@ const Routes = (props) => {
                 }
 
                     <div    
-                    className={currentUser? 'w-10/12 absolute right-0': "flex h-screen flex-col justify-center" }
+                    className={currentUser? 'w-10/12 absolute right-0 h-screen': "flex h-screen flex-col justify-center" }
                     >
-                                            
+                        <div className='block w-full h-16'>&nbsp;</div>
                         <Switch>
                             <Route path="/login" component={Login}/>
                             <Route path="/register" component={Register}/>

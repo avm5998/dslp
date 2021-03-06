@@ -104,10 +104,10 @@ const Page = () => {
     }
 
     return (<>
-        <div className='flex flex-col min-h-screen bg-gray-100'>
-            <div className="flex flex-row h-40 w-full items-start justify-start shadow-sm bg-gray-100">
+        <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 4rem)'}}>
+            <div className="flex flex-row h-24 w-full items-start justify-start shadow-sm bg-gray-100">
 
-                <div className='mx-5 my-10 w-2/12'>
+                <div className='mx-5 my-4 w-2/12'>
                     <DropDown customStyle='h-10 w-72' customUlStyle={'w-72'} text={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
                         name,
                         onClick(e) {
@@ -118,7 +118,7 @@ const Page = () => {
                     })) : []} />
                 </div>
 
-                <div className='mx-5 my-10 w-3/12 text-center'>
+                <div className='mx-5 my-4 w-3/12 text-center'>
                     {queryType === QueryType.Numerical && dataset.num_lists[searchColumn].max && dataset.num_lists[searchColumn].min ?
                         <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
                             Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
@@ -130,11 +130,11 @@ const Page = () => {
                             : ''}
                 </div>
 
-                <div className='my-10 w-auto'>
-                    <Button text="Add filter" customStyle='h-10 w-auto' onClick={addFilter} hoverAnimation={false} />
+                <div className='my-4 w-64'>
+                    <Button text="Add filter" customStyle='h-10 w-auto' onClick={addFilter} hoverAnimation={true} />
                 </div>
 
-                <div className='mx-5 my-10 w-5/12'>
+                <div className='mx-5 my-4 w-5/12'>
                     <MultiSelect passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
                         dispatch(DataSetActions.setFilters(filters))
                     }} />

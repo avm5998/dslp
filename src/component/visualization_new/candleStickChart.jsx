@@ -56,7 +56,7 @@ export const config = {
     name: 'Candlestick Chart',
     function: ['Patterns', 'Data over time', 'Ranges'],
     getOperation: ({ aggregatedDataset, dataset, options }) => {
-
+        let hasResult = true
         let xdata = aggregatedDataset[options.x], ydata = aggregatedDataset[options.y]
         let data = []
         let xset = {}
@@ -176,7 +176,7 @@ export const config = {
                 }
             ]
         }
-        return res
+        return {res,hasRes}
     }
 }
 

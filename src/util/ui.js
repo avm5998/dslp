@@ -12,9 +12,9 @@ export function Button({
 }) {
     return <button id={id} onClick={onClick} disabled={disabled} className={
         overrideClass ? overrideClass : `
-    bg-transparent ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
-                `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500' : 'bg-blue-400 text-white border-transparent'} cursor-pointer `} 
-    rounded font-semibold py-2 px-4 border focus:outline-none ${customStyle}`}>
+    ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
+                `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500 border-1' : 'bg-transparent bg-blue-400 text-blue-400 border-blue-400 border-1'} cursor-pointer`} 
+    rounded font-semibold py-2 px-4 focus:outline-none ${customStyle}`}>
         {disabled ? disabledText : text}
     </button>
 }

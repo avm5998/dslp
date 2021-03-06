@@ -17,39 +17,40 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
 
 export const config = {
     name: 'Radar Graph',
-    function: ['Patterns', 'Relationships','Comparisons'],
-    getOperation: ({aggregatedDataset,dataset,options}) => {
+    function: ['Patterns', 'Relationships', 'Comparisons'],
+    getOperation: ({ aggregatedDataset, dataset, options }) => {
+        let res = {}, hasRes = true
         let someKey = ''
         let kinds = {}
-        let {category,value,aggregate} = options
-        for(let e in aggregatedDataset) someKey = e
-        let size = someKey?aggregatedDataset[someKey].length:0
+        let { category, value, aggregate } = options
+        for (let e in aggregatedDataset) someKey = e
+        let size = someKey ? aggregatedDataset[someKey].length : 0
 
-        for(let i = 0;i<size;i++){
+        for (let i = 0; i < size; i++) {
             let kind = aggregatedDataset[category][i], v = aggregatedDataset[value][i]
-            if (kind in kinds){
+            if (kind in kinds) {
                 kinds[kind].max = Math.max(kinds[kind].max, v)
                 kinds[kind].values.push(v)
-            }else{
+            } else {
                 kinds[kind] = {
-                    max:v,
-                    name:kind,
-                    values:[v]
+                    max: v,
+                    name: kind,
+                    values: [v]
                 }
             }
         }
 
         let values = []
-        for(let kind in kinds){
-            if(aggregate==='Average'){
+        for (let kind in kinds) {
+            if (aggregate === 'Average') {
                 let sum = 0
-                kinds[kind].values.forEach(v=>sum+=Number(v)||0)
+                kinds[kind].values.forEach(v => sum += Number(v) || 0)
                 values.push([sum])
             }
         }
 
 
-        let res = {
+        res = {
             title: {
                 text: ''
             },
@@ -86,10 +87,10 @@ export const config = {
             }]
         };
 
-        return res
+        return { res, hasRes }
     }
 }
 
 export default {
-    config,view
+    config, view
 }

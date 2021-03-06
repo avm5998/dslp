@@ -18,6 +18,7 @@ export const config = {
     name: 'Area Graph',
     function: ['Patterns', 'Data over time'],
     getOperation: ({aggregatedDataset,dataset,options}) => {
+        let hasRes = true
         let xdata = aggregatedDataset[options.x], ydata = aggregatedDataset[options.y]
         let res = {
             xAxis: {
@@ -35,7 +36,7 @@ export const config = {
             }]
         };
 
-        return res
+        return {res,hasRes}
     }
 }
 
