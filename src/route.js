@@ -16,11 +16,13 @@ import FeatureEngineering from './component/featureEngineering';
 import Preprocessing from './component/preprocessing';
 import FeatureSelection from './component/featureSelection';
 import Analysis from './component/analysis';
+// testing dummy
+import { login } from "./actions/auth";
 
 //Login imports
-// import Login from './component/login/login.component'
-// import Register from './component/register/register.component'
-// import Profile from './component/profile/profile.component'
+import Login from './component/login/login.component'
+import Register from './component/register/register.component'
+import Profile from './component/profile/profile.component'
 
 import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
@@ -45,8 +47,23 @@ const Menu = {
 }
 
 const Routes = (props) => {
-    const { user: currentUser } = useSelector((state) => state.auth);
+    const {userEnv} = process.env
     const dispatch = useDispatch();
+    if(userEnv === 'default'){
+        useEffect(() => {    
+            dispatch(login("dummy_user", "dummy@123"))
+            .then(() => {
+              props.history.push("/home");
+              window.location.reload();
+            })
+            .catch(() => {
+              console.log("loginfailed")
+            });
+        }, [])
+    }
+
+    const { user: currentUser } = useSelector((state) => state.auth);
+    
     let dataset = useSelector(state => state.dataset)
     let [menuData, setMenuData] = useState(Menu)
 
@@ -177,9 +194,9 @@ const Routes = (props) => {
                     >
                                             
                         <Switch>
-                            {/* <Route path="/login" component={Login}/>
+                            <Route path="/login" component={Login}/>
                             <Route path="/register" component={Register}/>
-                            <Route path="/profile" component={Profile}/> */}
+                            <Route path="/profile" component={Profile}/>
                             <Route exact path={['/home', '/']} component={Home} />
                             <Route path='/visualization' component={Visualization} />
                             <Route path='/query' component={Query} />

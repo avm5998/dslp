@@ -61,6 +61,7 @@ from yellowbrick.datasets import load_credit
 from yellowbrick.features import Rank1D
 # from pandas_profiling import ProfileReport
 from flask_caching import Cache
+from database.models import User
 
 matplotlib.use('Agg')
 
@@ -83,6 +84,7 @@ app.config['MONGODB_SETTINGS'] = {
     'host': 'mongodb://localhost/data_science_learning_platform_database'
 }
 
+
 initialize_routes(api)
 initialize_db(app)
 
@@ -102,7 +104,14 @@ cache.init_app(app)
 EditedPrefix = '__EDITED___'
 
 
-
+env_var = os.environ.get("FLASK_ENV")
+if env_var == "development":
+    if user_collection.find({"username":"dummy_user"}):
+        user_collection.remove({"username":"dummy_user"})
+    user =  User(username="dummy_user",email="dummy_user@g.com", password="dummy@123")
+    user.hash_password()
+    user.save()
+  
 
 
 
@@ -130,7 +139,7 @@ def describe(filename):
     return jsonify(file_name=filename, file_details=file_details, data_snapshot=data_snapshot)
 
 @app.route('/user_files',methods=['GET'])
-@cross_origin()
+@cross_origin(origin="*")
 @jwt_required()
 def get_user_files():
     user_id = get_jwt_identity()
@@ -139,7 +148,7 @@ def get_user_files():
 
 
 @app.route('/file/<filename>',methods=['GET'])
-@cross_origin()
+@cross_origin(origin="*")
 @jwt_required()
 def get_file(filename):
     user_id = get_jwt_identity()
@@ -185,7 +194,7 @@ def getDataFrameDetails(df):
 
 
 @app.route('/uploadFile',methods=['POST'])
-@cross_origin()
+@cross_origin(origin="*")
 @jwt_required()
 def uploadFile():
     
