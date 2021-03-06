@@ -198,6 +198,7 @@ const Routes = (props) => {
                             <Route path="/register" component={Register}/>
                             <Route path="/profile" component={Profile}/>
                             <Route exact path={['/home', '/']} component={Home} />
+                            <Route path='/summary' component={Summary} />
                             <Route path='/visualization' component={Visualization} />
                             <Route path='/query' component={Query} />
                             <Route path='/clean' component={Cleaning} />
