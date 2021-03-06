@@ -22,7 +22,7 @@ const Home = (props) => {
   const dispatch = useDispatch()
   const dataset = useSelector(state => state.dataset)
   const [files_list, setFileList] = useState([])
-  let [selectFile, setFile] = useState('Select previously uploaded files')
+  let [selectFile, setFile] = useState('Select dataset')
 
   useEffect(async () => {
     await updateFilesDropdown();
@@ -131,7 +131,7 @@ const Home = (props) => {
       </form>
       {/* {console.log("dropdown"+files_list)} */}
       <div className='my-10 w-2/12'>
-          <DropDown className="fileSelect" customStyle='h-10 w-72' customUlStyle={'w-72'} text = {selectFile} items={files_list.map(name => ({
+          <DropDown className="fileSelect" disabled={!!files_list.length} customStyle='h-10 w-72' customUlStyle={'w-72'} text = {selectFile} items={files_list.map(name => ({
               name,
               onClick(e){
                 setFile(name);
@@ -140,9 +140,9 @@ const Home = (props) => {
           }))} />
           
       </div>
-      <div className="mt-10">
+      {/* <div className="mt-10">
         <Button text="Load Profile" disabled={dataset.loading || !dataset.loaded} disabledText={dataset.loaded ? 'Loading Profile...' : 'Select a datafile(.csv) to see the profile'} onClick={loadProfile} />
-      </div>
+      </div> */}
     </div>
     <div className={`pr-20 flex flex-col h-screen items-start justify-center w-2/3 bg-gray-100`}>
       <div className={`mx-auto bg-white shadow-lg rounded-lg my-32 px-4 py-4 w-auto ${dataset.loaded?'':'hidden'}`}>

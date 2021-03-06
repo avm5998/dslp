@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 
 import { Route, Router, Switch, Link, Redirect } from 'react-router-dom';
 import Home from './component/home';
-import Summary from './component/visualization';
+import Summary from './component/summary';
 import Visualization from './component/visualization_new';
 import Query from './component/query'
 import Header from './component/header/header.component'
@@ -149,11 +149,11 @@ const Routes = (props) => {
 
             (   
             <div>
-                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80'>
+                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80 mt-10'>
                 {
                 
                     currentUser &&(
-                        <div className='fixed flex flex-col top-16 left-0 w-2/12 bg-white h-full border-r'>
+                        <div className='fixed flex flex-col left-0 w-2/12 bg-white h-full border-r'>
 
                             <div className="flex items-center justify-center h-14 border-b">
                                 <div>Awesome data mining</div>

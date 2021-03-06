@@ -85,7 +85,14 @@ const Page = () => {
         })
 
         let json = await res.json()
+
+
         dispatch(DataSetActions.setData({
+            dataFilters:[],
+            dataFeatureSelection:[],
+            dataEngineering:[],
+            dataCleaners:[],
+            dataPreprossing:[],
             data: JSON.parse(json.data),
             cols: json.cols,
             num_cols: json.num_cols,
@@ -98,7 +105,7 @@ const Page = () => {
 
     return (<>
         <div className='flex flex-col min-h-screen bg-gray-100'>
-            <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
+            <div className="flex flex-row h-40 w-full items-start justify-start shadow-sm bg-gray-100">
 
                 <div className='mx-5 my-10 w-2/12'>
                     <DropDown customStyle='h-10 w-72' customUlStyle={'w-72'} text={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
