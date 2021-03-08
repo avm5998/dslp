@@ -16,6 +16,8 @@
   .dropdown.group:hover .group-hover\:-rotate-180 { transform: rotate(180deg) }
   .dropdown .scale-0 { transform: scale(0) }
   .dropdown .min-w-32 { min-width: 8rem }
+  .dropdown .closed {transform: scale(0);}
+  .dropdown .opened {transform: scale(1);}
 
 
   .multiselect .top-100 {top: 100%}

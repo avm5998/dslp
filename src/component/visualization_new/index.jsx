@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Label, Button, DropDown, MultiSelect, Modal, Checkbox, DropDownInput } from '../../util/ui'
 import * as echarts from 'echarts';
 import 'echarts-gl'
 
@@ -12,6 +12,7 @@ import BarChart from './barChart'
 import BoxPlot from './boxPlot'
 import CandleStickChart from './candleStickChart'
 import LineGraph from './lineGraph'
+import Histogram from './histogram'
 import PieChart from './pieChart'
 import RadarGraph from './radarGraph'
 import ScatterPlot from './scatterPlot'
@@ -22,6 +23,7 @@ const Graphs = [
     BarChart,
     BoxPlot,
     CandleStickChart,
+    Histogram,
     LineGraph,
     PieChart,
     RadarGraph,
@@ -169,6 +171,7 @@ const Page = () => {
         <div className='grid grid-cols-3 w-full gap-8 p-8 h-auto flex-grow-0'>
             <MultiSelect customHeight={'h-auto'} ref={ref} defaultOpen={false} defaultText='Select what do you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
             <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={plots} onSelect={e => setCurrentPlot(e)} />
+            {/* <DropDownInput ref={ref} defaultText={'test'} showOnHover={false} customStyle={'h-12 w-96'} customUlStyle={'h-auto w-96 pt-1 pb-2'} items={['G1','G2','GGGG','asdadsada']} onInput = {(name,index,value)=>{console.log(name,index,value)}} /> */}
             <Button disabled={!currentPlot} text="Options" overrideClass={`rounded font-semibold py-2 px-4 border focus:outline-none h-10 w-auto  ${!currentPlot?'text-gray-400 cursor-default':'text-black cursor-pointer'}`} onClick={e => { if (currentPlot) showOptions(1) }} hoverAnimation={false} />
         </div>
 

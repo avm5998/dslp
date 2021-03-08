@@ -3,8 +3,77 @@ import { useThrottle } from './util'
 import './ui.css'
 import { useImperativeHandle } from 'react'
 
-export function Label({pos = 'left',text=''}){
-    return (<div className={`flex items-center${pos==='mid'?'justify-center':pos==='right'?'justify-end':''}`}>{text}</div>)
+export const DropDownInput = forwardRef(({
+    id,
+    text,
+    defaultText = undefined,
+    items = [],
+    customStyle,
+    customUlStyle,
+    hideArrow,
+    onInput = ()=>{},
+    showOnHover = true,
+    controlledOpen = false,
+    openState = false,
+    nameWidthPercent = 30,
+    disabledRef = {}
+}, ref) => {
+    let [ulOpen, setOpenUl] = useState(0)
+    let [currentText, setCurrentText] = useState(defaultText)
+    let buttonRef = useRef()
+    let ulRef = useRef()
+    
+    useImperativeHandle(ref, () => ({
+        hide: () => {
+            setOpenUl(false)
+        }
+    }))
+
+    useEffect(() => {
+        if (controlledOpen) {
+            setOpenUl(openState)
+        }
+    }, [controlledOpen, openState])
+
+    if (onInput) {//items must be string array
+        items = items.map((name, i) => ({
+            name,
+        }))
+    }
+
+    let hasControl = defaultText !== undefined //give control to component itself
+    return (<div className="w-full dropdown group inline-block">
+        <button id={id} onClick={() => {
+            if (!showOnHover) {
+                setOpenUl(s => !s)
+            }
+        }} ref={buttonRef} className="outline-none focus:outline-none border px-3 py-1 bg-white rounded-sm flex items-center min-w-32 h-10 w-96">
+            <span className="pr-1 text-gray-400 flex-1">{hasControl ? currentText : text}</span>
+            <span className={`${hideArrow ? 'hidden' : ''}`} >
+                <svg
+                    className={`fill-current h-4 w-4 transform 0 ${showOnHover ? 'group-hover:-rotate-180' : (ulOpen ? '-rotate-180' : '')} transition duration-150 ease-in-out`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path
+                        d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"
+                    />
+                </svg>
+            </span>
+        </button>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'opened' : 'closed')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+            {items.map((item,index) => <li key={item.name} style={{borderTopWidth:index?'1px':'0px'}} className={`border-gray-200 bg-white cursor-default rounded text-gray-800 px-3 hover:bg-gray-100 z-auto py-2`}>
+                <div className='flex flex-row flex-nowrap h-full justify-center items-center w-full '>
+                    <div className='my-1 flex items-center justify-start' style={{width:`${nameWidthPercent}%`}}>{item.name}</div>
+                    <div className='border-1 rounded-sm border-gray-300' style={{width:`${100-nameWidthPercent}%`}}>
+                        <input className='focus:outline-none outline-none px-2 py-1 w-full' onInput={e=>{
+                        onInput(item.name,index,e.target.value)
+                    }}/></div>
+                </div>
+            </li>)}
+        </ul>
+    </div>)
+})
+
+export function Label({ pos = 'left', text = '' }) {
+    return (<div className={`flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{text}</div>)
 }
 
 export function Button({
@@ -19,13 +88,13 @@ export function Button({
     </button>
 }
 
-export const MultiSelect = forwardRef(({ controlledOpen = false, openState = false, defaultText = '', wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customHeight = '', customWidth = '' },ref)=> {
+export const MultiSelect = forwardRef(({ controlledOpen = false, openState = false, defaultText = '', wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customHeight = '', customWidth = '' }, ref) => {
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
 
-    useImperativeHandle(ref,()=>({
-        hide:()=>{
+    useImperativeHandle(ref, () => ({
+        hide: () => {
             buttonRef.current.classList.toggle('rotate180')
             menuRef.current.classList.add('invisible')
         }
@@ -41,20 +110,20 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
             toggleMenu()
     }, [selections])
 
-    useEffect(()=>{
-        if(controlledOpen){
+    useEffect(() => {
+        if (controlledOpen) {
             toggleMenu(openState)
         }
-    },[controlledOpen, openState])
+    }, [controlledOpen, openState])
 
     const toggleMenu = (state) => {
-        if(state === undefined){
+        if (state === undefined) {
             buttonRef.current.classList.toggle('rotate180')
             menuRef.current.classList.toggle('invisible')
-        }else if(state){
+        } else if (state) {
             buttonRef.current.classList.add('rotate180')
             menuRef.current.classList.remove('invisible')
-        }else{
+        } else {
             buttonRef.current.classList.remove('rotate180')
             menuRef.current.classList.add('invisible')
         }
@@ -69,7 +138,7 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
                             if (!selected.length) toggleMenu()
                         }}>
                             {selected.map(e =>
-                                <div key={e} className="flex justify-center items-center m-1 font-medium py-1 px-2 bg-white rounded-full text-blue-700 bg-blue-100 border border-blue-300 ">
+                                <div key={e} className="flex justify-center items-center font-medium py-1 px-2 bg-white rounded-full text-blue-700 bg-blue-100 border border-blue-300 ">
                                     <div className="text-xs font-normal leading-none max-w-full flex-initial">{getDesc(e)}</div>
                                     <div className="flex flex-auto flex-row-reverse">
                                         <div onClick={() => setSelected(all => {
@@ -89,7 +158,7 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
                                 <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} text-center bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
-                        <div className="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200" onClick={()=>toggleMenu()}>
+                        <div className="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200" onClick={() => toggleMenu()}>
                             <button ref={buttonRef} className="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-chevron-up w-4 h-4">
                                     <polyline points="18 15 12 9 6 15"></polyline>
@@ -137,23 +206,23 @@ export const DropDown = forwardRef(({
     controlledOpen = false,
     openState = false,
     disabledRef = {}
-},ref)=> {
+}, ref) => {
     let ulRef = useRef(null)
     let buttonRef = useRef(null)
     let [ulOpen, setOpenUl] = useState(0)
     let [currentText, setCurrentText] = useState(defaultText)
 
-    useImperativeHandle(ref,()=>({
-        hide:()=>{
+    useImperativeHandle(ref, () => ({
+        hide: () => {
             setOpenUl(false)
         }
     }))
 
-    useEffect(()=>{
-        if(controlledOpen){
+    useEffect(() => {
+        if (controlledOpen) {
             setOpenUl(openState)
         }
-    },[controlledOpen,openState])
+    }, [controlledOpen, openState])
 
     if (onSelect) {//items must be string array
         items = items.map((name, i) => ({
