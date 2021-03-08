@@ -17,6 +17,7 @@ import PieChart from './pieChart'
 import RadarGraph from './radarGraph'
 import ScatterPlot from './scatterPlot'
 import ThreeDScatterPlot from './threeDScatterPlot'
+import NightingaleRoseChart from './nightingaleRoseChart';
 
 const Graphs = [
     AreaGraph,
@@ -25,6 +26,7 @@ const Graphs = [
     CandleStickChart,
     Histogram,
     LineGraph,
+    NightingaleRoseChart,
     PieChart,
     RadarGraph,
     ScatterPlot,

@@ -2,6 +2,87 @@ import ifetch from 'isomorphic-fetch';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { config } from '../config/client'
 
+/**
+ * Assume
+ * categoryType has 2 values A,B
+ * valueType has 3 values 1,2,3
+ * defaultValue is 0
+ * aggregateCol is aggregated for categoryType and valueType
+ * 
+ * 
+ * dataset is:
+ * 
+ * cType vType aggregateCol
+ * A     1     5
+ * A     2     1
+ * A     3     3
+ * B     1     10
+ * B     2     -5
+ *
+ * reducer: p,c=>c
+ * initialValue: undefined
+ * 
+ * results will be
+ * 
+ * {
+ *  A:{
+ *     '1':5,
+ *     '2':1
+ *     '3':3
+ *  },
+ *  B:{
+ *     '1':5,
+ *     '2':1
+ *     '3':0
+ *  },
+ * }
+ * 
+ * @param {
+ * } aggregatedData 
+ * @param {*} categoryType
+ * @param {*} valueType
+ * @param {*} aggregateCol aggregateCol for categoryType and valueType
+ * @param {*} defaultValue defalutValue if a category does not have corresponding value
+ */
+export function groupBy({aggregatedData, categoryType, valueType, aggregateCol, reducer,initialValue, defaultValue = null}) {
+    let res = {}
+    // debugger
+    let size = aggregatedData[categoryType].length
+    let vals = new Set()
+    let cates = new Set()
+
+    for (let i = 0; i < size; i++) {
+        let cate = aggregatedData[categoryType][i], val = aggregatedData[valueType][i],
+         target = aggregatedData[aggregateCol][i]
+        cates.add(cate)
+        vals.add(val)
+        res[cate] = res[cate] || {}
+        if (val in res[cate]) {
+            res[cate][val] = reducer(res[cate][val],target)
+        } else {
+            res[cate][val] = reducer(initialValue,target)
+        }
+    }
+
+    let obj = {};
+
+    [...cates].forEach(cate=>{
+        [...vals].forEach(val=>{
+            obj[cate] = obj[cate] || {}
+            if (!(val in res[cate]))
+                obj[cate][val] = defaultValue
+                else
+                obj[cate][val] = res[cate][val]
+        })
+    })
+
+    return {
+        categoryValues:[...cates],
+        valueValues:[...vals],
+        data:obj
+    }
+}
+
 export function loadScript(url, callback) {
     var script = document.createElement("script")
     script.type = "text/javascript";
@@ -343,15 +424,15 @@ export function useSimpleForm(initialResult = {}) {
     }
 }
 
-export function useToggleGroup(){
+export function useToggleGroup() {
     let components = useRef([])
     return {
-        ref:(ref)=>{
-            if(ref) components.current.push(ref)
+        ref: (ref) => {
+            if (ref) components.current.push(ref)
         },
-        hide:()=>{
-            components.current.forEach(e=>{
-                if(e.hide instanceof Function)
+        hide: () => {
+            components.current.forEach(e => {
+                if (e.hide instanceof Function)
                     e.hide()
             })
         }

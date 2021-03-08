@@ -3,6 +3,15 @@ import { useThrottle } from './util'
 import './ui.css'
 import { useImperativeHandle } from 'react'
 
+export const Input = forwardRef(({
+    customStyle='',
+    placeholder='',
+    onInput = ()=>{},
+    defaultValue=''
+}, ref) => {
+    return <input ref={ref} className={`w-full py-1 px-2 rounded-sm focus:outline-none ${customStyle}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue}/>
+})
+
 export const DropDownInput = forwardRef(({
     id,
     text,

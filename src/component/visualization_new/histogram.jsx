@@ -7,7 +7,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <DropDown defaultText='Select Variable' customStyle='w-96' customUlStyle='w-96' showOnHover={false} items={dataset.num_cols} onSelect={e=>result.x = e}/>
                 <DropDown defaultText='Select Bins' customStyle='w-96' customUlStyle='w-96' showOnHover={false} items={[3,5,10,20]} onSelect={e=>result.bins = e}/>
                 <input className='w-full py-1 px-2 rounded-sm focus:outline-none' placeholder="Custom bins" onInput={e=>result.customBins = e.target.value}/>
-                <Checkbox label={'Smoothed'} defaultChecked={false} onChange={e=>result.smoothed = e.target.checked}/>
+                {/* <Checkbox label={'Smoothed'} defaultChecked={false} onChange={e=>result.smoothed = e.target.checked}/> */}
                 <Button onClick={e=>{
                     showOptions(0)
                     confirmOption()
@@ -50,7 +50,7 @@ export const config = {
                 series: [
                     {
                         name: '',
-                        type: 'line',
+                        type: 'bar',
                         smooth: options.smoothed,
                         symbol: 'none',
                         areaStyle: {},
