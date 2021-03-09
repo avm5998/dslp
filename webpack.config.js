@@ -103,6 +103,8 @@ const devSettings = {
   },
   plugins: [
     new webpack.DefinePlugin({ 'process.env': {
+      "env":JSON.stringify("development"),
+      "dataEnv": JSON.stringify("development"),
       "userEnv": JSON.stringify("development")
     }}),
     new webpack.HotModuleReplacementPlugin(),
@@ -118,7 +120,9 @@ const devDefaultSettings = {
   },
   plugins: [
     new webpack.DefinePlugin({ 'process.env': {
-      "userEnv":JSON.stringify("default")
+      "env":JSON.stringify("development"),
+      "dataEnv":JSON.stringify("default"),
+      "userEnv":JSON.stringify("default"),
     }}),
     new webpack.HotModuleReplacementPlugin(),
     new CleanWebpackPlugin(),
@@ -131,6 +135,11 @@ const prodSettings = {
   },
   devtool: 'source-map',
   plugins: [
+    new webpack.DefinePlugin({ 'process.env': {
+      "env":JSON.stringify("build"),
+      "dataEnv":JSON.stringify("build"),
+      "userEnv":JSON.stringify("build"),
+    }}),
     new OptimizeCssAssetsPlugin(),
     new webpack.optimize.OccurrenceOrderPlugin(),
   ]
