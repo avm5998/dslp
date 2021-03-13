@@ -23,6 +23,8 @@ import { login } from "./actions/auth";
 import Login from './component/login/login.component'
 import Register from './component/register/register.component'
 import Profile from './component/profile/profile.component'
+import ForgotPassword from './component/forgot_password/forgot_password.component'
+import ResetPasswordConfirm from './component/reset_password/reset_password.component'
 
 import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
@@ -205,6 +207,8 @@ const Routes = (props) => {
                             <Route path='/preprocessing' component={Preprocessing} />
                             <Route path='/featureSelection' component={FeatureSelection} />
                             <Route path='/analysis' component={Analysis} />
+                            <Route exact path='/forgot' component={ForgotPassword} />
+                            <Route exact path='/reset/:token' component={ResetPasswordConfirm} />
                             
                         </Switch>
                     </div>
