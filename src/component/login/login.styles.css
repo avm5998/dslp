@@ -120,3 +120,8 @@
   h1{
     color: black;
   }
+  .alert-danger, .alert-success{
+    padding: 2px 5px;
+    margin-top: 5px;
+    font-size: smaller;
+  }

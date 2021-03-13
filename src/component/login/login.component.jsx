@@ -120,8 +120,8 @@ const Login = (props) => {
             </div>
 
             {message && (
-              <div className="form-group">
-                <div className="alert alert-danger" role="alert">
+              <div className="form-group col-span-2">
+                <div className={!isLoggedIn?"alert alert-danger":""} role="alert">
                   {message}
                 </div>
               </div>
