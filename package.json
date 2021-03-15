@@ -7,7 +7,6 @@
    "scripts": {
       "start": "webpack-dev-server --port 9001 --history-api-fallback --mode=development",
       "start-default": "webpack-dev-server --port 9001 --history-api-fallback --mode=development",
-      
       "build": "webpack --config webpack.config.js --mode=production",
       "compress": "webpack --config webpack.config.js --mode=production",
       "production": "npm run build && npm run serve",
