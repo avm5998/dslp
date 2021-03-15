@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from 'react-router-dom';
-
+import { Link } from 'react-router-dom';
 import Form from "react-validation/build/form";
 import Input from "react-validation/build/input";
 import CheckButton from "react-validation/build/button";
@@ -115,10 +115,13 @@ const Login = (props) => {
                 <span>Login</span>
               </button>
             
+            <div className="form-label-group col-span-2 text-end">
+              <Link to="/forgot" className="underline"> forgot password? </Link>
+            </div>
 
             {message && (
-              <div className="form-group">
-                <div className="alert alert-danger" role="alert">
+              <div className="form-group col-span-2">
+                <div className={!isLoggedIn?"alert alert-danger":""} role="alert">
                   {message}
                 </div>
               </div>

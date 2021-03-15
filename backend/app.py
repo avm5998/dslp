@@ -29,15 +29,13 @@ from scipy import stats
 
 
 # login imports
-# from flask_bcrypt import generate_password_hash, check_password_hash
 from database.db import initialize_db
-from flask_restful import Api
+from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt
-from resources.errors import errors
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import get_jwt_identity
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import JWTManager
+from resources.errors import InternalServerError, SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
+    EmailDoesnotExistsError, BadTokenError
+from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
+from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, jwt_required
 from database.models import User
 from bson.objectid import ObjectId
 import collections
@@ -62,6 +60,12 @@ from yellowbrick.features import Rank1D
 # from pandas_profiling import ProfileReport
 from flask_caching import Cache
 from database.models import User
+#forgot password imports
+from threading import Thread
+from flask_mail import Message, Mail
+import datetime
+from jwt.exceptions import ExpiredSignatureError, DecodeError, \
+    InvalidTokenError
 
 matplotlib.use('Agg')
 
@@ -69,21 +73,22 @@ app = Flask(__name__,static_folder="../build")
 
 CORS(app)
 app.config.from_envvar('ENV_FILE_LOCATION')
-from resources.routes import initialize_routes
+
 app.config['CACHE_TIMEOUT'] = 60*60
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 app.config['UPLOAD_EXTENSIONS'] = ['.pdf', '.csv', '.json']
 app.config['UPLOAD_PATH'] = 'uploads'
 app.config['LOGO_PATH'] = 'static/logo'
 
+
 api = Api(app)
-api = Api(app, errors=errors)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
+mail = Mail(app)
 app.config['MONGODB_SETTINGS'] = {
     'host': 'mongodb://localhost/data_science_learning_platform_database'
 }
-
+from resources.routes import initialize_routes
 
 initialize_routes(api)
 initialize_db(app)
@@ -115,9 +120,131 @@ if env_var == "development":
 
 
 
+
+
+# Error handling
+
+
 @app.errorhandler(413)
 def too_large(e):
     return "File is too large", 413
+
+@app.errorhandler(EmailAlreadyExistsError)
+def email_already_exists(e):
+    return {"status":e.status, "message":e.message}, 400
+
+@app.errorhandler(SchemaValidationError)
+def schema_validation_error(e):
+    return {"status":e.status, "message":e.message}, 400
+
+@app.errorhandler(EmailDoesnotExistsError)
+def email_already_exists(e):
+    return {"status":e.status, "message":e.message}, 400
+
+@app.errorhandler(UnauthorizedError)
+def unauthorized_user(e):
+    return {"status":e.status, "message":e.message}, 401
+
+@app.errorhandler(BadTokenError)
+def bad_token(e):
+    return {"status":e.status, "message":e.message}, 403
+
+@app.errorhandler(InternalServerError)
+def internal_server_error(e):
+    return {"status":e.status, "message":e.message}, 500
+
+
+
+
+#Send email to reset password
+def send_async_email(app, msg):
+    with app.app_context():
+        try:
+            mail.send(msg)
+        except ConnectionRefusedError:
+            raise InternalServerError("[MAIL SERVER] not working")
+
+
+def send_email(subject, sender, recipients, text_body, html_body):
+    msg = Message(subject, sender=sender, recipients=recipients)
+    msg.body = text_body
+    msg.html = html_body
+    Thread(target=send_async_email, args=(app, msg)).start()
+
+
+
+#APIs
+@app.route("/api/auth/forgot", methods=["POST"])
+@cross_origin(origin="*")
+def forgot():
+    url =  'localhost:9001/reset/'
+    try:
+        body = request.get_json()
+        email = body.get('email')
+        if not email:
+            raise SchemaValidationError('Request is missing required fields')
+
+        user = User.objects.get(email=email)
+        # if not user:
+        #     raise EmailDoesnotExistsError("Couldn't find the user with given email address")
+
+        expires = datetime.timedelta(hours=24)
+        reset_token = create_access_token(str(user.id), expires_delta=expires)
+        print("token:"+str(reset_token))
+        reset_token = reset_token.replace(".", "$")
+        send_email('[Awesome data mining] Reset Your Password',
+                            sender='awesomedatamining@gmail.com',
+                            recipients=[user.email],
+                            text_body=render_template('email/reset_password.txt',
+                                                    url=url + reset_token),
+                            html_body=render_template('email/reset_password.html',
+                                                    url=url + reset_token))
+        return {'id': str(user.id), "message":"Reset link has been sent to your email"}, 200
+    except SchemaValidationError:
+        raise SchemaValidationError('Request is missing required fields')
+    except DoesNotExist:
+        raise EmailDoesnotExistsError("Couldn't find the user with given email address")
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
+
+
+@app.route("/api/auth/reset", methods=["POST"])
+@cross_origin(origin="*")
+def reset_link():
+    url =  'localhost:9001/reset/'
+    try:
+        body = request.get_json()
+        reset_token = body.get('reset_token')
+        print("toke: "+str(reset_token))
+        password = body.get('new_password')
+
+        if not reset_token or not password:
+            raise SchemaValidationError('Request is missing required fields')
+        # print(decode_token(reset_token))
+        user_id = decode_token(reset_token)['sub']
+
+        user = User.objects.get(id=user_id)
+
+        user.modify(password=password)
+        user.hash_password()
+        user.save()
+
+        send_email('[Awesome data mining] Password reset successful',
+                        sender='awesomedatamining@gmail.com',
+                        recipients=[user.email],
+                        text_body='Password reset was successful',
+                        html_body='<p>Password reset was successful</p>')
+        return {'id': str(user_id), "message":"Password reset successful"}, 200
+
+    except SchemaValidationError:
+        raise SchemaValidationError('Request is missing required fields')
+    except ExpiredSignatureError:
+        raise BadTokenError("Token expired")
+    except (DecodeError, InvalidTokenError):
+        raise BadTokenError("Invalid token")
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
+
 
 
 @app.route("/list_files_json",methods=['POST'])

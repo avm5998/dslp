@@ -48,27 +48,38 @@ const register = (username, email, password) => {
   });
 };
 
-const login = (username, password) => {
-  return axios
+const login = async (username, password) => {
+  const response = await axios
     .post(API_URL + "login", {
       username,
       password,
-    })
-    .then((response) => {
-      if (response.data.accessToken) {
-        localStorage.setItem("user", JSON.stringify(response.data));
-      }
-
-      return response.data;
     });
+  if (response.data.accessToken) {
+    localStorage.setItem("user", JSON.stringify(response.data));
+  }
+  return response.data;
 };
+
+
+
 
 const logout = () => {
   localStorage.removeItem("user");
 };
 
+const forgot_password = (email) => {
+  return axios.post(API_URL+'forgot', { email });
+};
+
+const reset_password_confirm = (reset_token, new_password) => {
+  return axios.post(API_URL+'reset', { reset_token, new_password });
+};
+
+
 export default {
   register,
   login,
   logout,
+  forgot_password,
+  reset_password_confirm
 };

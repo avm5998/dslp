@@ -4,12 +4,13 @@ import './ui.css'
 import { useImperativeHandle } from 'react'
 
 export const Input = forwardRef(({
+    attrs,
     customStyle='',
     placeholder='',
     onInput = ()=>{},
     defaultValue=''
 }, ref) => {
-    return <input ref={ref} className={`w-full py-1 px-2 rounded-sm focus:outline-none ${customStyle}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue}/>
+    return <input ref={ref} {...attrs} className={`py-1 px-2 rounded-sm focus:outline-none ${customStyle?customStyle:'w-full'}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue}/>
 })
 
 export const DropDownInput = forwardRef(({
@@ -81,8 +82,8 @@ export const DropDownInput = forwardRef(({
     </div>)
 })
 
-export function Label({ pos = 'left', text = '' }) {
-    return (<div className={`flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{text}</div>)
+export function Label({ pos = 'left', text = '', customStyle='' }) {
+    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{text}</div>)
 }
 
 export function Button({
