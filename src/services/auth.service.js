@@ -37,8 +37,9 @@
 // export default new AuthService();
 
 import axios from "axios";
+import {config} from '../config/client'
 
-const API_URL = "http://localhost:9000/api/auth/";
+const API_URL = config.endpoint + "api/auth/";
 
 const register = (username, email, password) => {
   return axios.post(API_URL + "signup", {

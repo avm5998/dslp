@@ -5,12 +5,12 @@ import { useImperativeHandle } from 'react'
 
 export const Input = forwardRef(({
     attrs,
-    customStyle='',
-    placeholder='',
-    onInput = ()=>{},
-    defaultValue=''
+    customStyle = '',
+    placeholder = '',
+    onInput = () => { },
+    defaultValue = ''
 }, ref) => {
-    return <input ref={ref} {...attrs} className={`py-1 px-2 rounded-sm focus:outline-none ${customStyle?customStyle:'w-full'}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue}/>
+    return <input ref={ref} {...attrs} className={`py-1 px-2 rounded-sm focus:outline-none ${customStyle ? customStyle : 'w-full'}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue} />
 })
 
 export const DropDownInput = forwardRef(({
@@ -21,7 +21,7 @@ export const DropDownInput = forwardRef(({
     customStyle,
     customUlStyle,
     hideArrow,
-    onInput = ()=>{},
+    onInput = () => { },
     showOnHover = true,
     controlledOpen = false,
     openState = false,
@@ -32,7 +32,7 @@ export const DropDownInput = forwardRef(({
     let [currentText, setCurrentText] = useState(defaultText)
     let buttonRef = useRef()
     let ulRef = useRef()
-    
+
     useImperativeHandle(ref, () => ({
         hide: () => {
             setOpenUl(false)
@@ -69,20 +69,20 @@ export const DropDownInput = forwardRef(({
             </span>
         </button>
         <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'opened' : 'closed')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
-            {items.map((item,index) => <li key={item.name} style={{borderTopWidth:index?'1px':'0px'}} className={`border-gray-200 bg-white cursor-default rounded text-gray-800 px-3 hover:bg-gray-100 z-auto py-2`}>
+            {items.map((item, index) => <li key={item.name} style={{ borderTopWidth: index ? '1px' : '0px' }} className={`border-gray-200 bg-white cursor-default rounded text-gray-800 px-3 hover:bg-gray-100 z-auto py-2`}>
                 <div className='flex flex-row flex-nowrap h-full justify-center items-center w-full '>
-                    <div className='my-1 flex items-center justify-start' style={{width:`${nameWidthPercent}%`}}>{item.name}</div>
-                    <div className='border-1 rounded-sm border-gray-300' style={{width:`${100-nameWidthPercent}%`}}>
-                        <input className='focus:outline-none outline-none px-2 py-1 w-full' onInput={e=>{
-                        onInput(item.name,index,e.target.value)
-                    }}/></div>
+                    <div className='my-1 flex items-center justify-start' style={{ width: `${nameWidthPercent}%` }}>{item.name}</div>
+                    <div className='border-1 rounded-sm border-gray-300' style={{ width: `${100 - nameWidthPercent}%` }}>
+                        <input className='focus:outline-none outline-none px-2 py-1 w-full' onInput={e => {
+                            onInput(item.name, index, e.target.value)
+                        }} /></div>
                 </div>
             </li>)}
         </ul>
     </div>)
 })
 
-export function Label({ pos = 'left', text = '', customStyle='' }) {
+export function Label({ pos = 'left', text = '', customStyle = '' }) {
     return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{text}</div>)
 }
 
@@ -117,7 +117,7 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
         }
 
         if (!defaultOpen)
-            toggleMenu()
+            toggleMenu(false)
     }, [selections])
 
     useEffect(() => {
@@ -138,7 +138,7 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
             menuRef.current.classList.add('invisible')
         }
     }
-
+    
     return (<div className={`${customHeight ? customHeight : 'h-64'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-center mx-auto`}>
         <div className="w-full">
             <div className="flex flex-col items-center relative">
@@ -208,6 +208,9 @@ export const DropDown = forwardRef(({
     text,
     defaultText = undefined,
     items = [],
+    additionalInput = false,
+    additionalInputPosition = 'bottom',
+    additionalInputPlaceholder,
     onSelect,
     customStyle,
     customUlStyle,
@@ -219,6 +222,8 @@ export const DropDown = forwardRef(({
 }, ref) => {
     let ulRef = useRef(null)
     let buttonRef = useRef(null)
+    let inputParentRef = useRef(null)
+    let inputRef = useRef(null)
     let [ulOpen, setOpenUl] = useState(0)
     let [currentText, setCurrentText] = useState(defaultText)
 
@@ -238,13 +243,49 @@ export const DropDown = forwardRef(({
         items = items.map((name, i) => ({
             name,
             onClick() {
-                onSelect(name, i)
+                onSelect(name, i, 'select')
                 return false
             }
         }))
     }
 
-    let hasControl = defaultText !== undefined //give control to component itself
+    const closeUl = useCallback(()=>{
+        if (!showOnHover) {
+            setOpenUl(false)
+        } else {
+            ulRef.current.style.display = 'none'
+            setTimeout(() => {
+                ulRef.current.style.display = ''
+            }, 0)
+        }
+    },[showOnHover,ulRef])
+
+    let hasControl = defaultText !== undefined //give control to DropDown component itself
+
+    let AdditionalInput = <li>
+        <div ref={inputParentRef} className='cursor-pointer p-2 flex flex-row flex-nowrap justify-start items-center' onClick={e=>{
+            if(e.target === inputParentRef.current){
+                if (hasControl && inputRef.current) {
+                    setCurrentText(inputRef.current.value)
+                    onSelect(inputRef.current.value,null,'input')
+                }
+                
+                closeUl()
+            }
+        }}>
+            <input ref={inputRef} onKeyDown={e=>{
+                if(e.keyCode==13){
+                    if (hasControl) {
+                        setCurrentText(e.target.value)
+                        onSelect(e.target.value,null,'input')
+                    }
+
+                    closeUl()
+                }
+            }} className='cursor-auto border w-2/3 py-1 px-2 rounded-sm focus:outline-none' placeholder={additionalInputPlaceholder}/>
+        </div>
+    </li>
+
     return (<div className="w-full dropdown group inline-block">
         <button id={id} onClick={() => {
             if (!showOnHover) {
@@ -263,51 +304,37 @@ export const DropDown = forwardRef(({
         </button>
 
         <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+            {<>
+            {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
             {items.map(item => {
 
-                return item.items ?
-                    <li key={item.name} className="rounded-sm relative px-3 py-1 hover:bg-gray-100">
-                        <button className="w-full text-left flex items-center outline-none focus:outline-none">
-                            <span className="pr-1 flex-1">{item.name}</span>
-                            <span className={`mr-auto`}>
-                                <svg className="fill-current h-4 w-4 transition duration-150 ease-in-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path
-                                        d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"
-                                    />
-                                </svg>
-                            </span>
-                        </button>
-                        <ul className="bg-white border rounded absolute top-0 right-0 transition duration-150 ease-in-out origin-top-left min-w-32">
-                            {item.items.map(subItem =>
-                                <li key={subItem.name} className="bg-white text-gray-800 p-3 cursor-pointer px-3 py-1 hover:bg-gray-100" onClick={subItem.onClick}>{subItem.name}</li>
-                            )}
-                        </ul>
-                    </li>
-                    : <li key={item.name} className={`bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
-                        if (disabledRef.current) {
-                            e.preventDefault()
-                            return
-                        }
+                return <li key={item.name} className={`bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
+                    if (disabledRef.current) {
+                        e.preventDefault()
+                        return
+                    }
 
-                        let res = item.onClick(e)
+                    let res = item.onClick(e)
 
-                        if (hasControl) {
-                            setCurrentText(item.name)
-                        }
+                    if (hasControl) {
+                        setCurrentText(item.name)
+                    }
 
-                        if (res === false) {//hide dropdown
-                            if (!showOnHover) {
-                                setOpenUl(s => !s)
-                            } else {
-                                ulRef.current.style.display = 'none'
-                                setTimeout(() => {
-                                    ulRef.current.style.display = ''
-                                }, 0)
-                            }
+                    if (res === false) {//hide dropdown
+                        if (!showOnHover) {
+                            setOpenUl(s => !s)
+                        } else {
+                            ulRef.current.style.display = 'none'
+                            setTimeout(() => {
+                                ulRef.current.style.display = ''
+                            }, 0)
                         }
-                    }}>{item.name}</li>
+                    }
+                }}>{item.name}</li>
             }
             )}
+            {additionalInput && additionalInputPosition === 'bottom'?AdditionalInput:''}
+            </>}
         </ul>
     </div>)
 })
