@@ -8,6 +8,8 @@ import { elementIsVisibleInViewport, fetchByJSON } from '../../util/util';
 import NoData from '../common/nodata'
 import placeholderImg from '../../assets/images/placeholder.jpg'
 import Help from '../common/help'
+import useClipboard from "react-use-clipboard";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 const PageModal = ({ isOpen, setIsOpen }) => {
   return (<Modal isOpen={isOpen} setIsOpen={setIsOpen}>
@@ -25,11 +27,42 @@ const PageModal = ({ isOpen, setIsOpen }) => {
   </Modal>)
 }
 
+const DisplayCode = ({code}) => {
+  let [showCode, setShowCode] = useState(false)
+  const [isCopied, setCopied] = useClipboard(code, {
+    successDuration: 2000
+  });
+  
+  return (
+    <div className="pb-4">
+      <Checkbox label="show code"  onClick={() => {
+      setShowCode(!showCode)}}/>
+      <div className={showCode?
+        
+          "bg-white h-full flex items-start border-gray-200 border p-4 cursor-pointer"+
+           " hover:bg-white justify-between hover:shadow-lg rounded-lg mt-4 whitespace-pre-line align-bottom"
+          :
+          "hidden invisible"}>
+          <p>
+          {
+            showCode? code : ""
+          }
+        </p>
+        
+        <FontAwesomeIcon icon={isCopied? "clipboard-check":"clipboard"} onClick={setCopied}/>
+      </div>
+
+  </div>
+  )
+}
+
 const Variables = ({ tabpanelIndex, tabpanel }) => {
   let [modalOpened, setModalOpened] = useState(false)
   const dataset = useSelector(state => state.dataset)
   let [curCol, setCurCol] = useState('')
   let [curImg, setCurImg] = useState(placeholderImg)
+  
+  let [code, setCode] = useState("")
   const plotForm = useRef()
   const parentRef = useRef()
 
@@ -56,9 +89,11 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
       // console.log(formData);
 
       let res = await fetchByJSON('/visualization', formData)
-      return await res.json()
-      // console.log(await res.json());
-      // return res
+      let json_data = await res.json()
+      console.log(json_data['code'])
+      setCode(json_data['code'])
+      return json_data
+
     }, onSubmitSuccess: (json) => {
       setCurImg('data:image/png;base64,' + json.base64)
     },
@@ -78,14 +113,14 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
 
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
-
+    console.log(curCol)
     form.onSubmit()
   },[curCol, tabpanel])
 
   // console.log(dataset.num_lists, curCol);
   // console.log(form.getData());
 
-  return (<div className={`container mx-auto ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
+  return (<div className={`container mx-auto bg-gray-100 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
 
     <PageModal isOpen={modalOpened} setIsOpen={setModalOpened} />
     <div className="container mx-auto">
@@ -138,7 +173,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
 
         {Object.keys(dataset.col_lists).map(col => {
           let cur = dataset.col_lists[col]
-
+          {/* console.log(" sub-div "+cur.name) */}
           return (<div key={cur.name} className="p-2 lg:w-1/3 md:w-1/2 w-full">
             <div className={`${curCol === cur.name ? 'bg-white' : ''} h-full flex items-start border-gray-200 border p-4 cursor-pointer hover:bg-white hover:shadow-lg rounded-lg`} onClick={() => {
               if (formDisabledRef.current) return
@@ -152,8 +187,9 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
               </div>
             </div>
           </div>)
-        })}
+        })} 
       </div>
+      <DisplayCode code={code} />
     </div>
   </div>)
 }
@@ -162,6 +198,7 @@ const Interactions = ({ tabpanelIndex, tabpanel }) => {
   let [col1, setCol1] = useState(0)
   let [col2, setCol2] = useState(1)
   let [curImg, setCurImg] = useState(placeholderImg)
+  let [code, setCode] = useState("")
   let disabledRef = useRef(false)
   let parentRef = useRef()
 
@@ -181,6 +218,7 @@ const Interactions = ({ tabpanelIndex, tabpanel }) => {
         })
 
         let json = await res.json()
+        setCode(json['code'])
         setCurImg('data:image/png;base64,' + json.base64)
       })()
     } else {
@@ -207,12 +245,15 @@ const Interactions = ({ tabpanelIndex, tabpanel }) => {
       <div className='p-10'>
         <img src={curImg} className='w-full h-auto' />
       </div>
+
     </div>
+    <DisplayCode code={code} />
   </div>)
 }
 const Correlations = ({ tabpanelIndex, tabpanel }) => {
   let [curImg, setCurImg] = useState(placeholderImg)
   const dataset = useSelector(state => state.dataset)
+  let [code, setCode] = useState("")
   let parentRef = useRef()
 
   useEffect(() => {
@@ -226,15 +267,18 @@ const Correlations = ({ tabpanelIndex, tabpanel }) => {
       })
 
       let json = await res.json()
-      console.log(json);
+      setCode(json['code'])
+      console.log(json['code']);
       setCurImg('data:image/png;base64,' + json.base64)
     })()
   }, [tabpanel])
 
   return (<div className={`container mx-auto h-full ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
-    <div className='flex h-full justify-center items-center'>
-      <img src={curImg} alt="" />
+    <div className='flex h-full justify-center flex-wrap flex-col items-center'>
+      <img className="my-4"src={curImg} alt="" />
+      <DisplayCode code={code} />
     </div>
+
   </div>)
 }
 
