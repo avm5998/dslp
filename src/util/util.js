@@ -1,3 +1,5 @@
+import { actions as DataSetActions } from '../reducer/dataset'
+import { useDispatch, useSelector } from 'react-redux'
 import ifetch from 'isomorphic-fetch';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { config } from '../config/client'
@@ -109,7 +111,7 @@ export async function fetch(url, options) {
 }
 
 export async function fetchByJSON(url, obj) {
-
+    url = url.replace(/$\/+/,'')
     return await ifetch(config.endpoint + url, {
         body: JSON.stringify(obj),
         headers: {
@@ -213,6 +215,22 @@ function getInitialForm(fields) {
     }
 
     return form
+}
+
+export function useCachedData(){
+    let cached = localStorage.getItem('dataset')
+    let dataset = useSelector(state => state.dataset)
+    let dispatch = useDispatch()
+
+    useEffect(()=>{
+        if(!dataset.loaded && cached){
+            dispatch(DataSetActions.setData(JSON.parse(cached)))
+        }
+    },[])
+}
+
+export function autoCacheData(data){
+    localStorage.setItem('dataset',JSON.stringify(data))
 }
 
 export function initialFormRadio(args) {

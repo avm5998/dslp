@@ -281,7 +281,7 @@ def get_file(filename):
     user_id = get_jwt_identity()
     buf = StringIO()
     data = ''
-    df = _getCache(filename)
+    df = _getCache(user_id,filename)
     update_user_files_list(user_id, filename)
     if df is not None:
         df.info(buf=buf,verbose=True)
@@ -324,15 +324,14 @@ def getDataFrameDetails(df):
 @cross_origin(origin="*")
 @jwt_required()
 def uploadFile():
-    
     file = request.files['file']
     #get user id
-    
+    user_id = get_jwt_identity()
     forceUpdate = True if 'forceUpdate' in request.form else False
     autoCache = True if 'autoCache' in request.form else False
     
     filename = secure_filename(file.filename)
-    file_details = mongo_collection.find_one({"file_name": filename})
+    file_details = mongo_collection.find_one({"file_name": filename,"user_id":user_id})
     if forceUpdate or not file_details:
         if filename:
             file_ext = os.path.splitext(filename)[-1]
@@ -343,31 +342,27 @@ def uploadFile():
         if file_details:
             if forceUpdate:
                 cache.delete(filename)
-                mongo_collection.update_one({"file_name": filename},{"content":content})
+                mongo_collection.update_one({"file_name": filename,"user_id":user_id},{"$set":{"content":content}}, upsert=True)
             else:
                 return "file already uploaded", 400
         else:
             cache.delete(filename)
-            mongo_collection.insert_one({"file_name": filename, "desc": "Default desc", "logo_name": "default_logo.png",
+            mongo_collection.insert_one({"user_id":user_id,"file_name": filename, "desc": "Default desc", "logo_name": "default_logo.png",
                                     "source_link": "default source link","content":content})
     
 
     #Updating users list of files to store upto three files
     # file_name = str(mongo_collection.find_one({"file_name": filename}, {"_id":1})['file_name'])
-    user_id = get_jwt_identity()
+
     update_user_files_list(user_id, filename)
 
     buf = StringIO()
     data = ''
-    if autoCache:
-        df = _getCache(filename)
-    else:
-        df = None
-    if df is not None:
-        df.info(buf=buf,verbose=True)
-        data = df.to_json()
+    df = _getCache(user_id,filename)
+    df.info(buf=buf,verbose=True)
+    data = df.to_json()
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(df)
-    _setCache(filename,df)
+    _setCache(user_id,filename,df)
     return jsonify(success=True, info = buf.getvalue(), data = data, 
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
@@ -382,34 +377,31 @@ def update_user_files_list(user_id, filename):
     queue.appendleft(filename)   
     user_collection.update_one({'_id':ObjectId(user_id)}, {'$set':{'files':list(queue)}})
 
-def _setCache(name,df):
-    cache.set(name,df,timeout = app.config['CACHE_TIMEOUT'])
+def _setCache(uid,name,df):
+    key = str(uid)+'_'++name
+    cache.set(key,df,timeout = app.config['CACHE_TIMEOUT'])
     return df
 
-def _getCache(name):
-    df = cache.get(name)
+# get dataframe by content in cache or database, then put that datafrome into cache
+def _getCache(uid,name):
+    key = str(uid)+'_'++name
+    df = cache.get(key)
     if df is None:
-        details = mongo_collection.find_one({"file_name": name})
+        details = mongo_collection.find_one({"file_name": name,"user_id":uid})
         if not details:
-            return 'no data found', 400
+            return None
         df = pd.read_csv(StringIO(details['content'].decode('utf8')))
-        _setCache(name,df)
+        _setCache(uid,key,df)
     return df
-
-@app.route('/cacheDataFrame',methods=['POST'])
-@cross_origin()
-def cacheDataFrame():
-    params = request.json()
-    df = _getCache(params.filename)
-    return jsonify(df=df.to_json())
 
 @app.route('/visualization',methods=['POST'])
 @cross_origin()
+@jwt_required()
 def visualization():
+    user_id = get_jwt_identity()
     params = request.json
-    print(params)
     vis_type = params['type']
-    df = _getCache(params['filename'])
+    df = _getCache(user_id, params['filename'])
 
     ImgFormat = 'png'
     bytesIO = BytesIO()
@@ -470,64 +462,20 @@ def visualization():
             if 'Histogram' in plot:
                 df[col].value_counts().plot(kind='bar')
 
-        # ax.grid(axis='y', alpha=0.75)
-        # ax.set_xlabel(col)
-        # ax.set_ylabel('Frequency')
-        # Set a clean upper y-axis limit.
-        # ax.set_ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
-
     fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
     plt.close()
     imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
-    return jsonify(base64=imgStr,format=ImgFormat,resData = resData)
-    
-    # bytesIO = BytesIO()
-    # t = np.arange(0.0, 2.0, 0.01)
-    # s = 1 + np.sin(2 * np.pi * t)
 
-    # fig, ax = plt.subplots()
-    # ax.plot(t, s)
-
-    # ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-    #     title='About as simple as it gets, folks')
-    # ax.grid()
-
-    # fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
-    # plt.close()
-    # imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
-    # return jsonify(base64=imgStr,format=ImgFormat)
-
-# @app.route('/getProfile', methods=['POST'])
-# @cross_origin()
-# def getProfile():
-#     params = request.json
-#     df = _getCache(params['filename'])
-    
-#     # profile = df.profile_report(
-#     #     title="Data visualization",
-#     #     samples=None,
-#     #     duplicates=None,
-#     #     missing_diagrams=None
-#     # )
-#     # profile = ProfileReport(_getCache(params['filename']), title='Pandas Profiling Report', explorative=True)
-#     # return jsonify(html=profile.to_html())
-
-#     return jsonify(visual = {
-#         'interactions':interactions,
-#         'correlations':correlations,
-#         'variables':variables
-#     }}
 
 @app.route('/query',methods=['POST'])
 @cross_origin()
+@jwt_required()
 def query():
-    # print("_______________________________________")
+    user_id = get_jwt_identity()
     params = request.json
-    cacheResult = params['cacheResult']
     filename = params['filename']
     filters = json.loads(params['filters'])
-    print(filters)
-    df = _getCache(filename)
+    df = _getCache(user_id,filename)
     ndf = df
     for filter in filters:
         queryType = filter['queryType']
@@ -539,8 +487,7 @@ def query():
             qObject = json.loads(filter['qString'])
             ndf = ndf[ndf.apply(lambda x:qObject['min'] <= x[qObject['column']] <= qObject['max'], axis = 1)]
 
-    if cacheResult:
-        _setCache(EditedPrefix+filename,ndf)
+    _setCache(user_id,EditedPrefix+filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
@@ -549,56 +496,135 @@ def query():
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 
 
-@app.route('/clean', methods=['POST']) #/query
+@app.route('/clean', methods=['POST'])
 @cross_origin()
-def cond_clean_json(filename):
+@jwt_required()
+def cond_clean_json():
+    user_id = get_jwt_identity()
     web = []
     params = request.json
-    cacheResult = params['cacheResult']
-    autoReplace = params['autoReplace']
     filename = params['filename']
     cleaners = json.loads(params['cleaners'])
-    df = _getCache(filename)
-    print(cleaners)
+    df = _getCache(user_id, filename)
 
-    if autoReplace:
-        ndf = ndf.replace(MISSING_VALUES, np.nan)
-        
-    for filter in filters:
-        subOption = filter['subOption']
+    # {
+    #     option,
+    #     condition:{
+    #         items or cols
+    #     }
+    # }
+
+    # auto replace missing values
+    ndf = ndf.replace(MISSING_VALUES, np.nan)
+    print(cleaners)
+    return None
+    for cleaner in cleaners:
+        option = cleaner['option']
         # 0 Remove N/A Rows
         # 1 Remove N/A Columns
         # 2 Replace N/A By Mean 
         # 3 Replace N/A By Median 
         # 4 Replace N/A By Specific Value 
         # 5 Remove Outliers 
-        if subOption == 2:
-            condition = filter['condition']
+        if option == 0:
+            ndf = ndf.dropna(axis=0)
+        elif option == 1:
+            ndf = ndf.dropna(axis=1)
+        elif option == 2:
+            condition = cleaner['condition']
             for col in range(condition.cols):
                 df[col].fillna(df[col].astype(float).mean(), inplace=True)
-        elif subOption == 3:
-            condition = filter['condition']
+        elif option == 3:
+            condition = cleaner['condition']
             for col in range(condition.cols):
                 df[col].fillna(df[col].astype(float).median(), inplace=True)
-        elif subOption == 4:
-            condition = filter['condition']
-            for items in range(condition.items):
+        elif option == 4:
+            condition = cleaner['condition']
+            for item in range(condition.items):
                 df[item.col].fillna(item.val, inplace=True)
+        elif option == 5:
+            for item in range(condition.items):
+                df[item.col] =  df[item.col].astype(float)
+                q_low = df[item.col].quantile(float(item.below.strip('%'))/100) if below in item else float('-inf')
+                q_hi = df[item.col].quantile(float(item.above.strip('%'))/100) if above in item else float('inf')
+                df = df[(df[each_col] < q_hi) & (df[each_col] > q_low)]
                 
-    for filter in filters:
-        subOption = filter['subOption']
-        if subOption == 0:
-            ndf = ndf.dropna(axis=0)
-        elif subOption == 1:
-            ndf = ndf.dropna(axis=1)
        
-    if cacheResult:
-        _setCache(EditedPrefix+filename,ndf)
+    _setCache(user_id,EditedPrefix+filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
+@app.route('/current_data_json', methods=['POST']) #/query
+@cross_origin()
+@jwt_required()
+def current_data_json():
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+
+    df = _getCache(EditedPrefix+filename) or _getCache(filename)
+    return jsonify(data=df.to_json())
+
+
+@app.route('/feature_engineering', methods=['POST'])
+@cross_origin()
+def cond_eng_json(): 
+    params = request.json
+    queries = params['queries']
+    for query in queries:
+        feature_eng = query['feature_eng']
+
+    df = pd.DataFrame(data=table_DATA, columns=col).reset_index(drop=True)
+    df = df.replace(missing_values, np.nan) 
+    if feature_eng == 'Convert Cases':
+        case_col = params['case_col']
+        case_type = params['case_type']
+
+        for index1, index2 in zip(case_col, case_type):
+            if index2=="lower":
+                df[index1] = df[index1].astype(str).str.lower()
+            else:
+                df[index1] = df[index1].astype(str).str.upper()
+    elif feature_eng == 'Convert Categorical to Numerical':
+        for i in categorical_col:
+            label = LabelEncoder()
+            df[i] = label.fit_transform(df[i].astype(str))
+    elif feature_eng == 'Convert Numerical to Categorical':
+        for index1, index2, index3 in zip(numerical_col, bins, labels):
+            label = LabelEncoder()
+            df[index1] = pd.cut(df[index1].astype(float), bins=list(index2.split(",")), labels=list(index3.split(",")))
+    elif feature_eng == "Standard Scaler": 
+        scaler = StandardScaler()
+        df[stand_scaler_col] = scaler.fit_transform(df[stand_scaler_col])
+    elif feature_eng == "Minmax Scaler": 
+        scaler = MinMaxScaler()
+        df[minmax_scaler_col] = scaler.fit_transform(df[minmax_scaler_col])
+    elif feature_eng == 'Text Data: Feature Extraction Models':
+        if feat_extract_model_text_data == 'CountVectorizer':
+            scaler = CountVectorizer()
+        elif feat_extract_model_text_data == 'TfidfVectorizer':
+            scaler = TfidfVectorizer()
+    elif feature_eng == 'Add New Features and Labels':
+        print("********Inside********")
+        print('add_feat_col=',add_feat_col)
+        new_feat_assigns = {}
+        index=0
+        for new_feat_name, orig_feat_name in zip(add_feat_name_in, add_feat_col):
+            print('*****new_feat_name, orig_feat_name== ', new_feat_name, orig_feat_name)
+            unique_values = add_feat_uniq_val_in[index].split(',')
+            new_labels = add_feat_new_label[index].split(',')
+            print('unique_values, new_labels=====> ', unique_values, new_labels)
+            for uniq_val, new_label in zip(unique_values, new_labels):
+                # cond += '\nOriginal Column: ' + orig_feat_name +  '--->'+ 'New Feature:' + new_feat_name + ';  Unique Value: '+ uniq_val + "---> New Label: " + new_label
+                print('********** uniq_val, new_label= ', uniq_val, new_label)
+                new_feat_assigns[uniq_val] = new_label
+            print('new_feat_assigns===============', new_feat_assigns)
+            df[new_feat_name] = df[orig_feat_name].apply(lambda x: new_feat_assigns[x])
+            index+=1
+
+    return jsonify(df_sorted=df.to_json(orient="values"), prep_f=cond, prep_col=list(df.columns))
 
 if __name__ == '__main__':
     app.run(host='0,0,0,0',debug=True)
