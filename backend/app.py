@@ -177,7 +177,8 @@ def send_email(subject, sender, recipients, text_body, html_body):
 @app.route("/api/auth/forgot", methods=["POST"])
 @cross_origin(origin="*")
 def forgot():
-    url =  'localhost:9001/reset/'
+    
+    url =  str(request.origin)+'/reset/'
     try:
         body = request.get_json()
         email = body.get('email')
@@ -211,11 +212,12 @@ def forgot():
 @app.route("/api/auth/reset", methods=["POST"])
 @cross_origin(origin="*")
 def reset_link():
-    url =  'localhost:9001/reset/'
+    url =  str(request.origin)+'/reset/'
     try:
         body = request.get_json()
         reset_token = body.get('reset_token')
-        print("toke: "+str(reset_token))
+        # print("toke: "+str(reset_token))
+        print(request.url)
         password = body.get('new_password')
 
         if not reset_token or not password:
@@ -401,8 +403,13 @@ def visualization():
     user_id = get_jwt_identity()
     params = request.json
     vis_type = params['type']
+<<<<<<< HEAD
     df = _getCache(user_id, params['filename'])
 
+=======
+    df = _getCache(params['filename'])
+    code = ""
+>>>>>>> e043c82cec71ac893ae111e597cd48f4e1d7b6ec
     ImgFormat = 'png'
     bytesIO = BytesIO()
     resData = {}
@@ -411,6 +418,8 @@ def visualization():
     if vis_type == 'interactions':
         col1, col2 = params['col1'], params['col2']
         ax.scatter(df[col1], df[col2])
+        code = f"plt.scatter(df['{col1}'], df['{col2}'])"
+
     
     if vis_type == 'correlations':
         cols = df.columns.to_list()
@@ -437,6 +446,9 @@ def visualization():
 
         data = [[getValue(df,col1,col2) for col2 in ncols] for col1 in ncols]
         ax = sns.heatmap(data, cmap = 'cool', linewidth=0.3,xticklabels =cols, yticklabels = cols)
+        code= "import seaborn as sns\n"
+        code += f"data = np.random.randn(50, 20)"+"\n"
+        code += f"sns.heatmap(data, cmap = 'cool', linewidth=0.3,xticklabels ={cols}, yticklabels = {cols})"
 
     if vis_type == 'chi_square':
         col1, col2 = params['col1'], params['col2']
@@ -456,16 +468,61 @@ def visualization():
         if isnumeric:
             if 'Histogram' in plot:
                 df[col].plot.hist(bins=df[col].shape[0], alpha=.7,density = True, ax = ax,  xlim = col_range, logx = logx, logy = logy)
+                print(f"df['{col}'].plot.hist(bins=df['{col}'].shape[0], alpha={.7},density = True,  xlim = {col_range}, logx = {logx}, logy = {logy})")
+                code = f"df['{col}'].plot.hist(bins=df['{col}'].shape[0], alpha={.7},density = True,  xlim = {col_range}, logx = {logx}, logy = {logy})\n"
             if 'KDE' in plot:
                 df[col].plot.kde( ax = ax,  xlim = col_range, logx = logx, logy = logy)
+                code += f"df['{col}'].plot.kde(xlim = {col_range}, logx = {logx}, logy = {logy})" 
         else:
             if 'Histogram' in plot:
                 df[col].value_counts().plot(kind='bar')
+                code = f"df['{col}'].value_counts().plot(kind='bar')"
 
     fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
     plt.close()
     imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
+<<<<<<< HEAD
 
+=======
+    return jsonify(base64=imgStr,format=ImgFormat,resData = resData, code=code)
+    
+    # bytesIO = BytesIO()
+    # t = np.arange(0.0, 2.0, 0.01)
+    # s = 1 + np.sin(2 * np.pi * t)
+
+    # fig, ax = plt.subplots()
+    # ax.plot(t, s)
+
+    # ax.set(xlabel='time (s)', ylabel='voltage (mV)',
+    #     title='About as simple as it gets, folks')
+    # ax.grid()
+
+    # fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
+    # plt.close()
+    # imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
+    # return jsonify(base64=imgStr,format=ImgFormat)
+
+# @app.route('/getProfile', methods=['POST'])
+# @cross_origin()
+# def getProfile():
+#     params = request.json
+#     df = _getCache(params['filename'])
+    
+#     # profile = df.profile_report(
+#     #     title="Data visualization",
+#     #     samples=None,
+#     #     duplicates=None,
+#     #     missing_diagrams=None
+#     # )
+#     # profile = ProfileReport(_getCache(params['filename']), title='Pandas Profiling Report', explorative=True)
+#     # return jsonify(html=profile.to_html())
+
+#     return jsonify(visual = {
+#         'interactions':interactions,
+#         'correlations':correlations,
+#         'variables':variables
+#     }}
+>>>>>>> e043c82cec71ac893ae111e597cd48f4e1d7b6ec
 
 @app.route('/query',methods=['POST'])
 @cross_origin()

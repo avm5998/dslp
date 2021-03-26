@@ -1,0 +1,119 @@
+.animation-popin-bottom {
+    animation: popin-bottom 0.1s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+.animation-popout-bottom {
+    animation: popout-bottom 0.15s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+@keyframes popin-bottom {
+    0% {
+        transform: scale(0) translateX(-50%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateX(-50%);
+        opacity: 1;
+    }
+}
+
+@keyframes popout-bottom {
+    0% {
+        transform: scale(1) translateX(-50%);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0) translateX(-50%);
+        opacity: 0;
+    }
+}
+
+.animation-popin-right {
+    animation: popin-right 0.1s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+.animation-popout-right {
+    animation: popout-right 0.15s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+@keyframes popin-right {
+    0% {
+        transform: scale(0) translateY(-50%) translateX(20px);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(-50%) translateX(20px);
+        opacity: 1;
+    }
+}
+
+@keyframes popout-right {
+    0% {
+        transform: scale(1) translateY(-50%) translateX(20px);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0) translateY(-50%) translateX(20px);
+        opacity: 0;
+    }
+}
+
+.animation-popin-left {
+    animation: popin-left 0.1s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+.animation-popout-left {
+    animation: popout-left 0.15s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+@keyframes popin-left {
+    0% {
+        transform: scale(0) translateX(calc(-100% - 20px)) translateY(-50%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateX(calc(-100% - 20px)) translateY(-50%);
+        opacity: 1;
+    }
+}
+
+@keyframes popout-left {
+    0% {
+        transform: scale(1) translateX(calc(-100% - 20px)) translateY(-50%);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0) translateX(calc(-100% - 20px)) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+.animation-popin-top {
+    animation: popin-top 0.1s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+.animation-popout-top {
+    animation: popout-top 0.15s cubic-bezier(0, 0, 0.2, 1) 1 forwards;
+}
+
+@keyframes popin-top {
+    0% {
+        transform: scale(0) translateY(calc(-100% - 30px)) translateX(-50%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(calc(-100% - 30px)) translateX(-50%);
+        opacity: 1;
+    }
+}
+
+@keyframes popout-top {
+    0% {
+        transform: scale(1) translateY(calc(-100% - 30px)) translateX(-50%);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0) translateY(calc(-100% - 30px)) translateX(-50%);
+        opacity: 0;
+    }
+}
