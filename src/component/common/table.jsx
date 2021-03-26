@@ -50,10 +50,10 @@ export default function ({PageSize, styleText = '', style = {}}) {
                         <option value="50">50</option>
                     </select></label>
                 </div>
-                <div className="inline-block float-right text-lg py-3 px-6">
+                {/* <div className="inline-block float-right text-lg py-3 px-6">
                     <label>Search:<input type="search" className="ml-5 outline-none bg-gray-100 border-gray-200 rounded leading-3 p-2 text-gray-600" placeholder="" />
                     </label>
-                </div>
+                </div> */}
 
                 <table className="stripe hover dataTable no-footer dtr-inline" role="grid" aria-describedby="example_info" style={{ borderBottomColor: '#ddd' }}>
                     <thead>

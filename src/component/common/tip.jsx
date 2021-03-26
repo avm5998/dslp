@@ -1,4 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { set } from 'lodash'
+import React, { forwardRef, useEffect, useState, useRef, useCallback } from 'react'
+import './tip.css'
 
 const Tip = ({ info, styleText = '' }) => {
     let [selectTip, setSelectTip] = useState(false)
@@ -11,7 +14,9 @@ const Tip = ({ info, styleText = '' }) => {
     useEffect(() => {
         if (!selectTip) {
             for (let child of childBinder.current) {
-                document.body.removeChild(child)
+                try {//child could already been removed
+                    document.body.removeChild(child)
+                } catch (e) { }
             }
 
             childBinder.current.length = 0
@@ -29,7 +34,7 @@ const Tip = ({ info, styleText = '' }) => {
             let element = document.querySelector(selector)
             if (element) {
                 let rect = positionBinder.current[selector]
-                if(!rect){
+                if (!rect) {
                     rect = document.querySelector(selector).getBoundingClientRect()
                 }
                 let overlapped = document.createElement('div')
@@ -51,7 +56,7 @@ const Tip = ({ info, styleText = '' }) => {
             }
         }
 
-        return ()=>{
+        return () => {
             for (let child of childBinder.current) {
                 document.body.removeChild(child)
             }
@@ -63,17 +68,17 @@ const Tip = ({ info, styleText = '' }) => {
             setShowTipContent(false)
         }
     }} style={{
-        zIndex:1000,
+        zIndex: 1000,
         background: selectTip ? 'rgba(0,0,0,.3)' : 'transparent'
     }}>
         <div className='absolute right-0 top-0 cursor-pointer bordered-light w-16 h-16 bg-green-300 flex justify-center items-center' onClick={() => {
-            if(!selectTip){
+            if (!selectTip) {
                 setSelectTip(true)
-            }else{
-                setSelectTip(false)
+            } else {
                 if (showTipContent) {
                     setShowTipContent(false)
                 }
+                setSelectTip(false)
             }
         }} style={{
             zIndex: 1003
@@ -89,5 +94,55 @@ const Tip = ({ info, styleText = '' }) => {
         </div>
     </div>)
 }
+
+/**
+ * phase:
+ * 
+ * start: fadein, show
+ * end: fadeout, hidden
+ * 
+ * | fadein | show | fadeout | hidden
+ */
+export const InlineTip = forwardRef(({ info = '', infoPosition = 'bottom', customStyle = '' }, ref) => {
+    let [showInfo, setShowInfo] = useState(false)
+    let [phase, setPhase] = useState('start') //start or end
+    let timeoutRef = useRef()
+    const closeTip = useCallback(e => {
+        setPhase('end')
+        timeoutRef.current = setTimeout(() => {
+            setShowInfo(false)
+        }, 150)
+        e.preventDefault()
+    }, [])
+
+    return <div className='' style={{ zIndex: 1 }}>
+        <FontAwesomeIcon onMouseEnter={() => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current)
+                timeoutRef.current = null
+            }
+
+            setShowInfo(true)
+            setPhase('start')
+        }} className={`ml-2 text-gray-300`} icon={['far', 'question-circle']} />
+
+        <div className={`
+        ${showInfo ? '' : 'hidden'}
+        ${infoPosition == 'bottom' ? 'origin-top' :
+                infoPosition == 'top' ? 'origin-bottom' :
+                    infoPosition == 'left' ? 'origin-right' :
+                        infoPosition == 'right' ? 'origin-left' : ''
+            }
+         ${phase == 'start' ? 'animation-popin-' : 'animation-popout-'}${infoPosition} rounded-lg w-48 absolute border shadow-md bg-white text-gray-400 tracking-normal p-3 ${customStyle}`} onMouseLeave={e => {
+                closeTip(e)
+            }}
+            style={{
+                transform: infoPosition
+            }}
+        ><FontAwesomeIcon onClick={e => {
+            closeTip(e)
+        }} className={`cursor-pointer hover:text-gray-500 absolute top-2 right-2 text-gray-300`} icon={['fas', 'times']} /><p>{info}</p></div>
+    </div>
+})
 
 export default Tip

@@ -51,17 +51,17 @@ const FeatureEngineering = () => {
 
 
         }} setIsOpen={setShowSubOptionModal} contentStyleText="mx-auto mt-20">
-            <Tip info={{
+            {/* <Tip info={{
                 '.Bins':'input to type in Bins'
-            }}/>
+            }}/> */}
             <div className='p-5 flex flex-col'>
 
                 {option === 0 ?
                     <div className="flex flex-col">
                         {dataset.cate_cols.map(name =>
                             <div className='flex flex-row w-full' key={name}>
-                                <div className='px-10 w-1/3 label-left'>{name + ':'}</div>
-                                <DropDown customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" text={ChangeOptions[currentOption[name] || 0]} items={ChangeOptions.map((operation, i) => ({
+                                <div className='px-10 py-2 w-1/3 label-left'>{name + ':'}</div>
+                                <DropDown showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" text={ChangeOptions[currentOption[name] || 0]} items={ChangeOptions.map((operation, i) => ({
                                     name: operation, onClick(e) {
                                         setSubOption(option, subOption, { key: name, value: operation })
                                     }
@@ -72,12 +72,12 @@ const FeatureEngineering = () => {
                     : ''}
 
                 {option === 1 ? <div>
-                    <MultiSelect selections={dataset.cate_cols} customHeight='h-32' onSelect={(e) => {
+                    <MultiSelect defaultOpen={false} selections={dataset.cate_cols} customHeight='h-32' onSelect={(e) => {
                         setSubOption(option, subOption, e)
                     }} />
                 </div> : ''}
 
-                {option === 2 ? <div className='grid grid-cols-3'>
+                {option ==  2 ? <div className='grid grid-cols-3'>
                     {dataset.num_cols.map((col,i)=><React.Fragment key={i}>
                         <Checkbox {...checkbox2} label={col} name='suboption_checked' item={col}/>
                         <input {...input2} className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins' name={col+'_Bins'}/>
@@ -99,14 +99,16 @@ const FeatureEngineering = () => {
                 </div> : ''}
 
                 <div className="flex justify-end m-3 mt-10">
-                    <Button text='Confirm' customStyle='border-light' />
+                    <Button text='Confirm' customStyle='border-light' onClick={()=>{
+                        console.log(subOption.current)
+                    }}/>
                 </div>
             </div>
         </Modal>
-        <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
-            <div className='mx-5 my-10 w-8/12 flex justify-start'>
-                <div className='w-96'>
-                    <DropDown text={optionText} customStyle='h-10 w-96' customUlStyle={'w-96'} items={
+        <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
+            <div className='mx-5 w-8/12 flex justify-start'>
+                <div className='w-64'>
+                    <DropDown text={optionText} customStyle={'h-8 py-1 w-64'} customUlStyle={'w-64'} items={
                         ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler'].map((item, i) => ({
                             name: item, onClick(e) {
                                 {/*   0                           1                            2                               3                 4    */ }
@@ -116,17 +118,17 @@ const FeatureEngineering = () => {
                             }
                         }))} />
                 </div>
-                <Button text={subOptionText} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+                <Button text={subOptionText} customStyle={'h-6 w-48 ml-10 py-1'} onClick={()=>{
                     if(option>-1){
                         setShowSubOptionModal(true)
                     }
                 }}/>
 
-                <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+                <Button text={'Confirm'} customStyle={'h-6 w-48 ml-10 py-1'} onClick={()=>{
                 }}/>
             </div>
-            <div className='mx-5 my-10 w-3/12'>
-                <MultiSelect selections={dataset.dataEngineering} passiveMode={true} />
+            <div className='mx-5 w-3/12'>
+                <MultiSelect defaultText={'Selected operations'} customHeight={'h-8'} selections={dataset.dataEngineering} passiveMode={true} />
             </div>
         </div>
         <Table PageSize={10}/>

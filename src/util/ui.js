@@ -87,27 +87,32 @@ export function Label({ pos = 'left', text = '', customStyle = '' }) {
 }
 
 export function Button({
-    id, text, onClick = () => { }, disabled = false, disabledText = text, hoverAnimation = true, customStyle = '', overrideClass = ''
+    id, text, onClick = () => { }, disabled = false, disabledText = text, 
+    hoverAnimation = true, customStyle = '', overrideClass = '', hasPadding = true
 }) {
     return <button id={id} onClick={onClick} disabled={disabled} className={
         overrideClass ? overrideClass : `
     ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
                 `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500 border-1' : 'bg-transparent bg-blue-400 text-blue-400 border-blue-400 border-1'} cursor-pointer`} 
-    rounded font-semibold py-2 px-4 focus:outline-none ${customStyle}`}>
+    rounded font-semibold ${hasPadding?'px-4':''} focus:outline-none ${customStyle}`}>
         {disabled ? disabledText : text}
     </button>
 }
 
-export const MultiSelect = forwardRef(({ controlledOpen = false, openState = false, defaultText = '', wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customHeight = '', customWidth = '' }, ref) => {
+export const MultiSelect = forwardRef(({ controlledOpen = false, openState = false, defaultText = '', 
+wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, 
+customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref) => {
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
-
     useImperativeHandle(ref, () => ({
         hide: () => {
             buttonRef.current.classList.toggle('rotate180')
             menuRef.current.classList.add('invisible')
-        }
+        },
+        clear:()=>{
+            setSelected([])
+        },
     }))
 
     useEffect(() => {
@@ -139,23 +144,23 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
         }
     }
     
-    return (<div className={`${customHeight ? customHeight : 'h-64'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-center mx-auto`}>
-        <div className="w-full">
-            <div className="flex flex-col items-center relative">
-                <div className="w-full">
-                    <div className="p-1 flex border border-gray-200 bg-white rounded">
-                        <div className={`flex flex-auto ${wrapSelection ? 'flex-wrap' : 'flex-nowrap overflow-hidden'}`} onClick={() => {
+    return (<div className={`${allowWrap?'':'flex-nowrap'} ${customHeight ? customHeight : 'h-auto'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-start`}>
+        <div className="w-full h-full">
+            <div className="w-full h-full flex flex-col items-center relative">
+                <div className="w-full h-full">
+                    <div className="w-full h-full box-border px-2 flex border border-gray-400 bg-white rounded">
+                        <div className={`py-1 flex flex-auto ${wrapSelection ? 'flex-wrap' : 'flex-nowrap overflow-hidden'}`} onClick={() => {
                             if (!selected.length) toggleMenu()
                         }}>
                             {selected.map(e =>
-                                <div key={e} className="flex justify-center items-center font-medium py-1 px-2 bg-white rounded-full text-blue-700 bg-blue-100 border border-blue-300 ">
+                                <div key={e} className="flex justify-center items-center font-medium box-border h-full px-2 bg-white rounded-full text-blue-700 border border-blue-300 ">
                                     <div className="text-xs font-normal leading-none max-w-full flex-initial">{getDesc(e)}</div>
-                                    <div className="flex flex-auto flex-row-reverse">
-                                        <div onClick={() => setSelected(all => {
+                                    <div className={`${allowDelete?'':'hidden'} flex flex-auto flex-row-reverse`}>
+                                        <div onClick={() => {if(allowDelete) setSelected(all => {
                                             all.splice(all.indexOf(e), 1)
                                             onSelect(all)
                                             return [...all]
-                                        })}>
+                                        })}}>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-x cursor-pointer hover:text-blue-400 rounded-full w-4 h-4 ml-2">
                                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -165,10 +170,10 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
                                 </div>
                             )}
                             <div className="flex-1" >
-                                <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} text-center bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800`} />
+                                <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} text-center bg-transparent px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
-                        <div className="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200" onClick={() => toggleMenu()}>
+                        <div className="text-gray-400 w-4 flex items-center border-gray-200" onClick={() => toggleMenu()}>
                             <button ref={buttonRef} className="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-chevron-up w-4 h-4">
                                     <polyline points="18 15 12 9 6 15"></polyline>
@@ -185,7 +190,7 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
                                 <div className={`flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative`} onClick={() => setSelected(all => {
                                     if (all.indexOf(selection) === -1)
                                         all.push(selection)
-                                    else
+                                    else if(allowDelete)
                                         all.splice(all.indexOf(selection), 1)
                                     onSelect(all)
                                     return [...all]
@@ -291,7 +296,7 @@ export const DropDown = forwardRef(({
             if (!showOnHover) {
                 setOpenUl(s => !s)
             }
-        }} ref={buttonRef} className={`outline-none focus:outline-none border px-3 py-1 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
+        }} ref={buttonRef} className={`box-border outline-none focus:outline-none border px-2 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
             <span className="pr-1 text-gray-400 flex-1">{hasControl ? currentText : text}</span>
             <span className={`${hideArrow ? 'hidden' : ''}`} >
                 <svg
@@ -303,12 +308,12 @@ export const DropDown = forwardRef(({
             </span>
         </button>
 
-        <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?'border':''} rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
             {<>
             {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
             {items.map(item => {
 
-                return <li key={item.name} className={`bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
+                return <li key={item.name} className={`box-border bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
                     if (disabledRef.current) {
                         e.preventDefault()
                         return
@@ -432,7 +437,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
                 {/* left */}
                 <div ref={ref => { if (ref && leftX == -1) setLeftX(ref.getBoundingClientRect().x) }} draggable={true} onDragStart={dragStart} onDragEnd={dragComplete} onDrag={dragLeft} className="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer" style={{ left: `${left}%` }}>
                     <div className="relative -mt-2 w-1">
-                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ marginLeft: '-25px' }}>
+                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(-50%)' }}>
                             <div className="relative shadow-md" data-text onDoubleClick={() => setShowMinInput(true)}>
                                 {showMinInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-3 left-0 w-16 absolute truncate rounded bg-black text-white text-xs py-1 px-4" onBlur={confirmMinInput} onKeyDown={e => e.keyCode === 13 ? confirmMinInput(e) : ''} /> : ''}
                                 <div className="bg-black -mt-8 -ml-3 text-white truncate text-xs rounded py-1 px-3 w-16 text-center">{leftText}</div>
@@ -447,7 +452,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
                 {/* right */}
                 <div ref={ref => { if (ref && rightX == -1) setRightX(ref.getBoundingClientRect().x) }} draggable={true} onDragStart={dragStart} onDragEnd={dragComplete} onDrag={dragRight} className="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer" style={{ left: `${right}%` }}>
                     <div className="relative -mt-2 w-1">
-                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ marginLeft: '-25px' }}>
+                        <div className="absolute z-40 opacity-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(-50%)' }}>
                             <div className="relative shadow-md" data-text onDoubleClick={() => setShowMaxInput(true)}>
                                 {showMaxInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-2 left-0 w-16 absolute truncate rounded bg-black text-white text-xs py-1 px-4" onBlur={confirmMaxInput} onKeyDown={e => e.keyCode === 13 ? confirmMaxInput(e) : ''} /> : ''}
                                 <div className="bg-black mt-4 -ml-2 text-white truncate text-xs rounded py-1 px-3 w-16 text-center">{rightText}</div>

@@ -11,7 +11,9 @@ import Header from './component/header/header.component'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
 import Cleaning from './component/cleaning'
+import Sandbox from './component/sandbox'
 import FeatureEngineering from './component/featureEngineering';
 import Preprocessing from './component/preprocessing';
 import FeatureSelection from './component/featureSelection';
@@ -32,19 +34,21 @@ import { clearMessage } from "./actions/message";
 import { history } from './store';
 //add all solid icon-fonts
 library.add(fas)
+library.add(far)
 
 const Menu = {
     'Main': [
         { text: 'Upload Data', icon: 'home', to: '/' },
         { text: 'Summary', icon: 'chart-area', to: '/summary' },
         { text: 'Visualization', icon: 'chart-area', to: '/visualization' },
+        { text: 'Sandbox', icon: 'chart-area', to: '/sandbox' },
         { text: 'Query', icon: 'search', to: '/query' },
         { text: 'Clean', icon: 'search', to: '/clean' },
         { text: 'Feature Engineering', icon: 'search', to: '/featureEngineering' },
         { text: 'Feature Selection', icon: 'search', to: '/featureSelection' },
-        { text: 'Preprossing', icon: 'search', to: '/preprocessing' },
+        { text: 'Preprocessing', icon: 'search', to: '/preprocessing' },
         { text: 'Sign In', icon: 'sign-in-alt', to: '/signin' },
-        { text: 'Analysis', icon: 'sign-in-alt', to: '/analysis' }
+        { text: 'Analysis', icon: 'sign-in-alt', to: '/analysis' },
     ],
 }
 
@@ -106,9 +110,9 @@ const Routes = (props) => {
                                         </a>
                                     </li>
                                     <li>
-                                        <a>        
+                                        {/* <a>        
                                             <img src="src\assets\images\vivek_profile.jpg" className='profile-img'/>
-                                        </a>
+                                        </a> */}
 
 
                                         <ul class="nav-dropdown">
@@ -201,6 +205,7 @@ const Routes = (props) => {
                             <Route exact path={['/home', '/']} component={Home} />
                             <Route path='/summary' component={Summary} />
                             <Route path='/visualization' component={Visualization} />
+                            <Route path='/sandbox' component={Sandbox} />
                             <Route path='/query' component={Query} />
                             <Route path='/clean' component={Cleaning} />
                             <Route path='/featureEngineering' component={FeatureEngineering} />
