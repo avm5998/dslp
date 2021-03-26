@@ -13,7 +13,7 @@ import authHeader from '../../services/auth-header';
 
 const Home = (props) => {
   useCachedData()
-  
+
   const { user: currentUser } = useSelector((state) => state.auth);
 
   if (!currentUser) {
@@ -124,6 +124,16 @@ const Home = (props) => {
             selectFileOption(name);
           }
         }))} />
+        <Button text='Revert data' disabled={!dataset.filename} onClick={()=>{
+          if(dataset.filename){
+            fetchByJSON('cleanEditedCache',{
+              filename:dataset.filename
+            })
+
+            dispatch(DataSetActions.emptyInfo())
+            selectFileOption(dataset.filename)
+          }
+        }} customStyle='h-10 w-72 my-4' hasPadding={false}/>
 
       </div>
       {/* <div className="mt-10">

@@ -9,8 +9,11 @@ import Table from '../common/table'
 import { data } from 'autoprefixer';
 import Tip from '../common/tip'
 
+const CleanTypes = ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'];
+
 const Cleaning = () => {
     useCachedData()
+    let multiSelect23Ref = useRef()
     let [option, setOption] = useState(-1)
     let [optionText, setOptionText] = useState('Select cleaning type')
     let dataset = useSelector(state => state.dataset)
@@ -39,6 +42,7 @@ const Cleaning = () => {
         cleaners.push({
             option: option,
             condition: cleaningCondition.current[option].condition,
+            desc:CleanTypes[option]
         })
 
         dispatch(DataSetActions.setCleaners(cleaners))
@@ -53,8 +57,8 @@ const Cleaning = () => {
 
                 if (value)
                     items.push({
-                        key: p,
-                        value: refs[p].value
+                        col: p,
+                        val: refs[p].value
                     })
             }
             cleaningCondition.current[4].condition.items = items
@@ -101,11 +105,9 @@ const Cleaning = () => {
 
     const queryCleaner = async () => {
         let res = await fetchByJSON('clean', {
-            cleaners: JSON.stringify(dataset.cleaners),
+            cleaners: JSON.stringify(dataset.dataCleaners),
             filename: dataset.filename
         })
-
-        return
 
         let json = await res.json()
         dispatch(DataSetActions.setData({
@@ -165,22 +167,25 @@ const Cleaning = () => {
 
         <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
 
-            <div className='mx-5 w-5/12'>
+            <div className='mx-5 w-3/12'>
                 <DropDown id="dropdownClean" text={optionText} customStyle='h-10 w-72' customUlStyle={'w-72'} items={
-                    ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'].map((item, i) => ({
+                    CleanTypes.map((item, i) => ({
                         name: item, onClick(e) {
                             {/*0                      1                2                       3                        4                            5 */ }
                             setOption(i)
                             setOptionText(item)
+                            if (multiSelect23Ref.current){
+                                multiSelect23Ref.current.clear()
+                            }
                             if (i === 4 || i === 5) {
                                 setShowSubOptionModal(true)
                             }
                         }
                     }))} />
             </div>
-            <div className='mx-5 w-5/12'>
+            <div className='mx-5 w-3/12'>
                 {/* Select a column and apply a cleaner */}
-                {(option === 2 || option === 3) ? <MultiSelect customHeight={`h-10`} selections={dataset.num_cols}
+                {(option === 2 || option === 3) ? <MultiSelect ref={multiSelect23Ref} customHeight={`h-10`} selections={dataset.num_cols}
                     onSelect={(e) => {
                         cleaningCondition.current[option].condition.cols = e
                     }}
@@ -196,7 +201,12 @@ const Cleaning = () => {
                     : ''}
             </div>
 
-            <div className='mx-5 w-5/12'>
+            <div className='mx-5 w-3/12'>
+                    <MultiSelect customHeight={`h-10`} defaultText={`Applied cleaners`} allowDelete={false} passiveMode={true} selections={dataset.dataCleaners} getDesc={e => e.desc} onSelect={filters => {
+                    }} />
+                </div>
+
+            <div className='mx-5 w-3/12'>
                 <Button id='confirmBtn' customStyle={`h-10`} text='Confirm' onClick={onConfirm} />
             </div>
         </div>

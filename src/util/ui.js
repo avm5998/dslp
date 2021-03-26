@@ -87,13 +87,14 @@ export function Label({ pos = 'left', text = '', customStyle = '' }) {
 }
 
 export function Button({
-    id, text, onClick = () => { }, disabled = false, disabledText = text, hoverAnimation = true, customStyle = '', overrideClass = ''
+    id, text, onClick = () => { }, disabled = false, disabledText = text, 
+    hoverAnimation = true, customStyle = '', overrideClass = '', hasPadding = true
 }) {
     return <button id={id} onClick={onClick} disabled={disabled} className={
         overrideClass ? overrideClass : `
     ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
                 `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500 border-1' : 'bg-transparent bg-blue-400 text-blue-400 border-blue-400 border-1'} cursor-pointer`} 
-    rounded font-semibold px-4 focus:outline-none ${customStyle}`}>
+    rounded font-semibold ${hasPadding?'px-4':''} focus:outline-none ${customStyle}`}>
         {disabled ? disabledText : text}
     </button>
 }
@@ -108,7 +109,10 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
         hide: () => {
             buttonRef.current.classList.toggle('rotate180')
             menuRef.current.classList.add('invisible')
-        }
+        },
+        clear:()=>{
+            setSelected([])
+        },
     }))
 
     useEffect(() => {
@@ -433,7 +437,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
                 {/* left */}
                 <div ref={ref => { if (ref && leftX == -1) setLeftX(ref.getBoundingClientRect().x) }} draggable={true} onDragStart={dragStart} onDragEnd={dragComplete} onDrag={dragLeft} className="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer" style={{ left: `${left}%` }}>
                     <div className="relative -mt-2 w-1">
-                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(50%)' }}>
+                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(-50%)' }}>
                             <div className="relative shadow-md" data-text onDoubleClick={() => setShowMinInput(true)}>
                                 {showMinInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-3 left-0 w-16 absolute truncate rounded bg-black text-white text-xs py-1 px-4" onBlur={confirmMinInput} onKeyDown={e => e.keyCode === 13 ? confirmMinInput(e) : ''} /> : ''}
                                 <div className="bg-black -mt-8 -ml-3 text-white truncate text-xs rounded py-1 px-3 w-16 text-center">{leftText}</div>

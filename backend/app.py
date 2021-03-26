@@ -380,13 +380,17 @@ def update_user_files_list(user_id, filename):
     user_collection.update_one({'_id':ObjectId(user_id)}, {'$set':{'files':list(queue)}})
 
 def _setCache(uid,name,df):
-    key = str(uid)+'_'++name
+    key = str(uid)+'_'+name
     cache.set(key,df,timeout = app.config['CACHE_TIMEOUT'])
     return df
 
+def _clearCache(uid,name):
+    key = str(uid)+'_'+name
+    cache.delete(key)
+
 # get dataframe by content in cache or database, then put that datafrome into cache
 def _getCache(uid,name):
-    key = str(uid)+'_'++name
+    key = str(uid)+'_'+name
     df = cache.get(key)
     if df is None:
         details = mongo_collection.find_one({"file_name": name,"user_id":uid})
@@ -403,13 +407,9 @@ def visualization():
     user_id = get_jwt_identity()
     params = request.json
     vis_type = params['type']
-<<<<<<< HEAD
     df = _getCache(user_id, params['filename'])
+    code=''
 
-=======
-    df = _getCache(params['filename'])
-    code = ""
->>>>>>> e043c82cec71ac893ae111e597cd48f4e1d7b6ec
     ImgFormat = 'png'
     bytesIO = BytesIO()
     resData = {}
@@ -481,48 +481,6 @@ def visualization():
     fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
     plt.close()
     imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
-<<<<<<< HEAD
-
-=======
-    return jsonify(base64=imgStr,format=ImgFormat,resData = resData, code=code)
-    
-    # bytesIO = BytesIO()
-    # t = np.arange(0.0, 2.0, 0.01)
-    # s = 1 + np.sin(2 * np.pi * t)
-
-    # fig, ax = plt.subplots()
-    # ax.plot(t, s)
-
-    # ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-    #     title='About as simple as it gets, folks')
-    # ax.grid()
-
-    # fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
-    # plt.close()
-    # imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
-    # return jsonify(base64=imgStr,format=ImgFormat)
-
-# @app.route('/getProfile', methods=['POST'])
-# @cross_origin()
-# def getProfile():
-#     params = request.json
-#     df = _getCache(params['filename'])
-    
-#     # profile = df.profile_report(
-#     #     title="Data visualization",
-#     #     samples=None,
-#     #     duplicates=None,
-#     #     missing_diagrams=None
-#     # )
-#     # profile = ProfileReport(_getCache(params['filename']), title='Pandas Profiling Report', explorative=True)
-#     # return jsonify(html=profile.to_html())
-
-#     return jsonify(visual = {
-#         'interactions':interactions,
-#         'correlations':correlations,
-#         'variables':variables
-#     }}
->>>>>>> e043c82cec71ac893ae111e597cd48f4e1d7b6ec
 
 @app.route('/query',methods=['POST'])
 @cross_origin()
@@ -552,7 +510,59 @@ def query():
 
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 
+# Require last modified dataframe from server
+# First, the original dataframe is identified by user id and filename and assuming the file exists
 
+# if the original dataframe is in the mem cache
+#   do nothing
+# else
+#   get original dataframe by user id and filename, set the dataframe to mem cache
+
+# if the modified dataframe is in the mem cache
+#   get the modified dataframe json
+# else
+#   do nothing since we don't know how to get the modified data even with the filters
+#   and at the same time, since there is no modified data, all filters/cols will be invalid and being rest
+
+# TODO is it better to store the current version of modified data each time the data's been modified?
+@app.route('/handleCachedData', methods=['POST'])
+@cross_origin()
+@jwt_required()
+def handleCachedData():
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+    df = _getCache(user_id,filename)
+    modifiedJson = ''
+
+    if df is not None:
+        ndf = _getCache(user_id,EditedPrefix + filename)
+
+        if ndf is not None: # must be in the mem cache since database does not store modified data
+            modifiedJson = ndf.to_json()
+
+    cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf if ndf is not None else df)
+    return jsonify(modifiedJson = modifiedJson,dataJson = df.to_json(),
+    cols = cols,col_lists = col_lists, num_cols = num_cols, 
+    cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+
+@app.route('/cleanEditedCache', methods=['POST'])
+@cross_origin()
+@jwt_required()
+def cleanEditedCache():
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+    _clearCache(user_id,EditedPrefix+filename)
+    return jsonify(success=True)
+
+# cleaner data structure
+# {
+#     option,
+#     condition:{
+#         items or cols
+#     }
+# }
 @app.route('/clean', methods=['POST'])
 @cross_origin()
 @jwt_required()
@@ -563,18 +573,9 @@ def cond_clean_json():
     filename = params['filename']
     cleaners = json.loads(params['cleaners'])
     df = _getCache(user_id, filename)
-
-    # {
-    #     option,
-    #     condition:{
-    #         items or cols
-    #     }
-    # }
-
     # auto replace missing values
-    ndf = ndf.replace(MISSING_VALUES, np.nan)
+    ndf = df.replace(MISSING_VALUES, np.nan)
     print(cleaners)
-    return None
     for cleaner in cleaners:
         option = cleaner['option']
         # 0 Remove N/A Rows
@@ -589,22 +590,23 @@ def cond_clean_json():
             ndf = ndf.dropna(axis=1)
         elif option == 2:
             condition = cleaner['condition']
-            for col in range(condition.cols):
-                df[col].fillna(df[col].astype(float).mean(), inplace=True)
+            for col in condition['cols']:
+                ndf[col].fillna(ndf[col].astype(float).mean(), inplace=True)
         elif option == 3:
             condition = cleaner['condition']
-            for col in range(condition.cols):
-                df[col].fillna(df[col].astype(float).median(), inplace=True)
+            for col in condition['cols']:
+                ndf[col].fillna(ndf[col].astype(float).median(), inplace=True)
         elif option == 4:
             condition = cleaner['condition']
-            for item in range(condition.items):
-                df[item.col].fillna(item.val, inplace=True)
+            for item in condition['items']:
+                ndf[item['col']].fillna(item['val'], inplace=True)
         elif option == 5:
-            for item in range(condition.items):
-                df[item.col] =  df[item.col].astype(float)
-                q_low = df[item.col].quantile(float(item.below.strip('%'))/100) if below in item else float('-inf')
-                q_hi = df[item.col].quantile(float(item.above.strip('%'))/100) if above in item else float('inf')
-                df = df[(df[each_col] < q_hi) & (df[each_col] > q_low)]
+            condition = cleaner['condition']
+            for item in condition['items']:
+                ndf[item['col']] =  ndf[item['col']].astype(float)
+                q_low = ndf[item['col']].quantile(float(item['below'].strip('%'))/100) if 'below' in item else 0
+                q_hi = ndf[item['col']].quantile(float(item['above'].strip('%'))/100) if 'above' in item else 1
+                ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]
                 
        
     _setCache(user_id,EditedPrefix+filename,ndf)
@@ -621,7 +623,7 @@ def current_data_json():
     params = request.json
     filename = params['filename']
 
-    df = _getCache(EditedPrefix+filename) or _getCache(filename)
+    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)
     return jsonify(data=df.to_json())
 
 

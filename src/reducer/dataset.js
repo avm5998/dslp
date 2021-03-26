@@ -1,14 +1,16 @@
 import {createSlice} from '@reduxjs/toolkit'
-import {autoCacheData, dataFrameJSONObjectToReactTableData} from '../util/util'
+import {cacheData,cacheDataInfo, dataFrameJSONObjectToReactTableData} from '../util/util'
 
 const DEFAULT_DATASET = {
+    data:null,//data is persistent
+
+    //other info and filters is persistent at local storage 
     loading:false,
     loaded:false,
     filename:'',
-    data:null,
     dataCleaners:[],
     dataEngineering:[],
-    dataPreprossing:[],
+    dataPreprocessing:[],
     dataFeatureSelection:[],
     dataFilters:[],
     tableData:{
@@ -58,18 +60,29 @@ const slice = createSlice({
                 state.tableData = dataFrameJSONObjectToReactTableData(state.data)
             }
 
-            autoCacheData(state)
+            cacheDataInfo(state)
 
             //DO NOT DELETE, FOR FAST DEBUG
-            if(action) console.log(JSON.stringify({...DEFAULT_DATASET, loaded:true,tableData:state.tableData,...action.payload}))
+            // if(action) console.log(JSON.stringify({...DEFAULT_DATASET, loaded:true,tableData:state.tableData,...action.payload}))
+        },
+
+        emptyInfo(state,action){
+            state.dataCleaners = [];
+            state.dataEngineering = []
+            state.dataPreprocessing = []
+            state.dataFilters = []
+            state.dataFeatureSelection = []
+            cacheDataInfo(state)
         },
 
         setFilters(state,action){
             state.dataFilters = [...action.payload]
+            cacheDataInfo(state)
         },
-
+        
         setCleaners(state,action){
             state.dataCleaners = [...action.payload]
+            cacheDataInfo(state)
         },
         
         setProfile(state,action){

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import ifetch from 'isomorphic-fetch';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { config } from '../config/client'
+import authHeader from '../services/auth-header';
 
 /**
  * Assume
@@ -115,6 +116,7 @@ export async function fetchByJSON(url, obj) {
     return await ifetch(config.endpoint + url, {
         body: JSON.stringify(obj),
         headers: {
+            ...authHeader(),
             'content-type': 'application/json'
         },
         method: 'POST',
@@ -217,20 +219,63 @@ function getInitialForm(fields) {
     return form
 }
 
+/**
+ * use this function to get data from server when page rereshes
+ */
 export function useCachedData(){
-    let cached = localStorage.getItem('dataset')
-    let dataset = useSelector(state => state.dataset)
+    let info = null;
+
+    try{//Strange BUG!
+        info = JSON.parse(localStorage.getItem('info'))
+    }catch(e){
+
+    }
+
     let dispatch = useDispatch()
+    let dataset = useSelector(state=>state.dataset)
 
     useEffect(()=>{
-        if(!dataset.loaded && cached){
-            dispatch(DataSetActions.setData(JSON.parse(cached)))
-        }
+        if(dataset.data !== null || !info)
+            return
+            
+        (async function(){
+            let res = await fetchByJSON('handleCachedData',{
+                filename:info.filename
+            })
+        
+            let json = await res.json()
+    
+            if(json.modifiedJson){//use modified data
+                dispatch(DataSetActions.setData({...info,
+                    filename:info.filename,
+                    data: JSON.parse(json.modifiedJson),
+                }))
+            }else{//use initial data
+                dispatch(DataSetActions.setData({...info,
+                    filename:info.filename,
+                    data: JSON.parse(json.dataJSon),
+                    cols: json.cols,
+                    num_cols: json.num_cols,
+                    col_lists: json.col_lists,
+                    cate_cols: json.cate_cols,
+                    cate_lists: json.cate_lists,
+                    num_lists: json.num_lists
+                }))
+
+                dispatch(DataSetActions.emptyInfo())
+            }
+        })()
     },[])
 }
 
-export function autoCacheData(data){
-    localStorage.setItem('dataset',JSON.stringify(data))
+export function cacheDataInfo(data){
+    localStorage.setItem('info',JSON.stringify({...data,
+        data:null,
+        tableData:{
+            columns:[],
+            data:[]
+        },
+    }))
 }
 
 export function initialFormRadio(args) {
