@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { Button, DropDown, MultiSelect, RangeSelector } from '../../util/ui'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchByJSON, GetDataFrameInfo } from '../../util/util'
+import { fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { useTable, usePagination, useSortBy } from 'react-table'
 import Table from '../common/table'
@@ -34,6 +34,8 @@ const getQString = (type, numQuery = { min: Number.MIN_SAFE_INTEGER, max: Number
 
 
 const Page = () => {
+    useCachedData()
+
     let dataset = useSelector(state => state.dataset)
 
     let [searchColumn, setSearchColumn] = useState('Select a Column')
@@ -78,21 +80,14 @@ const Page = () => {
     }
 
     const queryFilter = async () => {
-        let res = await fetchByJSON('/query', {
+        let res = await fetchByJSON('query', {
             filters: JSON.stringify(dataset.dataFilters),
-            cacheResult: true,
             filename: dataset.filename
         })
 
         let json = await res.json()
 
-
         dispatch(DataSetActions.setData({
-            dataFilters:[],
-            dataFeatureSelection:[],
-            dataEngineering:[],
-            dataCleaners:[],
-            dataPreprossing:[],
             data: JSON.parse(json.data),
             cols: json.cols,
             num_cols: json.num_cols,
@@ -105,10 +100,10 @@ const Page = () => {
 
     return (<>
         <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 4rem)'}}>
-            <div className="flex flex-row h-24 w-full items-start justify-start shadow-sm bg-gray-100">
+            <div className="flex flex-row h-28 w-full items-end justify-start shadow-sm bg-gray-100">
 
                 <div className='mx-5 my-4 w-2/12'>
-                    <DropDown customStyle='h-10 w-72' customUlStyle={'w-72'} text={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
+                    <DropDown customStyle='h-8 w-72' customUlStyle={'w-72'} text={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
                         name,
                         onClick(e) {
                             setSearchColumn(name)
@@ -118,7 +113,7 @@ const Page = () => {
                     })) : []} />
                 </div>
 
-                <div className='mx-5 my-4 w-3/12 text-center'>
+                <div className='mx-5 mb-4 w-3/12 text-center'>
                     {queryType === QueryType.Numerical && dataset.num_lists[searchColumn].max && dataset.num_lists[searchColumn].min ?
                         <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
                             Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
@@ -130,12 +125,12 @@ const Page = () => {
                             : ''}
                 </div>
 
-                <div className='my-4 w-64'>
-                    <Button text="Add filter" customStyle='h-10 w-auto' onClick={addFilter} hoverAnimation={true} />
+                <div className='mb-4 w-64'>
+                    <Button text="Add filter" customStyle='h-8 w-auto' onClick={addFilter} hoverAnimation={true} />
                 </div>
 
-                <div className='mx-5 my-4 w-5/12'>
-                    <MultiSelect passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
+                <div className='mx-5 mb-4 w-5/12'>
+                    <MultiSelect allowDelete={false} customHeight='h-8' passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
                         dispatch(DataSetActions.setFilters(filters))
                     }} />
                 </div>

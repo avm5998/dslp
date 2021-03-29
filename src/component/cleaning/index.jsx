@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -9,28 +9,25 @@ import Table from '../common/table'
 import { data } from 'autoprefixer';
 import Tip from '../common/tip'
 
-const getQString = (subOption, condition) => {
-    return ''
-}
-
-const getDesc = (subOption, qString) => {
-
-}
+const CleanTypes = ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'];
 
 const Cleaning = () => {
+    useCachedData()
+    let multiSelect23Ref = useRef()
     let [option, setOption] = useState(-1)
     let [optionText, setOptionText] = useState('Select cleaning type')
     let dataset = useSelector(state => state.dataset)
     const getDefaultSubOptions = useCallback(() => {
-        let res = [...Array(6).keys()].map(e => ({}))
+        let res = [...Array(6).keys()].map(e => ({condition:{}}))
         res[4].refs = {}
-        res[5].belowRefs = {}
         res[5].aboveRefs = {}
+        res[5].belowRefs = {}
         return res
     }, [])
     let cleaningCondition = useRef(getDefaultSubOptions())
     let [subOptionText, setSubOptionText] = useState('Input values')
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
+    let dispatch = useDispatch()
 
     useEffect(() => {
         queryCleaner()
@@ -38,14 +35,14 @@ const Cleaning = () => {
 
     const onConfirm = (e) => {
         if (option === -1) return
-        let qString = getQString(option, cleaningCondition.current)
+
         let cleaners = [...dataset.dataCleaners]
-        let exist = filters.some(f => f.subOption === option && f.qString === qString)
-        if (exist) return
+        // let exist = filters.some(f => f.subOption === option && f.qString === qString)
+        // if (exist) return
         cleaners.push({
-            subOption: option,
-            qString,
-            desc: getDesc(option, qString)
+            option: option,
+            condition: cleaningCondition.current[option].condition,
+            desc:CleanTypes[option]
         })
 
         dispatch(DataSetActions.setCleaners(cleaners))
@@ -53,21 +50,21 @@ const Cleaning = () => {
 
     const onConfirmSubOption = () => {
         if (option === 4) {
-            let res = []
+            let items = []
             let refs = cleaningCondition.current[4].refs
             for (let p in refs) {
                 let value = refs[p].value
 
                 if (value)
-                    res.push({
-                        key: p,
-                        value: refs[p].value
+                    items.push({
+                        col: p,
+                        val: refs[p].value
                     })
             }
-            cleaningCondition.current[4].res = res
-            if (res.length) setSubOptionText('Edit values')
-        } else {
-            let res = {}
+            cleaningCondition.current[4].condition.items = items
+            if (items.length) setSubOptionText('Edit values')
+        } else if (option === 5){
+            let itemObj = {}
             let belowRefs = cleaningCondition.current[5].belowRefs
             let aboveRefs = cleaningCondition.current[5].aboveRefs
 
@@ -75,8 +72,8 @@ const Cleaning = () => {
                 let value = belowRefs[p].value
 
                 if (value){
-                    res[p] = res[p] || {}
-                    res[p].below = value
+                    itemObj[p] = itemObj[p] || {}
+                    itemObj[p].below = value
                 }
             }
 
@@ -84,44 +81,57 @@ const Cleaning = () => {
                 let value = aboveRefs[p].value
 
                 if (value){
-                    res[p] = res[p] || {}
-                    res[p].above = value
+                    itemObj[p] = itemObj[p] || {}
+                    itemObj[p].above = value
                 }
             }
 
-            if (Object.keys(res).length) setSubOptionText('Edit values')
+            if (Object.keys(itemObj).length) setSubOptionText('Edit values')
+
+            let items = []
+            for(let key in itemObj){
+                items.push({
+                    col:key,
+                    above:itemObj[key].above,
+                    below:itemObj[key].below,
+                })
+            }
+
+            cleaningCondition.current[5].condition.items = items
         }
 
-        console.log(cleaningCondition.current);
         setShowSubOptionModal(false)
     }
 
     const queryCleaner = async () => {
-        // let res = await fetchByJSON('/clean', {
-        //     cleaners: JSON.stringify(dataset.cleaners),
-        //     cacheResult: true,
-        //     filename: dataset.filename
-        // })
+        let res = await fetchByJSON('clean', {
+            cleaners: JSON.stringify(dataset.dataCleaners),
+            filename: dataset.filename
+        })
 
-        // let json = await res.json()
-        // dispatch(DataSetActions.setData({
-        //     data: JSON.parse(json.data),
-        //     cols: json.cols,
-        //     num_cols: json.num_cols,
-        //     col_lists: json.col_lists,
-        //     cate_cols: json.cate_cols,
-        //     cate_lists: json.cate_lists,
-        //     num_lists: json.num_lists
-        // }))
+        let json = await res.json()
+        dispatch(DataSetActions.setData({
+            data: JSON.parse(json.data),
+            cols: json.cols,
+            num_cols: json.num_cols,
+            col_lists: json.col_lists,
+            cate_cols: json.cate_cols,
+            cate_lists: json.cate_lists,
+            num_lists: json.num_lists
+        }))
     }
 
+    useEffect(()=>{
+        queryCleaner()
+    },[dataset.dataCleaners])
+
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
-        <Tip info={{
+        {/* <Tip info={{
             '#confirmBtn':'Just confirm your data',
-            '#dropdownClean':`What is data cleaning?
-            Data cleaning is the process of fixing or removing incorrect, corrupted, incorrectly formatted, duplicate, or incomplete data within a dataset.
-            When combining multiple data sources, there are many opportunities for data to be duplicated or mislabeled. If data is incorrect, outcomes and algorithms are unreliable, even though they may look correct. There is no one absolute way to prescribe the exact steps in the data cleaning process because the processes will vary from dataset to dataset. But it is crucial to establish a template for your data cleaning process so you know you are doing it the right way every time.`,
-    }}/>
+            // '#dropdownClean':`What is data cleaning?
+            // Data cleaning is the process of fixing or removing incorrect, corrupted, incorrectly formatted, duplicate, or incomplete data within a dataset.
+            // When combining multiple data sources, there are many opportunities for data to be duplicated or mislabeled. If data is incorrect, outcomes and algorithms are unreliable, even though they may look correct. There is no one absolute way to prescribe the exact steps in the data cleaning process because the processes will vary from dataset to dataset. But it is crucial to establish a template for your data cleaning process so you know you are doing it the right way every time.`,
+    }}/> */}
         <Modal isOpen={showSubOptionModal} setIsOpen={setShowSubOptionModal} onClose={onConfirmSubOption} contentStyleText="mx-auto mt-20" style={{ maxWidth: '35%' }}>
             <div className='p-5 flex flex-col'>
                 <div className="flex flex-col">
@@ -155,26 +165,29 @@ const Cleaning = () => {
             </div>
         </Modal>
 
-        <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
+        <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
 
-            <div className='mx-5 my-10 w-5/12'>
+            <div className='mx-5 w-3/12'>
                 <DropDown id="dropdownClean" text={optionText} customStyle='h-10 w-72' customUlStyle={'w-72'} items={
-                    ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'].map((item, i) => ({
+                    CleanTypes.map((item, i) => ({
                         name: item, onClick(e) {
                             {/*0                      1                2                       3                        4                            5 */ }
                             setOption(i)
                             setOptionText(item)
+                            if (multiSelect23Ref.current){
+                                multiSelect23Ref.current.clear()
+                            }
                             if (i === 4 || i === 5) {
                                 setShowSubOptionModal(true)
                             }
                         }
                     }))} />
             </div>
-            <div className='mx-5 my-10 w-5/12'>
+            <div className='mx-5 w-3/12'>
                 {/* Select a column and apply a cleaner */}
-                {(option === 2 || option === 3) ? <MultiSelect selections={dataset.num_cols}
+                {(option === 2 || option === 3) ? <MultiSelect ref={multiSelect23Ref} customHeight={`h-10`} selections={dataset.num_cols}
                     onSelect={(e) => {
-                        cleaningCondition.current[option].options = e
+                        cleaningCondition.current[option].condition.cols = e
                     }}
                 /> : ''}
 
@@ -188,8 +201,13 @@ const Cleaning = () => {
                     : ''}
             </div>
 
-            <div className='mx-5 my-10 w-5/12'>
-                <Button id='confirmBtn' text='Confirm' onClick={onConfirm} />
+            <div className='mx-5 w-3/12'>
+                    <MultiSelect customHeight={`h-10`} defaultText={`Applied cleaners`} allowDelete={false} passiveMode={true} selections={dataset.dataCleaners} getDesc={e => e.desc} onSelect={filters => {
+                    }} />
+                </div>
+
+            <div className='mx-5 w-3/12'>
+                <Button id='confirmBtn' customStyle={`h-10`} text='Confirm' onClick={onConfirm} />
             </div>
         </div>
         <Table PageSize={10} />

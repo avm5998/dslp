@@ -24,7 +24,7 @@ const FS = () => {
             <div className='p-5 flex flex-col'>
                 <div className='grid grid-cols-2 gap-4'>
                     <div className='flex items-center'>Variables X = </div>
-                    <MultiSelect defaultText='Select Variables X' wrapSelection={false} customWidth={'w-96 flex-nowrap'} customHeight={'h-auto'} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.variablesx = e}/>
+                    <MultiSelect customHeight={'h-10'} customWidth={'w-96'} defaultText='Select Variables X' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.variablesx = e}/>
                     <div className='flex items-center'>Target Y = </div>
                     <DropDown defaultText={'Select Target Y'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={dataset.cols} onSelect={e=>result.targety = e}/>
                     <div className='flex items-center'>Select K=? Best Features </div>
@@ -61,15 +61,17 @@ const FS = () => {
                 </div> */}
             </div>
         </Modal>
-        <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
-            <div className='mx-5 my-10 w-8/12 flex justify-start'>
-                <Button text={optionText} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+        <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
+            <div className='mx-5 w-8/12 flex justify-start'>
+                <Button text={optionText} customStyle={'h-6 w-48 ml-10 py-0'} onClick={()=>{
                     setShowSubOptionModal(s=>!s)
+                }}/>
+                <Button disabled={!dataset.dataFeatureSelection.length} text={'Cancel operation'} customStyle={'h-6 w-48 ml-10 py-0'} onClick={()=>{
                 }}/>
             </div>
 
-            <div className='mx-5 my-10 w-3/12'>
-                <MultiSelect selections={dataset.dataFeatureSelection} passiveMode={true} />
+            <div className='mx-5 w-3/12'>
+                {/* <MultiSelect defaultText={'Selected operation'} customHeight={`h-10`} selections={dataset.dataFeatureSelection} passiveMode={true} /> */}
             </div>
         </div>
         <Table PageSize={10}/>

@@ -5,12 +5,12 @@ import { useImperativeHandle } from 'react'
 
 export const Input = forwardRef(({
     attrs,
-    customStyle='',
-    placeholder='',
-    onInput = ()=>{},
-    defaultValue=''
+    customStyle = '',
+    placeholder = '',
+    onInput = () => { },
+    defaultValue = ''
 }, ref) => {
-    return <input ref={ref} {...attrs} className={`py-1 px-2 rounded-sm focus:outline-none ${customStyle?customStyle:'w-full'}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue}/>
+    return <input ref={ref} {...attrs} className={`py-1 px-2 rounded-sm focus:outline-none ${customStyle ? customStyle : 'w-full'}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue} />
 })
 
 export const DropDownInput = forwardRef(({
@@ -21,7 +21,7 @@ export const DropDownInput = forwardRef(({
     customStyle,
     customUlStyle,
     hideArrow,
-    onInput = ()=>{},
+    onInput = () => { },
     showOnHover = true,
     controlledOpen = false,
     openState = false,
@@ -32,7 +32,7 @@ export const DropDownInput = forwardRef(({
     let [currentText, setCurrentText] = useState(defaultText)
     let buttonRef = useRef()
     let ulRef = useRef()
-    
+
     useImperativeHandle(ref, () => ({
         hide: () => {
             setOpenUl(false)
@@ -69,45 +69,50 @@ export const DropDownInput = forwardRef(({
             </span>
         </button>
         <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'opened' : 'closed')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
-            {items.map((item,index) => <li key={item.name} style={{borderTopWidth:index?'1px':'0px'}} className={`border-gray-200 bg-white cursor-default rounded text-gray-800 px-3 hover:bg-gray-100 z-auto py-2`}>
+            {items.map((item, index) => <li key={item.name} style={{ borderTopWidth: index ? '1px' : '0px' }} className={`border-gray-200 bg-white cursor-default rounded text-gray-800 px-3 hover:bg-gray-100 z-auto py-2`}>
                 <div className='flex flex-row flex-nowrap h-full justify-center items-center w-full '>
-                    <div className='my-1 flex items-center justify-start' style={{width:`${nameWidthPercent}%`}}>{item.name}</div>
-                    <div className='border-1 rounded-sm border-gray-300' style={{width:`${100-nameWidthPercent}%`}}>
-                        <input className='focus:outline-none outline-none px-2 py-1 w-full' onInput={e=>{
-                        onInput(item.name,index,e.target.value)
-                    }}/></div>
+                    <div className='my-1 flex items-center justify-start' style={{ width: `${nameWidthPercent}%` }}>{item.name}</div>
+                    <div className='border-1 rounded-sm border-gray-300' style={{ width: `${100 - nameWidthPercent}%` }}>
+                        <input className='focus:outline-none outline-none px-2 py-1 w-full' onInput={e => {
+                            onInput(item.name, index, e.target.value)
+                        }} /></div>
                 </div>
             </li>)}
         </ul>
     </div>)
 })
 
-export function Label({ pos = 'left', text = '', customStyle='' }) {
+export function Label({ pos = 'left', text = '', customStyle = '' }) {
     return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{text}</div>)
 }
 
 export function Button({
-    id, text, onClick = () => { }, disabled = false, disabledText = text, hoverAnimation = true, customStyle = '', overrideClass = ''
+    id, text, onClick = () => { }, disabled = false, disabledText = text, 
+    hoverAnimation = true, customStyle = '', overrideClass = '', hasPadding = true
 }) {
     return <button id={id} onClick={onClick} disabled={disabled} className={
         overrideClass ? overrideClass : `
     ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
                 `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500 border-1' : 'bg-transparent bg-blue-400 text-blue-400 border-blue-400 border-1'} cursor-pointer`} 
-    rounded font-semibold py-2 px-4 focus:outline-none ${customStyle}`}>
+    rounded font-semibold ${hasPadding?'px-4':''} focus:outline-none ${customStyle}`}>
         {disabled ? disabledText : text}
     </button>
 }
 
-export const MultiSelect = forwardRef(({ controlledOpen = false, openState = false, defaultText = '', wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, customHeight = '', customWidth = '' }, ref) => {
+export const MultiSelect = forwardRef(({ controlledOpen = false, openState = false, defaultText = '', 
+wrapSelection = true, selections, onSelect, passiveMode = false, getDesc = e => e, defaultOpen = true, 
+customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref) => {
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
-
     useImperativeHandle(ref, () => ({
         hide: () => {
             buttonRef.current.classList.toggle('rotate180')
             menuRef.current.classList.add('invisible')
-        }
+        },
+        clear:()=>{
+            setSelected([])
+        },
     }))
 
     useEffect(() => {
@@ -117,7 +122,7 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
         }
 
         if (!defaultOpen)
-            toggleMenu()
+            toggleMenu(false)
     }, [selections])
 
     useEffect(() => {
@@ -138,24 +143,24 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
             menuRef.current.classList.add('invisible')
         }
     }
-
-    return (<div className={`${customHeight ? customHeight : 'h-64'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-center mx-auto`}>
-        <div className="w-full">
-            <div className="flex flex-col items-center relative">
-                <div className="w-full">
-                    <div className="p-1 flex border border-gray-200 bg-white rounded">
-                        <div className={`flex flex-auto ${wrapSelection ? 'flex-wrap' : 'flex-nowrap overflow-hidden'}`} onClick={() => {
+    
+    return (<div className={`${allowWrap?'':'flex-nowrap'} ${customHeight ? customHeight : 'h-auto'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-start`}>
+        <div className="w-full h-full">
+            <div className="w-full h-full flex flex-col items-center relative">
+                <div className="w-full h-full">
+                    <div className="w-full h-full box-border px-2 flex border border-gray-400 bg-white rounded">
+                        <div className={`py-1 flex flex-auto ${wrapSelection ? 'flex-wrap' : 'flex-nowrap overflow-hidden'}`} onClick={() => {
                             if (!selected.length) toggleMenu()
                         }}>
                             {selected.map(e =>
-                                <div key={e} className="flex justify-center items-center font-medium py-1 px-2 bg-white rounded-full text-blue-700 bg-blue-100 border border-blue-300 ">
+                                <div key={e} className="flex justify-center items-center font-medium box-border h-full px-2 bg-white rounded-full text-blue-700 border border-blue-300 ">
                                     <div className="text-xs font-normal leading-none max-w-full flex-initial">{getDesc(e)}</div>
-                                    <div className="flex flex-auto flex-row-reverse">
-                                        <div onClick={() => setSelected(all => {
+                                    <div className={`${allowDelete?'':'hidden'} flex flex-auto flex-row-reverse`}>
+                                        <div onClick={() => {if(allowDelete) setSelected(all => {
                                             all.splice(all.indexOf(e), 1)
                                             onSelect(all)
                                             return [...all]
-                                        })}>
+                                        })}}>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-x cursor-pointer hover:text-blue-400 rounded-full w-4 h-4 ml-2">
                                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -165,10 +170,10 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
                                 </div>
                             )}
                             <div className="flex-1" >
-                                <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} text-center bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800`} />
+                                <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} text-center bg-transparent px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
-                        <div className="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200" onClick={() => toggleMenu()}>
+                        <div className="text-gray-400 w-4 flex items-center border-gray-200" onClick={() => toggleMenu()}>
                             <button ref={buttonRef} className="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-chevron-up w-4 h-4">
                                     <polyline points="18 15 12 9 6 15"></polyline>
@@ -185,7 +190,7 @@ export const MultiSelect = forwardRef(({ controlledOpen = false, openState = fal
                                 <div className={`flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative`} onClick={() => setSelected(all => {
                                     if (all.indexOf(selection) === -1)
                                         all.push(selection)
-                                    else
+                                    else if(allowDelete)
                                         all.splice(all.indexOf(selection), 1)
                                     onSelect(all)
                                     return [...all]
@@ -208,6 +213,9 @@ export const DropDown = forwardRef(({
     text,
     defaultText = undefined,
     items = [],
+    additionalInput = false,
+    additionalInputPosition = 'bottom',
+    additionalInputPlaceholder,
     onSelect,
     customStyle,
     customUlStyle,
@@ -219,6 +227,8 @@ export const DropDown = forwardRef(({
 }, ref) => {
     let ulRef = useRef(null)
     let buttonRef = useRef(null)
+    let inputParentRef = useRef(null)
+    let inputRef = useRef(null)
     let [ulOpen, setOpenUl] = useState(0)
     let [currentText, setCurrentText] = useState(defaultText)
 
@@ -238,19 +248,55 @@ export const DropDown = forwardRef(({
         items = items.map((name, i) => ({
             name,
             onClick() {
-                onSelect(name, i)
+                onSelect(name, i, 'select')
                 return false
             }
         }))
     }
 
-    let hasControl = defaultText !== undefined //give control to component itself
+    const closeUl = useCallback(()=>{
+        if (!showOnHover) {
+            setOpenUl(false)
+        } else {
+            ulRef.current.style.display = 'none'
+            setTimeout(() => {
+                ulRef.current.style.display = ''
+            }, 0)
+        }
+    },[showOnHover,ulRef])
+
+    let hasControl = defaultText !== undefined //give control to DropDown component itself
+
+    let AdditionalInput = <li>
+        <div ref={inputParentRef} className='cursor-pointer p-2 flex flex-row flex-nowrap justify-start items-center' onClick={e=>{
+            if(e.target === inputParentRef.current){
+                if (hasControl && inputRef.current) {
+                    setCurrentText(inputRef.current.value)
+                    onSelect(inputRef.current.value,null,'input')
+                }
+                
+                closeUl()
+            }
+        }}>
+            <input ref={inputRef} onKeyDown={e=>{
+                if(e.keyCode==13){
+                    if (hasControl) {
+                        setCurrentText(e.target.value)
+                        onSelect(e.target.value,null,'input')
+                    }
+
+                    closeUl()
+                }
+            }} className='cursor-auto border w-2/3 py-1 px-2 rounded-sm focus:outline-none' placeholder={additionalInputPlaceholder}/>
+        </div>
+    </li>
+
     return (<div className="w-full dropdown group inline-block">
         <button id={id} onClick={() => {
             if (!showOnHover) {
                 setOpenUl(s => !s)
             }
-        }} ref={buttonRef} className={`outline-none focus:outline-none border px-3 py-1 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
+        }} ref={buttonRef} className={`box-border outline-none focus:outline-none border px-2 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
             <span className="pr-1 text-gray-400 flex-1">{hasControl ? currentText : text}</span>
             <span className={`${hideArrow ? 'hidden' : ''}`} >
                 <svg
@@ -262,52 +308,38 @@ export const DropDown = forwardRef(({
             </span>
         </button>
 
-        <ul ref={ulRef} className={`${customUlStyle} bg-white border rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?'border':''} rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+            {<>
+            {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
             {items.map(item => {
 
-                return item.items ?
-                    <li key={item.name} className="rounded-sm relative px-3 py-1 hover:bg-gray-100">
-                        <button className="w-full text-left flex items-center outline-none focus:outline-none">
-                            <span className="pr-1 flex-1">{item.name}</span>
-                            <span className={`mr-auto`}>
-                                <svg className="fill-current h-4 w-4 transition duration-150 ease-in-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path
-                                        d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"
-                                    />
-                                </svg>
-                            </span>
-                        </button>
-                        <ul className="bg-white border rounded absolute top-0 right-0 transition duration-150 ease-in-out origin-top-left min-w-32">
-                            {item.items.map(subItem =>
-                                <li key={subItem.name} className="bg-white text-gray-800 p-3 cursor-pointer px-3 py-1 hover:bg-gray-100" onClick={subItem.onClick}>{subItem.name}</li>
-                            )}
-                        </ul>
-                    </li>
-                    : <li key={item.name} className={`bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
-                        if (disabledRef.current) {
-                            e.preventDefault()
-                            return
-                        }
+                return <li key={item.name} className={`box-border bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
+                    if (disabledRef.current) {
+                        e.preventDefault()
+                        return
+                    }
 
-                        let res = item.onClick(e)
+                    let res = item.onClick(e)
 
-                        if (hasControl) {
-                            setCurrentText(item.name)
-                        }
+                    if (hasControl) {
+                        setCurrentText(item.name)
+                    }
 
-                        if (res === false) {//hide dropdown
-                            if (!showOnHover) {
-                                setOpenUl(s => !s)
-                            } else {
-                                ulRef.current.style.display = 'none'
-                                setTimeout(() => {
-                                    ulRef.current.style.display = ''
-                                }, 0)
-                            }
+                    if (res === false) {//hide dropdown
+                        if (!showOnHover) {
+                            setOpenUl(s => !s)
+                        } else {
+                            ulRef.current.style.display = 'none'
+                            setTimeout(() => {
+                                ulRef.current.style.display = ''
+                            }, 0)
                         }
-                    }}>{item.name}</li>
+                    }
+                }}>{item.name}</li>
             }
             )}
+            {additionalInput && additionalInputPosition === 'bottom'?AdditionalInput:''}
+            </>}
         </ul>
     </div>)
 })
@@ -405,7 +437,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
                 {/* left */}
                 <div ref={ref => { if (ref && leftX == -1) setLeftX(ref.getBoundingClientRect().x) }} draggable={true} onDragStart={dragStart} onDragEnd={dragComplete} onDrag={dragLeft} className="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer" style={{ left: `${left}%` }}>
                     <div className="relative -mt-2 w-1">
-                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ marginLeft: '-25px' }}>
+                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(-50%)' }}>
                             <div className="relative shadow-md" data-text onDoubleClick={() => setShowMinInput(true)}>
                                 {showMinInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-3 left-0 w-16 absolute truncate rounded bg-black text-white text-xs py-1 px-4" onBlur={confirmMinInput} onKeyDown={e => e.keyCode === 13 ? confirmMinInput(e) : ''} /> : ''}
                                 <div className="bg-black -mt-8 -ml-3 text-white truncate text-xs rounded py-1 px-3 w-16 text-center">{leftText}</div>
@@ -420,7 +452,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
                 {/* right */}
                 <div ref={ref => { if (ref && rightX == -1) setRightX(ref.getBoundingClientRect().x) }} draggable={true} onDragStart={dragStart} onDragEnd={dragComplete} onDrag={dragRight} className="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer" style={{ left: `${right}%` }}>
                     <div className="relative -mt-2 w-1">
-                        <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ marginLeft: '-25px' }}>
+                        <div className="absolute z-40 opacity-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(-50%)' }}>
                             <div className="relative shadow-md" data-text onDoubleClick={() => setShowMaxInput(true)}>
                                 {showMaxInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-2 left-0 w-16 absolute truncate rounded bg-black text-white text-xs py-1 px-4" onBlur={confirmMaxInput} onKeyDown={e => e.keyCode === 13 ? confirmMaxInput(e) : ''} /> : ''}
                                 <div className="bg-black mt-4 -ml-2 text-white truncate text-xs rounded py-1 px-3 w-16 text-center">{rightText}</div>

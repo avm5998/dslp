@@ -54,6 +54,7 @@
   }
   
   .form-label-group input:not(:placeholder-shown) {
+    box-sizing:border-box;
     padding-top: 1.25rem;
     padding-bottom: .25rem;
   }

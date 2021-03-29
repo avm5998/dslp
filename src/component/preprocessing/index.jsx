@@ -151,7 +151,7 @@ const Preprocessing = () => {
                 }}/> */}
             </div>
             <div className='mx-5 my-10 w-3/12'>
-                <MultiSelect selections={dataset.dataPreprossing} passiveMode={true} />
+                <MultiSelect selections={dataset.dataPreprocessing} passiveMode={true} />
             </div>
         </div>
         <Table PageSize={10}/>
