@@ -35,7 +35,8 @@ from flask_bcrypt import Bcrypt
 from resources.errors import InternalServerError, SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
     EmailDoesnotExistsError, BadTokenError
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
-from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, jwt_required
+from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
+    jwt_required
 from database.models import User
 from bson.objectid import ObjectId
 import collections
@@ -323,7 +324,7 @@ def getDataFrameDetails(df):
 
 
 @app.route('/uploadFile',methods=['POST'])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt_required()
 def uploadFile():
     file = request.files['file']
@@ -400,13 +401,19 @@ def _getCache(uid,name):
         _setCache(uid,key,df)
     return df
 
+# def get_user_id():
+
+
 @app.route('/visualization',methods=['POST'])
+# @cross_origin(headers=['Content-Type', 'Authorization'])
+# @cross_origin(headers=['Content-Type', 'application/json'])
+# @cross_origin(headers=['Access-Control-Allow-Origin', '*'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def visualization():
-    user_id = get_jwt_identity()
-    params = request.json
+    params = json.loads(request.data)
     vis_type = params['type']
+    user_id = get_jwt_identity()
     df = _getCache(user_id, params['filename'])
     code=''
 
@@ -481,10 +488,10 @@ def visualization():
     fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
     plt.close()
     imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
-
+    return jsonify(base64=imgStr,format=ImgFormat,resData = resData, code=code)
 @app.route('/query',methods=['POST'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def query():
     user_id = get_jwt_identity()
     params = request.json
@@ -527,7 +534,7 @@ MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 # TODO is it better to store the current version of modified data each time the data's been modified?
 @app.route('/handleCachedData', methods=['POST'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def handleCachedData():
     user_id = get_jwt_identity()
     params = request.json
@@ -548,7 +555,7 @@ def handleCachedData():
 
 @app.route('/cleanEditedCache', methods=['POST'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def cleanEditedCache():
     user_id = get_jwt_identity()
     params = request.json
@@ -565,7 +572,7 @@ def cleanEditedCache():
 # }
 @app.route('/clean', methods=['POST'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def cond_clean_json():
     user_id = get_jwt_identity()
     web = []
@@ -617,7 +624,7 @@ def cond_clean_json():
 
 @app.route('/current_data_json', methods=['POST']) #/query
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def current_data_json():
     user_id = get_jwt_identity()
     params = request.json

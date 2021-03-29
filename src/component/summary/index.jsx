@@ -10,6 +10,9 @@ import placeholderImg from '../../assets/images/placeholder.jpg'
 import Help from '../common/help'
 import useClipboard from "react-use-clipboard";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {config} from '../../config/client'
+
+const API_URL = config.endpoint
 
 const PageModal = ({ isOpen, setIsOpen }) => {
   return (<Modal isOpen={isOpen} setIsOpen={setIsOpen}>
@@ -77,18 +80,16 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
     },
     onSubmit: async (e) => {
       let formData = form.getData()
-      // console.log(formData);
-      // if(!curCol) return
       Object.assign(formData, {
         isnumeric: dataset.num_cols.indexOf(curCol) !== -1,
         filename: dataset.filename,
         col: curCol,
         type: 'variables'
       })
-
-      // console.log(formData);
-
-      let res = await fetchByJSON('/visualization', formData)
+      console.log("form data")
+      // console.log(typeof(formData))
+      let data = JSON.stringify(formData);
+      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data});
       let json_data = await res.json()
       console.log(json_data['code'])
       setCode(json_data['code'])
@@ -210,12 +211,13 @@ const Interactions = ({ tabpanelIndex, tabpanel }) => {
     if (col1 !== col2) {
       (async () => {
         disabledRef.current = true
-        let res = await fetchByJSON('/visualization', {
+        let data = JSON.stringify({
           type: 'interactions',
           filename: dataset.filename,
           col1: dataset.num_cols[col1],
           col2: dataset.num_cols[col2],
         })
+        let res = await fetch(API_URL+'/visualization', {method:'POST', body:data});
 
         let json = await res.json()
         setCode(json['code'])
@@ -260,11 +262,12 @@ const Correlations = ({ tabpanelIndex, tabpanel }) => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
 
     (async () => {
-      let res = await fetchByJSON('/visualization', {
+       let data = JSON.stringify({
         type: 'correlations',
         filename: dataset.filename,
         cmap: 'cool'
       })
+      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data});
 
       let json = await res.json()
       setCode(json['code'])
