@@ -31,12 +31,18 @@ import ResetPasswordConfirm from './component/reset_password/reset_password.comp
 import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
 
+import vivek_profile from './assets/images/vivek_profile.jpg'
+import arrow from './assets/images/arrow.svg'
+
 import { history } from './store';
+
+import './route.css'
 //add all solid icon-fonts
 library.add(fas)
 library.add(far)
 
 const Menu = {
+    'User':[], 
     'Main': [
         { text: 'Upload Data', icon: 'home', to: '/' },
         { text: 'Summary', icon: 'chart-area', to: '/summary' },
@@ -72,6 +78,7 @@ const Routes = (props) => {
     
     let dataset = useSelector(state => state.dataset)
     let [menuData, setMenuData] = useState(Menu)
+    let [toggle, setToggle] = useState(false)
 
     useEffect(() => {
         setMenuData(data => {
@@ -92,7 +99,7 @@ const Routes = (props) => {
     return (
         <Router history={history} >
         <div>
-            <section class="navigation">
+        {     !currentUser && <section class="navigation">
                 <div class="nav-container">
                     <div class="brand">
                     <Link to={"/"}>
@@ -102,37 +109,7 @@ const Routes = (props) => {
                     <nav>
                         <div class="nav-mobile"><a id="nav-toggle" href=""><span></span></a></div>
             
-                    {currentUser ? (
-                        <ul class="nav-list">
-                                    <li>
-                                        <a href="/login" onClick={logOut}>
-                                                Sign out
-                                        </a>
-                                    </li>
-                                    <li>
-                                        {/* <a>        
-                                            <img src="src\assets\images\vivek_profile.jpg" className='profile-img'/>
-                                        </a> */}
-
-
-                                        <ul class="nav-dropdown">
-                                            <li>
-                                            <a href="">Signed in as {currentUser.username}</a>
-                                            <div className='dropdown-divider'></div>
-                                            </li>
-
-                                            <li>
-                                            <a href="/profile">Your Profile</a>
-                                            </li>
-                                            <li>
-                                            <a href="">Settings</a>
-                                            </li>
-
-                                        </ul>       
-                                    </li>
-                                </ul>
-                    ):
-                    (
+                    
                         <ul class="nav-list">
                                     <li>
                                         <Link to={"/login"} >
@@ -146,33 +123,72 @@ const Routes = (props) => {
                                     </Link>
                                     </li>
                             </ul>
-                    )
-                    }
                  </nav>
                 </div>
                     
-            </section>
+            </section>}
 
             <div>
-                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-80'>
+                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-600'>
                 {
                 
                     currentUser &&(
                         <div className='fixed flex flex-col left-0 w-2/12 bg-white h-full border-r'>
 
-                            <div className="flex items-center justify-center h-14 border-b">
+                            <div className="flex items-center justify-center h-14 bg-gray-900 border-b">
                                 <div>Awesome data mining</div>
                             </div>
 
-                            <div className="overflow-y-auto overflow-x-hidden flex-grow">
+                            <div className="overflow-y-auto bg-gray-800 overflow-x-hidden flex-grow">
+                                <div className="user flex" onClick={() => setToggle(!toggle)}>
+                                    <div className="user-details w-full">
+                                        <div className="profilepic" size ="40">
+                                            <img className="img" src={vivek_profile}/>
+                                        </div>
+                                        <div className="Id">
+                                            <div className="userId">
+                                            vg4838
+                                            </div>
+                                        
+                                        </div>
+                                        <span className="arrow-span pl-16 py-1">
+                                            <div className="arrow-div">
+                                                <img src={arrow} />
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <div className={toggle? "profile-dropdown bg-gray-100 text-gray-600":"hidden invisible"} >
+                                        <ul class="dropdown-items">
+                                            <li>
+                                            <a href="">Signed in as {currentUser.username}</a>
+                                            <div className=''></div>
+                                            </li>
+                                            <hr className="hor-row"/>
+                                            <li>
+                                            <a href="/profile">Your Profile</a>
+                                            </li>
+                                            <li>
+                                            <a href="">Settings</a>
+                                            </li>
+                                            <hr className="hor-row"/>
+                                            <li>
+                                                <a href="/login" onClick={logOut}>
+                                                        Sign out
+                                                </a>
+                                            </li>
+                                        </ul>       
+                                    </div>
+                                </div>
+                                
+                                <hr className="hor-row"/>
                                 <ul className="flex flex-col py-4 space-y-1">
                                     {Object.keys(menuData).map(menu =>
                                         <React.Fragment key={menu}>
-                                            <li className="px-5">
+                                            {/* <li className="px-5">
                                                 <div className="flex flex-row items-center h-8">
                                                     <div className="text-sm font-light tracking-wide text-gray-500">{menu}</div>
                                                 </div>
-                                            </li>
+                                            </li> */}
 
                                             {Menu[menu].map(item =>
                                                 <li key={item.text}>
