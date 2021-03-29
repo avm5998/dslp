@@ -43,6 +43,28 @@ const Preprocessing = () => {
         return res
     }, [])
 
+    // sophie add onConfirm
+    useEffect(() => { 
+        queryPreprocess()
+    },  [dataset.dataPreprossing])
+
+    const queryPreprocess = async() => {}
+    const onConfirm = (e) => {
+        if (option === -1) return
+        let qString = getQString(option, cleaningCondition.current)
+        let prep = [...dataset.dataPreprossing]
+        let exist = filters.some(f => f.subOption === option && f.qString === qString)
+        if (exist) return
+        cleaners.push({
+            subOption: option,
+            qString,
+            desc: getDesc(option, qString)
+        })
+
+        dispatch(DataSetActions.setCleaners(cleaners))
+    }
+
+
     let dispatch = useDispatch()
     let subOption = useRef(getDefaultSubOptions())
 
@@ -50,6 +72,8 @@ const Preprocessing = () => {
     let {select : select1,getData: getData1} = useSimpleForm()
     let {input : input3,getData: getData3} = useSimpleForm()
     let {input : input4,getData: getData4} = useSimpleForm()
+
+
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showSubOptionModal} onClose={()=>{
@@ -121,9 +145,10 @@ const Preprocessing = () => {
                         setShowSubOptionModal(true)
                     }
                 }}/>
-
-                <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
-                }}/>
+                
+                <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={onConfirm}/>
+                {/* <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+                }}/> */}
             </div>
             <div className='mx-5 my-10 w-3/12'>
                 <MultiSelect selections={dataset.dataPreprossing} passiveMode={true} />

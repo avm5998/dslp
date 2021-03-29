@@ -564,7 +564,7 @@ def cond_clean_json(filename):
     if autoReplace:
         ndf = ndf.replace(MISSING_VALUES, np.nan)
         
-    for filter in filters:
+    for filter in filters:#clearners?
         subOption = filter['subOption']
         # 0 Remove N/A Rows
         # 1 Remove N/A Columns
@@ -598,6 +598,202 @@ def cond_clean_json(filename):
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+
+
+# Sophie merged--> need modify 
+@app.route('/analysis', methods=['POST']) # regression
+@cross_origin()
+def cond_regression_json(filename):
+    web = []
+    params = request.json
+    cacheResult = params['cacheResult']
+    autoReplace = params['autoReplace']
+    filename = params['filename']
+    prep = json.loads(params['result'])
+    df = _getCache(filename)
+    # print(prep)
+    test_size = params['test_size_lr']
+    print(test_size)
+
+    # if autoReplace:
+    #     ndf = ndf.replace(MISSING_VALUES, np.nan)
+        
+    # for filter in prep:
+    #     subOption = filter['subOption']
+        # 0 Remove N/A Rows
+        # 1 Remove N/A Columns
+        # 2 Replace N/A By Mean 
+        # 3 Replace N/A By Median 
+        # 4 Replace N/A By Specific Value 
+        # 5 Remove Outliers 
+        # if subOption == 2:
+        #     condition = filter['condition']
+        #     for col in range(condition.cols):
+        #         df[col].fillna(df[col].astype(float).mean(), inplace=True)
+        # elif subOption == 3:
+        #     condition = filter['condition']
+        #     for col in range(condition.cols):
+        #         df[col].fillna(df[col].astype(float).median(), inplace=True)
+        # elif subOption == 4:
+        #     condition = filter['condition']
+        #     for items in range(condition.items):
+        #         df[item.col].fillna(item.val, inplace=True)
+                
+    # for filter in filters:
+    #     subOption = filter['subOption']
+    #     if subOption == 0:
+    #         ndf = ndf.dropna(axis=0)
+    #     elif subOption == 1:
+    #         ndf = ndf.dropna(axis=1)
+       
+    # if cacheResult:
+    #     _setCache(EditedPrefix+filename,ndf)
+    # cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
+    return jsonify(data=ndf.to_json(),
+    cols = cols,col_lists = col_lists, num_cols = num_cols, 
+    cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+
+
+@app.route('/analysis', methods=['POST']) #/query
+def cond_Kmeans_json(filename):
+    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+   
+    web_data = json.loads(request.form.get('ana_data'))
+    print("web_data.keys()", web_data.keys())
+    for key,val in web_data.items():
+        if key == "test_size":
+            test_size = float(val)/100 if val != '' else 0.3
+            print("test_size==", test_size)
+        elif key == "Techniques":
+            tech = val
+            print("tech=", tech)
+        elif key == "Metrics":
+            scoring = val
+            print("scoring=", scoring)
+        elif "plotSize" in key:
+            if val != '':
+                fig_len, fig_wid = int(val.split(',')[0]), int(val.split(',')[1]) 
+                print("fig_len, fig_wid ===============",fig_len, fig_wid)
+        elif "plotType" in key:
+            plotType = val 
+        elif key == "table_COLUMN":
+            col = val
+        elif key == "table_DATA":
+            table_DATA = val
+        elif 'find_parameter' in key:
+            find_parameter = val
+            print('find_parameter=',find_parameter)
+        elif 'opt_k_kmeans_set' in key:
+            opt_k_kmeans_set = int(val) if val else 8
+            print('opt_k_kmeans_set=', opt_k_kmeans_set)
+        elif 'opt_init_kmeans' in key:
+            opt_init_kmeans = val if val else 'k-means++'
+            print('opt_init_kmeans=', opt_init_kmeans)
+        elif 'opt_algo_kmeans' in key:
+            opt_algo_kmeans = val if val else 'auto'
+        elif 'random_state_kmeans_set' in key:
+            random_state_kmeans_set = int(val) if val else None
+        elif 'scatterX_kmeans' in key:
+            scatterX_kmeans = val
+        elif 'scatterY_kmeans' in key:
+            scatterY_kmeans = val
+     
+    df = pd.DataFrame(data=table_DATA, columns=col).reset_index(drop=True)
+    df = df.replace(missing_values, np.nan) 
+    # if finalY:
+    #     X_train, X_test, Y_train, Y_test = train_test_split(df[finalVar], df[finalY], test_size=test_size, random_state=0, shuffle=False) 
+    # else:
+    X_train = X_test = df[finalVar]
+    print('X_train------------',X_train.values)
+    if find_parameter == 'on':
+        cond = "\nFind the Optimal K clusters"
+        model = KMeans()
+        visualizer = KElbowVisualizer(model, k=(1,20))
+        img = BytesIO()
+        visualizer.fit(X_train.values)
+        plt.title('The Elbow Method for KMeans Clustering')
+        plt.xlabel('no. of clusters')
+        plt.ylabel('Distortion Score')
+        plt.legend()
+        plt.savefig(img, format='png') 
+        plt.clf()
+        img.seek(0)
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        img.close()
+        labeledData = df
+    else:
+        cond = "\nK-Means Set Parameters: \n  n_clusters=" + str(opt_k_kmeans_set) + ", init=" + str(opt_init_kmeans) + ", algorithm=" + str(opt_algo_kmeans)+ ", random_state=" + str(random_state_kmeans_set)
+        model = KMeans(n_clusters=opt_k_kmeans_set, init=opt_init_kmeans, algorithm=opt_algo_kmeans, random_state=random_state_kmeans_set)
+        models[tech] = model
+        img = BytesIO()
+        pred = model.fit(X_train)
+        df['Clusters'] = pd.DataFrame(pred.labels_)
+        print("Clusters====",df['Clusters'])
+        print(df['Clusters'].value_counts())
+        count_val = df['Clusters'].value_counts()
+        para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")
+        labeledData = pd.concat((X_train, df['Clusters']), axis=1)
+        print('labeledData=', labeledData)
+
+        plt.figure(figsize=(fig_len,fig_wid), dpi=200) 
+        if scoring == 'pca':
+            X = pca_df    # question here: should DO PCA on feature engneering???
+            print("X1=", X)
+            X['Clusters'] = model.fit_predict(X)
+            print("X2=", X)
+            sns.scatterplot(x="PC1", y="PC2", hue=X['Clusters'], data=pca_df)
+            plt.title(tech + 'Clustering with 2 dimensions')
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif scoring == 'pair':
+            sns.pairplot(labeledData, hue='Clusters')
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif scoring == 'scatter':
+            sns.scatterplot(x=scatterX_kmeans, y=scatterY_kmeans, hue='Clusters', data=labeledData)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif scoring == 'inertia':
+            para_result += '\nInertia -- The Lowest SSE value: \n' + str(model.inertia_)
+        elif scoring == 'centroid':
+            para_result += '\nFind Locations of Centroid: \n' + str(model.cluster_centers_)
+        elif scoring == 'number of iterations':
+            para_result += '\nThe Number of Iterations Required to Converge: ' + str(model.n_iter_)
+        elif scoring == 'silhouette':
+            print(list(df.columns).index(scatterX_kmeans))
+            print(list(df.columns))
+            scaler = StandardScaler()
+            scaled_features = scaler.fit_transform(df[finalVar])
+            kmeans_silhouette = silhouette_score(scaled_features, model.labels_).round(2)
+            # Plot the data and cluster silhouette comparison
+            fig, ax1 = plt.subplots(1, 1, figsize=(8, 6), sharex=True, sharey=True)
+            fig.suptitle(f"Clustering Algorithm: Crescents", fontsize=16)
+            fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange'}
+             # The k-means plot
+            km_colors = [fte_colors[label] for label in model.labels_]
+            ax1.scatter(scaled_features[:, list(df.columns).index(scatterX_kmeans)-1], scaled_features[:, list(df.columns).index(scatterY_kmeans)-1], c=km_colors)
+            ax1.set_title(f"k-means\nSilhouette: {kmeans_silhouette}", fontdict={"fontsize": 12})
+            ax1.set_xlabel(scatterX_kmeans)
+            ax1.set_ylabel(scatterY_kmeans)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+
+
+    print("models=", models)
+    return jsonify(df_sorted=labeledData.to_json(orient="values"), prep_f=cond, result=para_result, prep_col=list(labeledData.columns), plot_url=plotUrl) #final_Var=finalVar,
 
 
 if __name__ == '__main__':
