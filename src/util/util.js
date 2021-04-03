@@ -253,7 +253,7 @@ export function useCachedData(){
             }else{//use initial data
                 dispatch(DataSetActions.setData({...info,
                     filename:info.filename,
-                    data: JSON.parse(json.dataJSon),
+                    data: JSON.parse(json.dataJson),
                     cols: json.cols,
                     num_cols: json.num_cols,
                     col_lists: json.col_lists,

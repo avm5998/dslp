@@ -1,14 +1,43 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Input,Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { InlineTip } from '../common/tip'
+import CommonOption,{setCommonCode,DEFAULT_RESULT} from './commonOption'
+const defaultResult = {...DEFAULT_RESULT,...{}}
 
-export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption }) => {
+export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
+    let [activeTab, setActiveTab] = useState(0)
+
     return <>
-        <div className='grid grid-cols-1 gap-4 p-8 w-auto'>
-            <DropDown defaultText='Select Category' customStyle='w-96' customUlStyle='w-96' showOnHover={false} items={dataset.cate_cols} onSelect={e => result.category = e} />
-            <Button onClick={e => {
-                showOptions(0)
-                confirmOption()
-            }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`} />
+        <div className='p-4'>
+            <div className='flex justify-start text-gray-500'>
+                <div className={`${activeTab==0?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(0)}>Options</div>
+                <div className={`ml-4 hidden ${activeTab==1?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(1)}>Advanced Options</div>
+                <div className={`ml-4 ${activeTab==2?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(2)}>Common Options</div>
+            </div>
+            <div className={`grid gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`} style={{
+                gridTemplateColumns:'100px 1fr 100px 1fr'
+            }}>
+                <Label text='Category'><InlineTip info={`*Required\nThe categories of numerical data.`}/></Label>
+                <DropDown defaultText='Select Category Column' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cate_cols} onSelect={e=>result.cate_col = e}/>
+                <Label text='Numerical:'><InlineTip info={`*Required\nThe numerical data of which the proportion will be represented in the chart.`}/></Label>
+                <DropDown defaultText='Select Numerical Column' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.num_cols} onSelect={e=>result.num_col = e}/>
+            </div>
+            <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
+                gridTemplateColumns:'150px 1fr 150px 1fr'
+            }}>
+                </div>
+            <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
+                gridTemplateColumns:'200px 1fr 100px 1fr'
+            }}>
+                <CommonOption dataset={dataset} result={result}/>
+            </div>
+            <div className='flex justify-end'>
+                <Button onClick={e=>{
+                    showOptions(0)
+                    // confirmOption()
+                    setCode(config.getCode({...defaultResult,...result}, dataset))
+                }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`}/>
+            </div>
         </div>
     </>
 }
@@ -16,6 +45,25 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
 export const config = {
     name: 'Pie Chart',
     function: ['Comparisons', 'Proportions'],
+    getCode: (result,dataset)=>{
+        let plotOptions = {
+            y:`"${result.num_col}"`,
+        }
+        let prevSteps=[],postSteps = []
+        setCommonCode({dataset,result,plotOptions,postSteps,prevSteps})
+        
+        let dfplotArgs = []
+        for (let k in plotOptions){
+            dfplotArgs.push(`${k}=${plotOptions[k]}`)
+        }
+
+        prevSteps.push(`df.index = df['${result.cate_col}']`)
+        return `${prevSteps.length?prevSteps.join('\n'):''}
+df.plot.pie(${dfplotArgs.join(',')})
+${postSteps.length?postSteps.join('\n'):''}
+`
+
+    },
     getOperation: ({ aggregatedDataset, dataset, options }) => {
         let hasRes = true, res = {}
         if (options.category) {

@@ -181,7 +181,11 @@ const Routes = (props) => {
                                                             <FontAwesomeIcon icon={item.icon} />
                                                         </span>
                                                         <span className="ml-2 text-sm tracking-wide truncate">{item.text}</span>
-                                                        <span className={`${item.extraText?'':'hidden'} px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-indigo-500 bg-indigo-50 rounded-full`}>{item.extraText}</span>
+                                                        <span style={{
+                                                            textOverflow: `ellipsis`,
+                                                            overflow: `hidden`,
+                                                            whiteSpace: `nowrap`
+                                                        }} className={`${item.extraText?'':'hidden'} px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-indigo-500 bg-indigo-50 rounded-full`}>{item.extraText}</span>
                                                     </Link>
                                                 </li>
                                             )}

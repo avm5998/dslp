@@ -1,3 +1,4 @@
+import math
 import sys
 import os
 from flask import Flask, render_template, request, Response, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response
@@ -275,6 +276,8 @@ def get_user_files():
     user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
     return {'files_list': user_files_list}
 
+def convertNaN(value):
+    return None if math.isnan(value) else value
 
 @app.route('/file/<filename>',methods=['GET'])
 @cross_origin(origin="*")
@@ -304,11 +307,11 @@ def getDataFrameDetails(df):
     cate_lists = {cate:df[cate].cat.categories.to_list() for cate in cate_cols}
 
     num_lists = {num:{
-        'max':float(df[num].max()),
-        'min':float(df[num].min()),
+        'max':convertNaN(float(df[num].max())),
+        'min':convertNaN(float(df[num].min())),
         'distinct':format('%.2f'%(100*len(df[num].unique())/df[num].count()))+'%',
-        'mean':float(df[num].mean()),
-        'count':float(df[num].count()),
+        'mean':convertNaN(float(df[num].mean())),
+        'count':convertNaN(float(df[num].count())),
         'dtype':str(df[num].dtype)
     } for num in num_cols}
 
@@ -362,7 +365,7 @@ def uploadFile():
     data = ''
     df = _getCache(user_id,filename)
     df.info(buf=buf,verbose=True)
-    data = df.to_json()
+    data = df.iloc[:10,].to_json()
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(df)
     _setCache(user_id,filename,df)
     return jsonify(success=True, info = buf.getvalue(), data = data, 
@@ -616,7 +619,7 @@ def cond_clean_json():
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 @app.route('/current_data_json', methods=['POST']) #/query
-@cross_origin()
+@cross_origin('*')
 @jwt_required()
 def current_data_json():
     user_id = get_jwt_identity()
@@ -688,17 +691,20 @@ def cond_eng_json():
 # Sophie merged--> need modify 
 @app.route('/analysis', methods=['POST']) # regression
 @cross_origin()
-def cond_regression_json(filename):
+@jwt_required()
+def cond_regression_json():
     web = []
     params = request.json
-    cacheResult = params['cacheResult']
-    autoReplace = params['autoReplace']
-    filename = params['filename']
-    prep = json.loads(params['result'])
-    df = _getCache(filename)
-    # print(prep)
-    test_size = params['test_size_lr']
-    print(test_size)
+    print(params)
+    return jsonify(success=True,info="test string",float_num=10.123)
+    # cacheResult = params['cacheResult']
+    # autoReplace = params['autoReplace']
+    # filename = params['filename']
+    # prep = json.loads(params['result'])
+    # df = _getCache(filename)
+    # # print(prep)
+    # test_size = params['test_size_lr']
+    # print(test_size)
 
     # if autoReplace:
     #     ndf = ndf.replace(MISSING_VALUES, np.nan)
@@ -739,7 +745,7 @@ def cond_regression_json(filename):
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 
-@app.route('/analysis', methods=['POST']) #/query
+# @app.route('/analysis', methods=['POST']) #/query
 def cond_Kmeans_json(filename):
     cond, para_result, fig_len, fig_wid = '', '', 5,5
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image

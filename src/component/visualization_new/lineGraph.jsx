@@ -1,24 +1,72 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Input,Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { InlineTip } from '../common/tip'
+import CommonOption,{setCommonCode,DEFAULT_RESULT} from './commonOption'
+const defaultResult = {...DEFAULT_RESULT,...{}}
 
-export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption }) => {
+
+export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
+    let [activeTab, setActiveTab] = useState(0)
+
     return <>
-            <div className='grid grid-cols-1 gap-4 p-8 w-auto'>
-                <DropDown defaultText='Select X Axis' customStyle='w-96' customUlStyle='w-96' showOnHover={false} items={dataset.cols} onSelect={e=>result.x = e}/>
-                <DropDown defaultText='Select Y Axis' customStyle='w-96' customUlStyle='w-96' showOnHover={false} items={dataset.cols} onSelect={e=>result.y = e}/>
-                <DropDown defaultText='Sort' customStyle='w-96' customUlStyle='w-96' showOnHover={false} items={['X from Low to High','X from High to Low','Y from Low to High','Y from High to Low']} onSelect={e=>result.sort = e}/>
-                <Checkbox label={'Smoothed'} defaultChecked={false} onChange={e=>result.smoothed = e.target.checked}/>
+        <div className='p-4'>
+            <div className='flex justify-start text-gray-500'>
+                <div className={`${activeTab==0?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(0)}>Options</div>
+                <div className={`ml-4 hidden ${activeTab==1?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(1)}>Advanced Options</div>
+                <div className={`ml-4 ${activeTab==2?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(2)}>Common Options</div>
+            </div>
+            <div className={`grid gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`} style={{
+                gridTemplateColumns:'100px 1fr 100px 1fr'
+            }}>
+                <Label text='X Axis:'><InlineTip info={`*Required\nThe data on X Axis`}/></Label>
+                <DropDown defaultText='Select X Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.x = e}/>
+                <Label text='Y Axis:'><InlineTip info={`*Required\nThe data on Y Axis`}/></Label>
+                <DropDown defaultText='Select Y Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.y = e}/>
+            </div>
+            <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
+                gridTemplateColumns:'100px 1fr 200px 1fr'
+            }}>
+                {/* <Label text='Draw smoothly:'/>
+                <Checkbox label={'Smoothed'} defaultChecked={false} onChange={e=>result.smoothed = e.target.checked}/> */}
+            </div>
+            <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
+                gridTemplateColumns:'200px 1fr 100px 1fr'
+            }}>
+                <CommonOption dataset={dataset} result={result}/>
+            </div>
+            <div className='flex justify-end'>
                 <Button onClick={e=>{
                     showOptions(0)
-                    confirmOption()
+                    // confirmOption()
+                    setCode(config.getCode({...defaultResult,...result}, dataset))
                 }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`}/>
             </div>
+        </div>
     </>
 }
+
 
 export const config = {
     name: 'Line Graph',
     function: ['Patterns', 'Change over Time'],
+    getCode: (result,dataset)=>{
+        let plotOptions = {
+            x:`"${result.x}"`,
+            y:`"${result.y}"`,
+        }
+        let prevSteps=[],postSteps = []
+        setCommonCode({dataset,result,plotOptions,postSteps,prevSteps})
+        
+        let dfplotArgs = []
+        for (let k in plotOptions){
+            dfplotArgs.push(`${k}=${plotOptions[k]}`)
+        }
+
+        return `${prevSteps.length?prevSteps.join('\n'):''}
+df.plot(${dfplotArgs.join(',')})
+${postSteps.length?postSteps.join('\n'):''}
+`
+},
     getOperation: ({aggregatedDataset,dataset,options}) => {
         let hasRes = true, res = {}
         if(options.x && options.y){

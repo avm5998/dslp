@@ -5,7 +5,7 @@ import React from 'react'
 export default function NoData (){
     let dispatch = useDispatch()
 
-    return <div className="container px-8 py-48 mx-auto lg:px-4">
+    return <div className="container box-border py-48">
     <div className="flex flex-col w-full mb-12 text-left lg:text-center">
         <h1 className="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font">
             Please upload data file first.

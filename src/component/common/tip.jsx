@@ -103,7 +103,7 @@ const Tip = ({ info, styleText = '' }) => {
  * 
  * | fadein | show | fadeout | hidden
  */
-export const InlineTip = forwardRef(({ info = '', infoPosition = 'bottom', customStyle = '' }, ref) => {
+export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 'bottom', customStyle = '' }, ref) => {
     let [showInfo, setShowInfo] = useState(false)
     let [phase, setPhase] = useState('start') //start or end
     let timeoutRef = useRef()
@@ -115,7 +115,7 @@ export const InlineTip = forwardRef(({ info = '', infoPosition = 'bottom', custo
         e.preventDefault()
     }, [])
 
-    return <div className='' style={{ zIndex: 1 }}>
+    return <div className='' style={{ zIndex }}>
         <FontAwesomeIcon onMouseEnter={() => {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current)
@@ -141,7 +141,7 @@ export const InlineTip = forwardRef(({ info = '', infoPosition = 'bottom', custo
             }}
         ><FontAwesomeIcon onClick={e => {
             closeTip(e)
-        }} className={`cursor-pointer hover:text-gray-500 absolute top-2 right-2 text-gray-300`} icon={['fas', 'times']} /><p>{info}</p></div>
+        }} className={`cursor-pointer hover:text-gray-500 absolute top-2 right-2 text-gray-300`} icon={['fas', 'times']} /><p style={{whiteSpace:'break-spaces',wordBreak:'break-all'}}>{info}</p></div>
     </div>
 })
 

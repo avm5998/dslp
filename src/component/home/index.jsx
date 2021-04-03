@@ -57,6 +57,7 @@ const Home = (props) => {
       body: data,
       headers: authHeader()
     })
+    
     let json = await res.json()
 
     if (json.success) {
