@@ -15,7 +15,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <div className={`ml-4 ${activeTab==2?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(2)}>Common Options</div>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`} style={{
-                gridTemplateColumns:'100px 1fr 100px 1fr'
+                gridTemplateColumns:'5vw 1fr 5vw 1fr'
             }}>
                 <Label text='Columns:'><InlineTip info={`*Required\n Select numerical columns to see the distributions. \n If you select more than one numerical column, the columns you selected are better to have similar meanings and ranges`}/></Label>
                 <MultiSelect defaultOpen={false} selections={dataset.num_cols} customHeight='h-10' customWidth='w-60' showOnHover={false} onSelect={(e) => {
@@ -28,13 +28,13 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <datalist id='histogram_bins_list'><option value='5'></option><option value='10'></option><option value='15'></option><option value='20'></option></datalist>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
-                gridTemplateColumns:'100px 1fr 200px 1fr'
+                gridTemplateColumns:'5vw 1fr 10vw 1fr'
             }}>
                 <Label text='Alpha'></Label>
                 <Input onInput={e=>result.alpha = e.target.value} placeholder='Please input alpha (0 to 1 inclusive)' defaultValue={1}/>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
-                gridTemplateColumns:'200px 1fr 100px 1fr'
+                gridTemplateColumns:'10vw 1fr 5vw 1fr'
             }}>
                 <CommonOption dataset={dataset} result={result}/>
             </div>

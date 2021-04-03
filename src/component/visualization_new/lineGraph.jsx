@@ -16,7 +16,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <div className={`ml-4 ${activeTab==2?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(2)}>Common Options</div>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`} style={{
-                gridTemplateColumns:'100px 1fr 100px 1fr'
+                gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
                 <Label text='X Axis:'><InlineTip info={`*Required\nThe data on X Axis`}/></Label>
                 <DropDown defaultText='Select X Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.x = e}/>

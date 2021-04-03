@@ -84,7 +84,7 @@ const Analysis = () => {
                         }))} />
                 </div>
                 <Button text={'Option'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
-                    if(model>-1){
+                    if(model){
                         setShowSubOptionModal(true)
                     }
                 }}/>

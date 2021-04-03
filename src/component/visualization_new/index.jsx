@@ -160,7 +160,7 @@ export default function(){
         <Modal fixedModalPosition={{
             left:'20vw',
             top:'10vh',
-            width:'50vw'
+            width:'60vw'
         }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
             setCode(GraphConfigs[currentPlot].getCode(result), dataset)

@@ -19,7 +19,7 @@ export default function ({ dataset, result, submit }) {
                 <div className={`ml-4 ${activeTab == 1 ? 'border-b-2 font-bold cursor-default' : 'cursor-pointer'}`} onClick={e => setActiveTab(1)}>Advanced Options</div>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '100px 1fr 100px 1fr'
+                gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
                 <Label text="Choose Test Size(%)" />
                 <Input onInput={(e,v) => {
@@ -60,7 +60,7 @@ export default function ({ dataset, result, submit }) {
                 }} customStyle={`w-64`} attrs={{ list: 'find_C_logr_list' }} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '100px 1fr 100px 1fr'
+                gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
             </div>
             <div className='flex justify-end'>

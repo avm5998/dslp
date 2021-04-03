@@ -15,7 +15,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <div className={`ml-4 ${activeTab==2?'border-b-2 font-bold cursor-default':'cursor-pointer'}`} onClick={e=>setActiveTab(2)}>Common Options</div>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`} style={{
-                gridTemplateColumns:'100px 1fr 100px 1fr'
+                gridTemplateColumns:'5vw 1fr 5vw 1fr'
             }}>
                 <Label text='Category'><InlineTip info={`*Required\nThe categories of numerical data.`}/></Label>
                 <DropDown defaultText='Select Category Column' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cate_cols} onSelect={e=>result.cate_col = e}/>
