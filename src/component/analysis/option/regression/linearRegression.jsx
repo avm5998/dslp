@@ -44,12 +44,12 @@ export default function ({ dataset, result, submit }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Default: True"/></Label>
+                <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Default: True. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
                 <DropDown defaultText={'Select fit_intercept'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_fit_intercept_lr = name  //opt_fit_intercept_lr
                 }} />
-                <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Default: False"/></Label>
+                <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Default: False. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
                 <DropDown defaultText={'Select normalize'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_normalize_lr = name  //opt_normalize_lr
