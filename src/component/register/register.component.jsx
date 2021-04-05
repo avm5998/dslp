@@ -41,6 +41,16 @@ const vusername = (value) => {
   }
 };
 
+const vfullname = (value) => {
+  if (value.length < 1 || value.length > 50) {
+    return (
+      <div className="alert alert-danger" role="alert">
+        The name must be between 3 and  50 characters.
+      </div>
+    );
+  }
+};
+
 const vpassword = (value) => {
   if (value.length < 6 || value.length > 40) {
     return (
@@ -56,6 +66,7 @@ const Register = () => {
   const checkBtn = useRef();
 
   const [username, setUsername] = useState("");
+  const [fullname, setFullname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [successful, setSuccessful] = useState(false);
@@ -66,6 +77,10 @@ const Register = () => {
   const onChangeUsername = (e) => {
     const username = e.target.value;
     setUsername(username);
+  };
+  const onChangeFullname = (e) => {
+    const fullname = e.target.value;
+    setFullname(fullname);
   };
 
   const onChangeEmail = (e) => {
@@ -86,7 +101,7 @@ const Register = () => {
     form.current.validateAll();
 
     if (checkBtn.current.context._errors.length === 0) {
-      dispatch(register(username, email, password))
+      dispatch(register(fullname, username, email, password))
         .then(() => {
           setSuccessful(true);
         })
@@ -114,6 +129,18 @@ const Register = () => {
         <Form onSubmit={handleRegister} ref={form}>
           {!successful && (
             <div className="grid grid-cols-2">
+
+            <div className="form-label-group col-span-2">
+                <label htmlFor="fullname">Full name</label>
+                <Input
+                  type="text"
+                  className="form-control"
+                  name="fullname"
+                  value={fullname}
+                  onChange={onChangeFullname}
+                  validations={[required, vfullname]}
+                />
+              </div>
               <div className="form-label-group col-span-2">
                 <label htmlFor="username">Username</label>
                 <Input
