@@ -23,11 +23,11 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <DropDown defaultText='Select Numerical Column' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.num_cols} onSelect={e=>result.num_col = e}/>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
-                gridTemplateColumns:'150px 1fr 150px 1fr'
+                gridTemplateColumns:'7.5vw 1fr 7.5vw 1fr'
             }}>
                 </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
-                gridTemplateColumns:'200px 1fr 100px 1fr'
+                gridTemplateColumns:'10vw 1fr 5vw 1fr'
             }}>
                 <CommonOption dataset={dataset} result={result}/>
             </div>
