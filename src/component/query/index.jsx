@@ -87,15 +87,7 @@ const Page = () => {
 
         let json = await res.json()
 
-        dispatch(DataSetActions.setData({
-            data: JSON.parse(json.data),
-            cols: json.cols,
-            num_cols: json.num_cols,
-            col_lists: json.col_lists,
-            cate_cols: json.cate_cols,
-            cate_lists: json.cate_lists,
-            num_lists: json.num_lists
-        }))
+        dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
     }
 
     return (<>
@@ -130,7 +122,7 @@ const Page = () => {
                 </div>
 
                 <div className='mx-5 mb-4 w-5/12'>
-                    <MultiSelect allowDelete={false} customHeight='h-8' passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
+                    <MultiSelect allowDelete={true} customHeight='h-8' passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
                         dispatch(DataSetActions.setFilters(filters))
                     }} />
                 </div>

@@ -1,3 +1,4 @@
+import math
 import sys
 import os
 from flask import Flask, render_template, request, Response, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response
@@ -14,10 +15,12 @@ from numpy import unique, where
 from dateutil.parser import parse
 from sklearn.feature_selection import SelectKBest, chi2, f_classif, f_regression, RFE, mutual_info_classif, VarianceThreshold
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, LabelEncoder
-from sklearn.model_selection import train_test_split, cross_val_score, KFold
+from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.svm import SVR
+from sklearn import tree
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.svm import SVR, SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
@@ -275,6 +278,8 @@ def get_user_files():
     user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
     return {'files_list': user_files_list}
 
+def convertNaN(value):
+    return None if math.isnan(value) else value
 
 @app.route('/file/<filename>',methods=['GET'])
 @cross_origin(origin="*")
@@ -304,11 +309,11 @@ def getDataFrameDetails(df):
     cate_lists = {cate:df[cate].cat.categories.to_list() for cate in cate_cols}
 
     num_lists = {num:{
-        'max':float(df[num].max()),
-        'min':float(df[num].min()),
+        'max':convertNaN(float(df[num].max())),
+        'min':convertNaN(float(df[num].min())),
         'distinct':format('%.2f'%(100*len(df[num].unique())/df[num].count()))+'%',
-        'mean':float(df[num].mean()),
-        'count':float(df[num].count()),
+        'mean':convertNaN(float(df[num].mean())),
+        'count':convertNaN(float(df[num].count())),
         'dtype':str(df[num].dtype)
     } for num in num_cols}
 
@@ -362,7 +367,7 @@ def uploadFile():
     data = ''
     df = _getCache(user_id,filename)
     df.info(buf=buf,verbose=True)
-    data = df.to_json()
+    data = df.iloc[:10,].to_json()
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(df)
     _setCache(user_id,filename,df)
     return jsonify(success=True, info = buf.getvalue(), data = data, 
@@ -616,7 +621,7 @@ def cond_clean_json():
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 @app.route('/current_data_json', methods=['POST']) #/query
-@cross_origin()
+@cross_origin('*')
 @jwt_required()
 def current_data_json():
     user_id = get_jwt_identity()
@@ -684,6 +689,332 @@ def cond_eng_json():
             index+=1
 
     return jsonify(df_sorted=df.to_json(orient="values"), prep_f=cond, prep_col=list(df.columns))
+
+# Sophie merged--> need modify 
+def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
+    Y_test.reset_index(drop=True, inplace=True)
+    comp_df = pd.concat([Y_test, pd.DataFrame(Y_pred)], axis=1)
+    comp_df.columns = ["Actual(Y_test)", "Prediction(Y_pred)"]
+    comp_df=comp_df.apply(pd.to_numeric, errors='ignore') 
+    print("comp_df", comp_df, comp_df.dtypes)
+    img = BytesIO()
+    plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+    plt.title("Actual vs. Prediction Result")
+    if plotType in ['bar', 'line']:
+        comp_df.plot(kind=plotType)
+    elif plotType == 'scatter':
+        comp_df.plot.scatter(x='Actual(Y_test)', y="Prediction(Y_pred)")
+    elif plotType == 'heatmap':
+        sns.heatmap(comp_df,annot=True,cmap="RdYlGn")
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return plotUrl
+
+
+@app.route('/analysis', methods=['POST']) # regression
+@cross_origin()
+@jwt_required()
+def cond_Regression_json():
+    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+    models = {} # to store tested models
+    print(params)
+    analysis_model = params['analysis_model']
+    print(analysis_model)
+    test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+    metric = params['metric'] if 'metric' in params else 'neg_mean_squared_error'
+    plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+    finalVar = ["rent amount", "area"] # test, delete later
+    finalY = "total" # test, delete later
+    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    # print(df)
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
+    # print(X_train)
+    cond += "\n\nChoose Test Size: " + str(test_size)
+    if analysis_model == "Linear Regression":
+        param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
+        param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
+        model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+        cond += "\nModel: Linear Regression \nSet Parameters:  fit_intercept=" + str(param_fit_intercept_lr) + ", normalize=" + str(param_normalize_lr)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        para_result += "\nMetric:  " + metric + "\nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+
+    elif analysis_model == "Decision Tree Regression":
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+        param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
+        param_max_depth = int(params['param_max_depth']) if'param_max_depth' in params else None
+        param_max_features = params['param_max_features'] if 'param_max_features' in params else None
+        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
+        param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+        model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
+        models[analysis_model] = model
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+        cond += "\nModel: Decision Tree Regression \nSet Parameters: criterion=" + str(param_criterion) + ", splitter=" + str(param_splitter) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes="+ str(param_max_leaf_nodes)+ ", random_state=" + str(param_random_state) 
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+        if find_max_depth:
+            tuned_para = [{'max_depth': find_max_depth}]
+            cond = "\nFind Parameter for Decision Tree Regression" + str(tuned_para)
+            MSE_dtr = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE_dtr:
+                reg_dtr = GridSearchCV(DecisionTreeRegressor(), tuned_para, cv=4)
+                reg_dtr.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, reg_dtr.predict(X_test)
+                para_result = '\nThe best hyper-parameter for Decision Tree is: ' + str(reg_dtr.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        if 'visual_tree' in params:
+            visual_type = params['visual_tree']
+            cond += "\nVisualize Tree:" + visual_type
+            if  visual_type == 'Text Graph':
+                para_result = '\n' + tree.export_text(model) + '\n'
+                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            elif visual_type == 'Flowchart':
+                img = BytesIO()
+                plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+                tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            else:
+                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+
+    elif analysis_model == 'Random Forests Regression':
+        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else None
+        param_n_estimators = int(params['param_n_estimators']) if 'param_n_estimators' in params else 100
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+        find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+        param_max_features = params['param_max_features'] if 'param_max_features' in params else 'auto'
+        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
+        param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
+        model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
+        models[analysis_model] = model
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
+        cond += "\nPlot Predicted vs. Observed Target Variable:  Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+        if find_max_depth or find_n_estimators:
+            if find_max_depth and find_n_estimators:
+                tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
+            elif find_max_depth:
+                tuned_para = [{'max_depth': find_max_depth}]
+            elif find_n_estimators:
+                tuned_para = [{'n_estimators': find_n_estimators}]
+            cond = "\nFind Parameter for Random Forests Regressor: " + str(tuned_para)
+            MSE_rfr = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE_rfr:
+                reg_rfr = GridSearchCV(RandomForestRegressor(), tuned_para, cv=4)
+                reg_rfr.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, reg_rfr.predict(X_test)
+                para_result = 'The best hyper-parameters for Random Forests are: ' + str(reg_rfr.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    elif analysis_model == 'SVM Regression':
+        param_C = int(params['param_C']) if 'param_C' in params else 1.0
+        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 'scale'
+        find_C = [int(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
+        find_gamma  = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
+        param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
+        model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
+        models[analysis_model] = model
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+        cond += "\nModel: SVM Regressor \nSet Parameters:   kernel=" + str(param_kernel) + ", gamma=" + str(param_gamma) + ", C=" + str(param_C)
+        cond += "\nPlot Predicted vs. Observed Target Variable:    Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+            
+        if find_C or find_gamma:
+            if find_C and find_gamma:
+                tuned_para = [{'C': find_C, 'gamma': find_gamma}]
+            elif find_C:
+                tuned_para = [{'C': find_C}]
+            elif find_gamma:
+                tuned_para = [{'gamma': find_gamma}]
+            cond = "\nFind Parameter for Support Vector Machine (SVM) Regressor" + str(tuned_para)        
+            MSE_svm = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE_svm:
+                reg_svm = GridSearchCV(SVR(), tuned_para, cv=4)
+                reg_svm.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, reg_svm.predict(X_test)
+                para_result = 'The best hyper-parameters for SVR are: ' + str(reg_svm.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+        
+    # return jsonify(success=True,info="test string",float_num=15.123)
+ 
+    # return jsonify(data=ndf.to_json(),
+    # cols = cols,col_lists = col_lists, num_cols = num_cols, 
+    # cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+
+
+# @app.route('/analysis', methods=['POST']) #/query
+def cond_Kmeans_json(filename):
+    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+   
+    web_data = json.loads(request.form.get('ana_data'))
+    print("web_data.keys()", web_data.keys())
+    for key,val in web_data.items():
+        if key == "test_size":
+            test_size = float(val)/100 if val != '' else 0.3
+            print("test_size==", test_size)
+        elif key == "Techniques":
+            tech = val
+            print("tech=", tech)
+        elif key == "Metrics":
+            scoring = val
+            print("scoring=", scoring)
+        elif "plotSize" in key:
+            if val != '':
+                fig_len, fig_wid = int(val.split(',')[0]), int(val.split(',')[1]) 
+                print("fig_len, fig_wid ===============",fig_len, fig_wid)
+        elif "plotType" in key:
+            plotType = val 
+        elif key == "table_COLUMN":
+            col = val
+        elif key == "table_DATA":
+            table_DATA = val
+        elif 'find_parameter' in key:
+            find_parameter = val
+            print('find_parameter=',find_parameter)
+        elif 'opt_k_kmeans_set' in key:
+            opt_k_kmeans_set = int(val) if val else 8
+            print('opt_k_kmeans_set=', opt_k_kmeans_set)
+        elif 'opt_init_kmeans' in key:
+            opt_init_kmeans = val if val else 'k-means++'
+            print('opt_init_kmeans=', opt_init_kmeans)
+        elif 'opt_algo_kmeans' in key:
+            opt_algo_kmeans = val if val else 'auto'
+        elif 'random_state_kmeans_set' in key:
+            random_state_kmeans_set = int(val) if val else None
+        elif 'scatterX_kmeans' in key:
+            scatterX_kmeans = val
+        elif 'scatterY_kmeans' in key:
+            scatterY_kmeans = val
+     
+    df = pd.DataFrame(data=table_DATA, columns=col).reset_index(drop=True)
+    df = df.replace(missing_values, np.nan) 
+    # if finalY:
+    #     X_train, X_test, Y_train, Y_test = train_test_split(df[finalVar], df[finalY], test_size=test_size, random_state=0, shuffle=False) 
+    # else:
+    X_train = X_test = df[finalVar]
+    print('X_train------------',X_train.values)
+    if find_parameter == 'on':
+        cond = "\nFind the Optimal K clusters"
+        model = KMeans()
+        visualizer = KElbowVisualizer(model, k=(1,20))
+        img = BytesIO()
+        visualizer.fit(X_train.values)
+        plt.title('The Elbow Method for KMeans Clustering')
+        plt.xlabel('no. of clusters')
+        plt.ylabel('Distortion Score')
+        plt.legend()
+        plt.savefig(img, format='png') 
+        plt.clf()
+        img.seek(0)
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        img.close()
+        labeledData = df
+    else:
+        cond = "\nK-Means Set Parameters: \n  n_clusters=" + str(opt_k_kmeans_set) + ", init=" + str(opt_init_kmeans) + ", algorithm=" + str(opt_algo_kmeans)+ ", random_state=" + str(random_state_kmeans_set)
+        model = KMeans(n_clusters=opt_k_kmeans_set, init=opt_init_kmeans, algorithm=opt_algo_kmeans, random_state=random_state_kmeans_set)
+        models[tech] = model
+        img = BytesIO()
+        pred = model.fit(X_train)
+        df['Clusters'] = pd.DataFrame(pred.labels_)
+        print("Clusters====",df['Clusters'])
+        print(df['Clusters'].value_counts())
+        count_val = df['Clusters'].value_counts()
+        para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")
+        labeledData = pd.concat((X_train, df['Clusters']), axis=1)
+        print('labeledData=', labeledData)
+
+        plt.figure(figsize=(fig_len,fig_wid), dpi=200) 
+        if scoring == 'pca':
+            X = pca_df    # question here: should DO PCA on feature engneering???
+            print("X1=", X)
+            X['Clusters'] = model.fit_predict(X)
+            print("X2=", X)
+            sns.scatterplot(x="PC1", y="PC2", hue=X['Clusters'], data=pca_df)
+            plt.title(tech + 'Clustering with 2 dimensions')
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif scoring == 'pair':
+            sns.pairplot(labeledData, hue='Clusters')
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif scoring == 'scatter':
+            sns.scatterplot(x=scatterX_kmeans, y=scatterY_kmeans, hue='Clusters', data=labeledData)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif scoring == 'inertia':
+            para_result += '\nInertia -- The Lowest SSE value: \n' + str(model.inertia_)
+        elif scoring == 'centroid':
+            para_result += '\nFind Locations of Centroid: \n' + str(model.cluster_centers_)
+        elif scoring == 'number of iterations':
+            para_result += '\nThe Number of Iterations Required to Converge: ' + str(model.n_iter_)
+        elif scoring == 'silhouette':
+            print(list(df.columns).index(scatterX_kmeans))
+            print(list(df.columns))
+            scaler = StandardScaler()
+            scaled_features = scaler.fit_transform(df[finalVar])
+            kmeans_silhouette = silhouette_score(scaled_features, model.labels_).round(2)
+            # Plot the data and cluster silhouette comparison
+            fig, ax1 = plt.subplots(1, 1, figsize=(8, 6), sharex=True, sharey=True)
+            fig.suptitle(f"Clustering Algorithm: Crescents", fontsize=16)
+            fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange'}
+             # The k-means plot
+            km_colors = [fte_colors[label] for label in model.labels_]
+            ax1.scatter(scaled_features[:, list(df.columns).index(scatterX_kmeans)-1], scaled_features[:, list(df.columns).index(scatterY_kmeans)-1], c=km_colors)
+            ax1.set_title(f"k-means\nSilhouette: {kmeans_silhouette}", fontdict={"fontsize": 12})
+            ax1.set_xlabel(scatterX_kmeans)
+            ax1.set_ylabel(scatterY_kmeans)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+
+
+    print("models=", models)
+    return jsonify(df_sorted=labeledData.to_json(orient="values"), prep_f=cond, result=para_result, prep_col=list(labeledData.columns), plot_url=plotUrl) #final_Var=finalVar,
+
 
 if __name__ == '__main__':
     app.run(host='0,0,0,0',debug=True)

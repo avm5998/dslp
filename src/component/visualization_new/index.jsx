@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { Label, Button, DropDown, MultiSelect, Modal, Checkbox, DropDownInput, Input } from '../../util/ui'
-import * as echarts from 'echarts';
-import 'echarts-gl'
 
 import { useDispatch, useSelector } from 'react-redux';
-import { loadScript, useSimpleForm, useToggleGroup } from '../../util/util'
+import { loadScript, useSimpleForm, useToggleGroup,fetchByJSON,useCachedData } from '../../util/util'
 // import {TooltipComponent} from 'echarts/components';
 
 import AreaGraph from './areaGraph'
@@ -19,6 +17,8 @@ import ScatterPlot from './scatterPlot'
 import ThreeDScatterPlot from './threeDScatterPlot'
 import NightingaleRoseChart from './nightingaleRoseChart';
 import { ChromePicker } from 'react-color';
+import './index.css'
+import { InlineTip } from '../common/tip';
 
 const Graphs = [
     AreaGraph,
@@ -46,57 +46,88 @@ const Functions = [
     '3D'
 ]
 
-const PLOTS = {
-    'Histogram': {
-        function: ['Comparisons', 'Change over Time', 'Distribution', 'Patterns', 'Range']
-    },
-}
+const PLOTS = {}
 
-let GraphOptionViews = {}
+let GraphOptionViews = {}, GraphConfigs = {}
 
 for (let e of Graphs) {
     PLOTS[e.config.name] = {
         function: e.config.function
     }
-
+    GraphConfigs[e.config.name] = e.config
     GraphOptionViews[e.config.name] = e.view
 }
 
-const getEChartOption = (dataset, aggregatedDataset, plotType, options) => {
-    let res = {}
-    let hasRes = true
+const initialCode = data=>`import pandas as pd
+from io import StringIO
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.pyplot as plt
 
-    for (let e of Graphs) {
-        if (plotType == e.config.name) {
-            let r = e.config.getOperation({
-                dataset, aggregatedDataset, options
-            })
+data_json = StringIO("""${data}""")
+df = pd.read_json(data_json)
+`
 
-            res = r.res
-            hasRes = r.hasRes
-            break
-        }
-    }
 
-    return { res, hasRes }
-}
-
-const Page = () => {
+export default function(){
+    useCachedData()
     const [plots, setPlots] = useState(Object.keys(PLOTS))
     const [optionsVisible, showOptions] = useState(0)
-    const [commonOptionsVisible, showCommonOptions] = useState(0)
-    const [currentPlot, setCurrentPlot] = useState('')
-    let { result, getData } = useSimpleForm()
-    let { result: commonResult, getData: getCommonData } = useSimpleForm({ title: {}, toolbox: { feature: {} } })
-    const chartRef = useRef()
-    const parentRef = useRef()
-    const dataset = useSelector(state => state.dataset)
-    const dispatch = useDispatch()
-    let aggregatedData = useRef()
     let { ref, hide: hideSelections } = useToggleGroup()
-    let [currentColor, setCurrentColor] = useState(0)
-    let [showColorPicker, setShowColorPicker] = useState(0)
-    let [colors,setColors] = useState(['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'])
+    const [currentPlot, setCurrentPlot] = useState('')
+    const [code,setCode] = useState('')
+    const [activateStatus,setActivateStatus] = useState('Loading...')
+    let [dfJSON,setDfJSON] = useState('')//dataframe json
+    let dataset = useSelector(state => state.dataset)
+    let { result, getData } = useSimpleForm()
+    let codeParent = useRef()
+    let kernelRef = useRef()
+    
+    //Not just rerun the current code
+    //It's reinject the data and rerun the current code
+    const runCode = e=>{
+        kernelRef.current.requestExecute({code:initialCode(dfJSON)})
+        document.querySelector('.thebelab-run-button').click()
+    }
+
+    useEffect(()=>{
+        if(!code) return
+        codeParent.current.innerHTML = ''
+        let pre = document.createElement('pre')
+        pre.setAttribute('data-executable','true')
+        pre.setAttribute('data-language','python')
+        codeParent.current.appendChild(pre)
+        pre.innerHTML = code
+        thebelab.bootstrap();
+    },[code])
+
+    //start thebelab automatically
+    //load current dataframe
+    useEffect(()=>{
+        if(!dataset.filename){
+            setActivateStatus('No data')
+            return
+        }
+
+        thebelab.bootstrap();
+
+        //excute code in advance on thebelab to import libraries and set dataframe variable
+        thebelab.on("status", async function (evt, data) {
+            if(data.status === 'ready' && dataset.filename){
+                let res = await fetchByJSON('current_data_json',{
+                    filename:dataset.filename
+                })
+
+                let g = await res.json()
+                kernelRef.current = data.kernel
+                data.kernel.requestExecute({code:initialCode(g.data)})
+                setDfJSON(g.data)
+                setActivateStatus('Ready')
+            }
+            console.log("Status changed:", data.status, data.message);
+        })
+
+    },[dataset.filename])
 
     const setPlotsByFunctions = useCallback((functions) => {
         if (!functions || functions.length === 0) {
@@ -123,126 +154,45 @@ const Page = () => {
         setPlots([...res])
     }, [setPlots])
 
-    useEffect(() => {
-        let div = document.querySelector('#vis_main')
-
-        chartRef.current = echarts.init(div)
-
-        //load script for box plot
-        loadScript('https://cdn.jsdelivr.net/npm/echarts-simple-transform/dist/ecSimpleTransform.min.js', () => {
-            let res = {}
-            Object.keys(dataset.data).forEach(key => res[key] = [...Object.values(dataset.data[key])])
-            aggregatedData.current = res
-            echarts.registerTransform(window.ecSimpleTransform.aggregate);
-        })
-    }, [])
-
-    const confirmOption = () => {
-        let { res, hasRes } = getEChartOption(dataset, aggregatedData.current, currentPlot, getData())
-        let commonOption = getCommonData()
-        commonOption.color = colors
-        if (hasRes) {
-            chartRef.current.clear()
-            chartRef.current.setOption({...res,...commonOption})
-        }
-    }
-
-
     let OptionView = GraphOptionViews[currentPlot]
 
-    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 4rem)' }} ref={parentRef} onClick={e => {
-        if (e.target === parentRef.current || e.target === document.querySelector('#vis_main div')) {
-            hideSelections()
-        }
-    }}>
-        <Modal isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} contentStyleText="mx-auto mt-20" onClose={() => {
+    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
+        <Modal fixedModalPosition={{
+            left:'20vw',
+            top:'10vh',
+            width:'60vw'
+        }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
-            confirmOption()
+            setCode(GraphConfigs[currentPlot].getCode(result), dataset)
         }}>
             {
-                GraphOptionViews[currentPlot] ? <OptionView dataset={dataset} result={result} showOptions={showOptions} confirmOption={confirmOption} /> : ''
+                GraphOptionViews[currentPlot] ? <OptionView setCode={setCode} dataset={dataset} result={result} showOptions={showOptions}/> : ''
             }
         </Modal>
-        <Modal isOpen={commonOptionsVisible} setIsOpen={showCommonOptions} contentStyleText="mx-auto mt-20" onClose={() => {
-            showCommonOptions(0)
-        }}>
-            <div className='grid grid-cols-4 p-4 gap-4'>
-                <Label text='Title' />
-                <Input placeholder='Set title' customStyle={'text-center'} onInput={(e) => {
-                    commonResult.title.text = e.target.value
-                }} />
 
-                <Label text='Title left position' />
-
-                <DropDown defaultText={'Select title left position'} customStyle={'w-64'} customUlStyle={'w-64'} showOnHover={false} additionalInput={true} items={['left', 'center', 'right']} onSelect={(name, index, source) => {
-                    commonResult.title.left = name
-                }} />
-
-                <Label text='Title top position' />
-
-                <DropDown defaultText={'Select title top position'} customStyle={'w-64'} customUlStyle={'w-64'} showOnHover={false} additionalInput={true} items={['left', 'center', 'right']} onSelect={(name, index, source) => {
-
-                    commonResult.title.top = name
-                }} />
-
-                <Label text='Tool box' />
-                <MultiSelect defaultText={'Select tools'} customWidth={'w-64'} customHeight={'h-10'} defaultOpen={false}
-                    selections={['Data View', 'Restore', 'Save as image']} onSelect={e => {
-                        commonResult.toolbox.show = !!e.length
-
-                        if (e.indexOf('Data View') > -1) {
-                            commonResult.toolbox.feature.dataView = { readOnly: false }
-                        }
-
-                        if (e.indexOf('Restore') > -1) {
-                            commonResult.toolbox.feature.restore = {}
-                        }
-
-                        if (e.indexOf('Save as image') > -1) {
-                            commonResult.toolbox.feature.saveAsImage = {}
-                        }
-                    }} />
-
-                <Checkbox label={'Enable animation'} defaultChecked={true} onClick={e => {
-                    commonResult.animation = e.target.checked
-                }} />
-
-                <div className='col-span-3'>
-                    {[...Array(9).keys()].map(i =>
-                        <button className='m-2' style={{color:colors[i]}} onClick={() => {
-                            setCurrentColor(i)
-                            setShowColorPicker(s => 1 - s)
-                        }}>{'Color'+(i+1)}</button>
-                    )}
-
-
-                    {showColorPicker ? <div className='absolute'><ChromePicker color={colors[currentColor]} onChange={e=>{
-                        colors[currentColor] = e.hex
-                        setColors([...colors])}}/></div> : null}
-                </div>
-
-
-                <Button onClick={e => {
-                    showCommonOptions(0)
-                    let data = getCommonData()
-                    data.color = colors
-                    chartRef.current.setOption(data)
-                }} customStyle={`col-span-4 w-48 h-10 justify-self-end`} text={`Confirm`} />
+        <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4'>
+            <div className='w-72'>
+                <MultiSelect customHeight={'h-10'} customeWidth={'w-72'} ref={ref} defaultOpen={false} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
             </div>
-        </Modal>
-        <div className='grid grid-cols-4 w-full gap-8 p-8 h-auto flex-grow-0'>
-            <MultiSelect customHeight={'h-auto'} ref={ref} defaultOpen={false} defaultText='Select what do you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
-            <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'h-10 w-full'} customUlStyle={'h-10 w-96'} items={plots} onSelect={e => setCurrentPlot(e)} />
-            {/* <DropDownInput ref={ref} defaultText={'test'} showOnHover={false} customStyle={'h-12 w-96'} customUlStyle={'h-auto w-96 pt-1 pb-2'} items={['G1','G2','GGGG','asdadsada']} onInput = {(name,index,value)=>{console.log(name,index,value)}} /> */}
-            <Button disabled={!currentPlot} text="Options" overrideClass={`rounded font-semibold py-2 px-4 border focus:outline-none h-10 w-auto  ${!currentPlot ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={e => { if (currentPlot) showOptions(1) }} hoverAnimation={false} />
-            <Button text="Common Options" overrideClass={`rounded font-semibold py-2 px-4 border focus:outline-none h-10 w-auto text-black cursor-pointer`} onClick={e => { showCommonOptions(1) }} hoverAnimation={false} />
+            <div className='w-72'>
+                <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'h-10 w-72'} customUlStyle={'h-10 w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
+            </div>
+            <div className='w-auto flex justify-center items-center'>
+                <div className={``}>{activateStatus}</div>
+                <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.'/>
+            </div>
+            <div className='w-72'>
+                <Button hasPadding={false} disabled={!currentPlot} text="Options" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10  ${!currentPlot ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={e => { if (currentPlot) showOptions(1) }} hoverAnimation={false} />
+            </div>
+            <div className='w-72'>
+                <Button hasPadding={false} disabled={!code} text="Run" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
+                     ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
+            </div>
         </div>
-
-        <div className='flex-grow-1 w-full'>
-            <div id='vis_main' className='h-full w-full' >
-            </div>
+        <div className='flex-grow-1 w-full' ref={codeParent}>
+            {code?'':<div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                Select a plot type to see the corresponding code
+            </div>}
         </div>
     </div>)
 }
-
-export default Page

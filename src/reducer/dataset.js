@@ -51,6 +51,16 @@ const slice = createSlice({
         loading(state,action){
             Object.assign(state, LOADING_DATASET)
         },
+        
+        setTableData(state,action){
+            commonLoaded(state)
+
+            if (state.data){
+                state.tableData = dataFrameJSONObjectToReactTableData(action.payload)
+            }
+
+            cacheDataInfo(state)
+        },
 
         setData(state,action){
             commonLoaded(state)
@@ -77,7 +87,6 @@ const slice = createSlice({
 
         setFilters(state,action){
             state.dataFilters = [...action.payload]
-            cacheDataInfo(state)
         },
         
         setCleaners(state,action){

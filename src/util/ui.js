@@ -10,7 +10,7 @@ export const Input = forwardRef(({
     onInput = () => { },
     defaultValue = ''
 }, ref) => {
-    return <input ref={ref} {...attrs} className={`py-1 px-2 rounded-sm focus:outline-none ${customStyle ? customStyle : 'w-full'}`} placeholder={placeholder} onInput={onInput} defaultValue={defaultValue} />
+    return <input ref={ref} {...attrs} className={`box-border py-1 px-2 rounded-sm focus:outline-none ${customStyle ? customStyle : 'w-full'}`} placeholder={placeholder} onInput={e=>{onInput(e,e.target.value)}} defaultValue={defaultValue} />
 })
 
 export const DropDownInput = forwardRef(({
@@ -82,8 +82,8 @@ export const DropDownInput = forwardRef(({
     </div>)
 })
 
-export function Label({ pos = 'left', text = '', customStyle = '' }) {
-    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{text}</div>)
+export function Label({ pos = 'left', text = '', customStyle = '', children = '' }) {
+    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
 }
 
 export function Button({
@@ -308,12 +308,12 @@ export const DropDown = forwardRef(({
             </span>
         </button>
 
-        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?'border':''} rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?(ulOpen?'':'border'):''} rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
             {<>
             {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
-            {items.map(item => {
+            {items.map((item,_index) => {
 
-                return <li key={item.name} className={`box-border bg-white cursor-pointer rounded text-gray-800 p-3 hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
+                return <li key={item.name} className={`box-border bg-white cursor-pointer ${_index==items.length-1?'rounded-b-lg':''} text-gray-800 px-3 flex items-center justify-start hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
                     if (disabledRef.current) {
                         e.preventDefault()
                         return
@@ -472,7 +472,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
 }
 
 
-export function Modal({ isOpen, setIsOpen, duration = 300, children, onClose = () => { }, contentStyleText = '', style = {} }) {
+export function Modal({ fixedModalPosition=undefined,zIndex=1,isOpen, setIsOpen, duration = 300, children, onClose = () => { }, contentStyleText = '', style = {} }) {
     let modalBg = useRef()
     let [hidden, setHidden] = useState(true)
     let [realOpen, setIsRealOpen] = useState(false)//if hidden and opacity changed simontaneously, animation fails
@@ -494,8 +494,8 @@ export function Modal({ isOpen, setIsOpen, duration = 300, children, onClose = (
             setIsOpen(false)
         }
     }
-    } className={`modal-bg transition-opacity duration-${duration} pt-16 fixed w-full h-full left-0 top-0 m-auto overflow-auto flex justify-center items-center ${hidden ? 'hidden' : ''} ${realOpen ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,.3)', zIndex: 1 }}>
-        <div className={`modal-content relative m-auto bg-gray-100 w-auto ${contentStyleText} shadow-lg`} style={style}>
+    } className={`modal-bg transition-opacity duration-${duration} pt-16 fixed w-full h-full left-0 top-0 m-auto overflow-auto ${fixedModalPosition?'':'flex justify-center items-center'} ${hidden ? 'hidden' : ''} ${realOpen ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,.3)', zIndex: zIndex }}>
+        <div className={`modal-content relative ${fixedModalPosition?'':'m-auto w-auto'} bg-gray-100 ${contentStyleText} shadow-lg`} style={{...(fixedModalPosition||{}),...style}} >
             {children}
         </div>
     </div>)
@@ -524,7 +524,7 @@ export const Checkbox = forwardRef(({ item = '', forwardedRef, disabledRef = {},
                     return
                 }
 
-                onChange(e)
+                onChange(e,e.target.checked)
             }} type="checkbox" item={item} className="form-checkbox h-5 w-5 bg-gray-100 border-2 border-blue-300" defaultChecked={defaultChecked} /><span className="ml-2 text-gray-700">{label}</span>
         </label>)
 })

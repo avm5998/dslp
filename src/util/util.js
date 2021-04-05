@@ -253,7 +253,7 @@ export function useCachedData(){
             }else{//use initial data
                 dispatch(DataSetActions.setData({...info,
                     filename:info.filename,
-                    data: JSON.parse(json.dataJSon),
+                    data: JSON.parse(json.dataJson),
                     cols: json.cols,
                     num_cols: json.num_cols,
                     col_lists: json.col_lists,
@@ -402,6 +402,7 @@ export function useSimpleForm(initialResult = {}) {
 
     const getData = useCallback(() => {
         let res = result.current
+        
         for (let checkbox of checkboxRefs.current) {
             let { name, element, item } = checkbox
             res[name] = res[name] || []
@@ -425,6 +426,15 @@ export function useSimpleForm(initialResult = {}) {
 
     return {
         getData,
+        clearData:()=>{
+            for (let k in result.current){
+                if (result.current.hasOwnProperty(k)){
+                    delete result.current[k];
+                }
+            }
+
+            Object.assign(result.current,initialResult)
+        },
         result: result.current,
         checkbox: {
             ref: ref => {
