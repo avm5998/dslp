@@ -25,6 +25,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.metrics import confusion_matrix, roc_curve
 from sklearn.decomposition import PCA
 from scipy import stats
+import cv2
 
 
 
@@ -67,6 +68,7 @@ from flask_mail import Message, Mail
 import datetime
 from jwt.exceptions import ExpiredSignatureError, DecodeError, \
     InvalidTokenError
+from IPython.display import Image
 
 matplotlib.use('Agg')
 
@@ -80,6 +82,7 @@ app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 app.config['UPLOAD_EXTENSIONS'] = ['.pdf', '.csv', '.json']
 app.config['UPLOAD_PATH'] = 'uploads'
 app.config['LOGO_PATH'] = 'static/logo'
+app.config['IMAGE_EXTENSIONS'] = ['.png', '.jpg', '.jpeg']
 
 
 api = Api(app)
@@ -175,10 +178,28 @@ def send_email(subject, sender, recipients, text_body, html_body):
 
 
 #APIs
+
+@app.route("/change_profile_pic", methods=["PATCH"])
+@cross_origin(origin="*")
+@jwt_required(optional=True)
+def change_profile_pic():
+    user_avatar = request.files['file']
+    filename = request.form['filename']
+    file_ext = os.path.splitext(filename)[-1]
+    if file_ext not in app.config['IMAGE_EXTENSIONS']:
+        return jsonify(message="Invalid image format"), 400
+    user = User.objects(id=get_jwt_identity())[0]
+
+    user.profile_image.replace(user_avatar, filename=filename)
+    user.save()  
+    imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
+
+    return jsonify(base64=imgStr), 200
+
+
 @app.route("/api/auth/forgot", methods=["POST"])
 @cross_origin(origin="*")
-def forgot():
-    
+def forgot():  
     url =  str(request.origin)+'/reset/'
     try:
         body = request.get_json()
@@ -404,6 +425,8 @@ def _getCache(uid,name):
 # def get_user_id():
 
 
+
+
 @app.route('/visualization',methods=['POST'])
 # @cross_origin(headers=['Content-Type', 'Authorization'])
 # @cross_origin(headers=['Content-Type', 'application/json'])
@@ -554,7 +577,7 @@ def handleCachedData():
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 @app.route('/cleanEditedCache', methods=['POST'])
-@cross_origin()
+@cross_origin(origin="*")
 @jwt_required(optional=True)
 def cleanEditedCache():
     user_id = get_jwt_identity()

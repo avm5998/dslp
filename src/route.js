@@ -32,6 +32,7 @@ import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
 
 import vivek_profile from './assets/images/vivek_profile.jpg'
+import avatar from './assets/images/avatar.png'
 import arrow from './assets/images/arrow.svg'
 
 import { history } from './store';
@@ -53,7 +54,6 @@ const Menu = {
         { text: 'Feature Engineering', icon: 'search', to: '/featureEngineering' },
         { text: 'Feature Selection', icon: 'search', to: '/featureSelection' },
         { text: 'Preprocessing', icon: 'search', to: '/preprocessing' },
-        { text: 'Sign In', icon: 'sign-in-alt', to: '/signin' },
         { text: 'Analysis', icon: 'sign-in-alt', to: '/analysis' },
     ],
 }
@@ -75,6 +75,12 @@ const Routes = (props) => {
     }
 
     const { user: currentUser } = useSelector((state) => state.auth);
+    // if(currentUser){
+    //     useEffect(() => {
+    //         console.log('avatar changed in route')
+    //     }, [currentUser])
+    // }
+
     
     let dataset = useSelector(state => state.dataset)
     let [menuData, setMenuData] = useState(Menu)
@@ -143,11 +149,11 @@ const Routes = (props) => {
                                 <div className="user flex" onClick={() => setToggle(!toggle)}>
                                     <div className="user-details w-full">
                                         <div className="profilepic" size ="40">
-                                            <img className="img" src={vivek_profile}/>
+                                            <img className="img" src={'data:image/png;base64,' + currentUser.avatar}/>
                                         </div>
                                         <div className="Id">
                                             <div className="userId">
-                                            vg4838
+                                            {currentUser.username}
                                             </div>
                                         
                                         </div>

@@ -11,6 +11,7 @@ import Help from '../common/help'
 import useClipboard from "react-use-clipboard";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {config} from '../../config/client'
+import authHeader from '../../services/auth-header'
 
 const API_URL = config.endpoint
 
@@ -89,7 +90,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
       console.log("form data")
       // console.log(typeof(formData))
       let data = JSON.stringify(formData);
-      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data});
+      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
       let json_data = await res.json()
       console.log(json_data['code'])
       setCode(json_data['code'])
@@ -217,7 +218,7 @@ const Interactions = ({ tabpanelIndex, tabpanel }) => {
           col1: dataset.num_cols[col1],
           col2: dataset.num_cols[col2],
         })
-        let res = await fetch(API_URL+'/visualization', {method:'POST', body:data});
+        let res = await fetch(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
 
         let json = await res.json()
         setCode(json['code'])
@@ -267,7 +268,7 @@ const Correlations = ({ tabpanelIndex, tabpanel }) => {
         filename: dataset.filename,
         cmap: 'cool'
       })
-      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data});
+      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
 
       let json = await res.json()
       setCode(json['code'])

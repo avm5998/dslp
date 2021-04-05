@@ -16,8 +16,8 @@ import axios from "axios";
 
 const API_URL = "http://localhost:9000/api/auth/";
 import AuthService from "../services/auth.service";
-export const register = (username, email, password) => (dispatch) => {
-  return AuthService.register(username, email, password).then(
+export const register = (fullname, username, email, password) => (dispatch) => {
+  return AuthService.register(fullname, username, email, password).then(
     (response) => {
       dispatch({
         type: REGISTER_SUCCESS,
@@ -185,30 +185,3 @@ export const reset_password_confirm = (  reset_token, new_password) => dispatch 
     }
   );
 };
-// export const reset_password_confirm = ( reset_token, new_password, re_new_password) => dispatch => {
-//   try {
-//       const response = await axios.post(API_URL+'reset', { reset_token, new_password });
-//       console.log(response);
-//       dispatch({
-//           type: PASSWORD_RESET_CONFIRM_SUCCESS
-//       });
-//       dispatch({
-//         type: SET_MESSAGE,
-//         payload: response.data.message,
-//       });
-//   } catch (error) {
-//     const message =
-//             (error.response &&
-//               error.response.data &&
-//               error.response.data.message) ||
-//             error.message ||
-//             error.toString();
-//       dispatch({
-//           type: PASSWORD_RESET_CONFIRM_FAIL
-//       });
-//       dispatch({
-//         type: SET_MESSAGE,
-//         payload: message,
-//       });
-//   }
-// };
