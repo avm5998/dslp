@@ -3,10 +3,12 @@ import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '..
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
-    test_size_logr_list: [30, 20, 10],
-    C_logr_list: [0.1, 0.2, 0.3],
-    find_solver_logr_list: ['newton-cg,lbfgs,liblinear,sag,saga'],
-    find_C_logr_list: ['100,10,1.0,0.1,0.01'],
+    test_size_list: [30, 20, 10],
+    max_depth_rfc_list: [5, 6, 7, 8, 9],
+    n_estimators_rfc_list: [10, 15, 20],
+    find_max_depth_rfc_list: ['5,10,15,20,50,70'],
+    find_n_estimators_rfc_list: ['10,25,50,100,150,200'],
+    max_leaf_nodes_rfc_list: [5,10,15,20]
 }
 
 export default function ({ dataset, result, submit }) {
@@ -20,22 +22,21 @@ export default function ({ dataset, result, submit }) {
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
-            }}>
+                }}>
                 <Label text="Choose Test Size(%)" />
                 <Input onInput={(e,v) => {
                     result.test_size = v
-                }} customStyle={`w-64 `} attrs={{ list: 'test_size_logr_list' }} />
+                }} customStyle={`w-64 `} attrs={{ list: 'test_size_list' }} />
 
-                <Label customStyle={``} text='Set parameters: solver' />
-                <DropDown defaultText={'Select solver'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']}
-                    onSelect={name => {
-                        result.param_solver = name
-                    }} />
-
-                <Label customStyle={``} text='Set parameters: C' />
+                <Label customStyle={``} text='Set parameters: max_depth' />
                 <Input onInput={(e,v) => {
-                    result.param_C = v
-                }} customStyle={`w-64`} attrs={{ list: 'C_logr_list' }} />
+                    result.param_max_depth = v
+                }} customStyle={`w-64 `} attrs={{ list: 'max_depth_rfc_list' }} />
+                <Label customStyle={``} text='Set parameters: n_estimators' />
+                <Input onInput={(e,v) => {
+                    result.param_n_estimators = v
+                }} customStyle={`w-64 `} attrs={{ list: 'n_estimators_rfc_list' }} />
+
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info=""/></Label>
                 <DropDown defaultText={'Select plot type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
@@ -50,18 +51,28 @@ export default function ({ dataset, result, submit }) {
                         result.metric = name
                     }} />
 
-                <Label text='Find the Best Hyper-Parameters: C'/>
+                <Label text='Find the Best Hyper-Parameters: max_depth'/>
                 <Input onInput={(e,v) => {
-                    result.find_C = v 
-                }} customStyle={`w-64`} attrs={{ list: 'find_C_logr_list' }} />
-                 <Label text='Find the Best Hyper-Parameters: solver'/>
+                    result.find_max_depth = v 
+                }} customStyle={`w-64`} attrs={{ list: 'find_max_depth_rfc_list' }} />
+                <Label text='Find the Best Hyper-Parameters: n_estimators'/>
                 <Input onInput={(e,v) => {
-                    result.find_solver = v 
-                }} customStyle={`w-64`} attrs={{ list: 'find_solver_logr_list' }} />
+                    result.find_n_estimators = v 
+                }} customStyle={`w-64`} attrs={{ list: 'find_n_estimators_rfc_list' }} />
+                
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
-            }}>
+                }}>
+                <Label customStyle={``} text='Set parameters: criterion' />
+                <DropDown defaultText={'Select criterion'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['gini', 'entropy']}
+                    onSelect={name => {
+                        result.criterion = name
+                    }} />
+                <Label customStyle={``} text='Set parameters: max_leaf_nodes' />
+                <Input onInput={(e,v) => {
+                    result.param_max_leaf_nodes = v
+                    }} customStyle={`w-64`} attrs={{ list: 'max_leaf_nodes_rfc_list' }} />
             </div>
             <div className='flex justify-end'>
                 <Button onClick={e => {

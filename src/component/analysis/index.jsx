@@ -7,12 +7,19 @@ import { actions as DataSetActions } from '../../reducer/dataset'
 import { Checkbox, Modal, Button, MultiSelect, DropDown, Label, Input} from '../../util/ui'
 import Table from '../common/table'
 import Tip from '../common/tip'
-import LinearRegressionOptions from './option/regression/linearRegession'
+import LinearRegressionOptions from './option/regression/linearRegression'
+import DecisionTreeRegressionOptions from './option/regression/decisiontreeRegression'
+import RandomForestsRegressionOptions from './option/regression/randomforestsRegression'
+import SVMRegressionOptions from './option/regression/svmRegression'
 import LogisticRegressionOptions from './option/classification/logisticRegression'
+import DecisionTreeClassifierOptions from './option/classification/decisiontreeClassifier'
+import RandomForestClassifierOptions from './option/classification/randomforestClassifier'
+import { construct } from 'core-js/fn/reflect';
+
 
 const OptionModels = {
-    Regression:{'Linear Regression':LinearRegressionOptions, }, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
-    Classification:{'Logistic Regression':LogisticRegressionOptions}
+    Regression:{'Linear Regression':LinearRegressionOptions, 'Decision Tree Regression':DecisionTreeRegressionOptions, 'Random Forests Regression':RandomForestsRegressionOptions, 'SVM Regression':SVMRegressionOptions}, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
+    Classification:{'Logistic Regression':LogisticRegressionOptions, 'Decision Tree Classifier':DecisionTreeClassifierOptions, 'Random Forests Classifier':RandomForestClassifierOptions}
 }
 
 // const Models = {
@@ -28,6 +35,7 @@ const Analysis = () => {
     let [option, setOption] = useState(-1)
     let [model, setModel] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
+    let [showConditionModal, setShowConditionModal] = useState(false)
     let dataset = useSelector(state => state.dataset)
     let dispatch = useDispatch()
 
@@ -41,18 +49,24 @@ const Analysis = () => {
     },[option,model])
 
     let submit = useCallback(async ()=>{
-        let res = await fetchByJSON("analysis",result)
-        let json = await res.json()
-        console.log(json)
+        let res = await fetchByJSON("analysis", {...result, filename:dataset.filename})   //send request
+        let json = await res.json()     // receive request
+     
+        // json.cond.replace(/&/g, ",  ")
+        $('#display_query').text(json.cond)
+        $('#display_results').text(json.para_result)
+        document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
+        console.log(json)   // print
     },[result])
 
     let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model)?OptionModels[option][model]:e=><div></div>
 
-    return (<div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
+    return (
+    <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
         <Modal fixedModalPosition={{
             left:'20vw',
             top:'10vh',
-            width:'60vw'
+            width:'70vw'
         }} zIndex={11} isOpen={showSubOptionModal} onClose={()=>{
             // let data = getData()
             // console.log(data)
@@ -83,7 +97,8 @@ const Analysis = () => {
                             }
                         }))} />
                 </div>
-                <Button text={'Option'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+                <Button text={'Select The Best Model'} customStyle={'h-10 w-65 ml-0'} onClick={()=>{
+                    
                     if(model){
                         setShowSubOptionModal(true)
                     }
@@ -93,9 +108,40 @@ const Analysis = () => {
                 }}/>
             </div>
         </div>
+
+
+     
+
+        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full flex justify-start'>
+                <Label text="Model Conditions:" className='w-300'>
+                <div id = "display_query" style={{ whiteSpace: 'pre-wrap' }} ></div>
+                </Label>
+            </div>
+        </div>
+
+        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full flex justify-start'>
+            <Label text="Model Results:">
+                <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} ></div>
+            </Label>
+            </div>
+        </div>
+
+        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full flex justify-start'>
+            <Label text="Model Plot:">
+                <img id="img" src="" />
+            </Label>
+            </div>
+        </div>
+
+
         
-        <Table PageSize={10}/>
-    </div>)
+        {/* <Table PageSize={10}/> */}
+
+    </div>
+    )
 }
 
 export default Analysis
