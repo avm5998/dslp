@@ -118,9 +118,9 @@ const FeatureEngineering = () => {
                     if(!canOperation){
                         alert(errorMsg)
                     }else{
-                        let res = await fetchByJSON('feature_engineering',getData())
-                        let json = await res.json()
-                        
+                        // let res = await fetchByJSON('feature_engineering',getData())
+                        // let json = await res.json()
+
                     }
                 }}/>
             </div>
