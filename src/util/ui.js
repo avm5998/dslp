@@ -170,7 +170,7 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
                                 </div>
                             )}
                             <div className="flex-1" >
-                                <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} text-center bg-transparent px-2 appearance-none outline-none h-full w-full text-gray-800`} />
+                                <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} flex items-center text-center bg-transparent px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
                         <div className="text-gray-400 w-4 flex items-center border-gray-200" onClick={() => toggleMenu()}>

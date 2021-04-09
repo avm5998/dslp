@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo,useSimpleForm } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo,useCachedData,useSimpleForm } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -10,6 +10,8 @@ import Table from '../common/table'
 
 
 const FS = () => {
+    useCachedData()
+    
     let [optionText, setOptionText] = useState('Select operation')
     // let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let [showSubOptionModal, setShowSubOptionModal] = useState(true)
@@ -19,8 +21,12 @@ const FS = () => {
     let [techinique,setTechnique] = useState(-1)
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
-        <Modal isOpen={showSubOptionModal} onClose={()=>{
-        }} setIsOpen={setShowSubOptionModal} contentStyleText="mx-auto mt-20">
+        <Modal fixedModalPosition={{
+            left:'20vw',
+            top:'10vh',
+            width:'60vw'
+        }} isOpen={showSubOptionModal} onClose={()=>{
+        }} setIsOpen={setShowSubOptionModal}>
             <div className='p-5 flex flex-col'>
                 <div className='grid grid-cols-2 gap-4'>
                     <div className='flex items-center'>Variables X = </div>
@@ -54,20 +60,20 @@ const FS = () => {
                     <div className='flex items-center'>Finalize Variables Y</div>
                     <DropDown defaultText={'Finalize Variables Y'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={['No Finalized Y',...dataset.cols]} onSelect={e=>result.finalizey = e}/>
                 </div>
-                {/* <div className="flex justify-end m-3 mt-10">
-                    <Button text='Confirm' customStyle='border-light' onClick={()=>{
+                <div className="flex justify-end mt-10">
+                    <Button text='Confirm' customStyle='w-48 h-10 justify-self-end' onClick={()=>{
                         console.log(getData())
                     }}/>
-                </div> */}
+                </div>
             </div>
         </Modal>
         <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
             <div className='mx-5 w-8/12 flex justify-start'>
-                <Button text={optionText} customStyle={'h-6 w-48 ml-10 py-0'} onClick={()=>{
+                <Button text={optionText} customStyle={'h-10 w-48 ml-10 py-0'} onClick={()=>{
                     setShowSubOptionModal(s=>!s)
                 }}/>
-                <Button disabled={!dataset.dataFeatureSelection.length} text={'Cancel operation'} customStyle={'h-6 w-48 ml-10 py-0'} onClick={()=>{
-                }}/>
+                {/* <Button disabled={!dataset.dataFeatureSelection.length} text={'Cancel operation'} customStyle={'h-10 w-48 ml-10 py-0'} onClick={()=>{
+                }}/> */}
             </div>
 
             <div className='mx-5 w-3/12'>
