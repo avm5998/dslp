@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
+import { useSelector } from 'react-redux'
 import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../../../util/ui'
 import { InlineTip } from '../../../common/tip'
 
@@ -11,6 +12,7 @@ const DataLists = {
 
 export default function ({ dataset, result, submit }) {
     let [activeTab, setActiveTab] = useState(0)
+    let option = useSelector(state=>state.option).analysis.regression['Linear Regression'] || {}
 
     return (
         <div className='p-4'>
@@ -22,7 +24,7 @@ export default function ({ dataset, result, submit }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default: 30%"/></Label>
-                <Input onInput={(e,v) => {
+                <Input defaultValue={option.test_size} onInput={(e,v) => {
                     result.test_size = v 
                 }} customStyle={`w-64`} attrs={{ list: 'test_size_lr_list' }} />
 
