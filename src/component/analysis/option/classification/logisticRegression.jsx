@@ -22,7 +22,7 @@ export default function ({ dataset, result, submit }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
                 <Label text="Choose Test Size(%)" />
-                <Input onInput={(e,v) => {
+                <Input defaultValue={1} onInput={(e,v) => {
                     result.test_size = v
                 }} customStyle={`w-64 `} attrs={{ list: 'test_size_logr_list' }} />
 

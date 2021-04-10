@@ -995,7 +995,7 @@ def cond_Classification_json():
     df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     # print(df)
     ndf = df.replace(MISSING_VALUES, np.nan)
-    cond += "\nFinal Independent Variables: " + str(fianlVar) + "\nFinal Dependent Variable: "+ str(finalY)
+    cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     if analysis_model == "Logistic Regression":
         test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
         metric = params['metric'] if 'metric' in params else 'Classification Report'

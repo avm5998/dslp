@@ -4,6 +4,7 @@ import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
+import { actions as OptionActions } from '../../reducer/option'
 import { Checkbox, Modal, Button, MultiSelect, DropDown, Label, Input} from '../../util/ui'
 import Table from '../common/table'
 import Tip from '../common/tip'
@@ -55,6 +56,7 @@ const Analysis = () => {
     },[option,model])
 
     let submit = useCallback(async ()=>{
+        dispatch(OptionActions.setOption(['analysis',option,model,{...result}]))
         let res = await fetchByJSON(`analysis/${option}`, {...result, filename:dataset.filename})   //send request
         let json = await res.json()     // receive request
      
@@ -63,7 +65,7 @@ const Analysis = () => {
         $('#display_results').text(json.para_result)
         document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
         console.log(json)   // print
-    },[result,option])
+    },[result,option,model])
 
     let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model)?OptionModels[option][model]:e=><div></div>
 
