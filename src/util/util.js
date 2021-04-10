@@ -402,7 +402,6 @@ export function useSimpleForm(initialResult = {}) {
 
     const getData = useCallback(() => {
         let res = result.current
-        
         for (let checkbox of checkboxRefs.current) {
             let { name, element, item } = checkbox
             res[name] = res[name] || []

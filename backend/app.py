@@ -251,7 +251,6 @@ def reset_link():
         raise InternalServerError('Something went wrong')
 
 
-
 @app.route("/list_files_json",methods=['POST'])
 def file_list():
     files = mongo_collection.find({}, {"_id": 0, "logo_name": 1, "desc": 1, "file_name": 1, "source_link": 1})
@@ -365,11 +364,11 @@ def uploadFile():
 
     buf = StringIO()
     data = ''
-    df = _getCache(user_id,filename)
+    df = _getCache(user_id,filename,modified = False)
     df.info(buf=buf,verbose=True)
     data = df.iloc[:10,].to_json()
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(df)
-    _setCache(user_id,filename,df)
+    _setCache(user_id,filename,df,modified = False)
     return jsonify(success=True, info = buf.getvalue(), data = data, 
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
@@ -384,25 +383,51 @@ def update_user_files_list(user_id, filename):
     queue.appendleft(filename)   
     user_collection.update_one({'_id':ObjectId(user_id)}, {'$set':{'files':list(queue)}})
 
-def _setCache(uid,name,df):
+def _setCache(uid,name,df,modified = True):
+    if modified:
+        name = EditedPrefix + name
     key = str(uid)+'_'+name
     cache.set(key,df,timeout = app.config['CACHE_TIMEOUT'])
     return df
 
-def _clearCache(uid,name):
+def _clearCache(uid,name,modified = True):
+    if modified:
+        name = EditedPrefix + name
     key = str(uid)+'_'+name
     cache.delete(key)
 
-# get dataframe by content in cache or database, then put that datafrome into cache
-def _getCache(uid,name):
+# get dataframe by content in cache, if it does not exist in the cache,
+# get content from database and create dataframe, then put it into cache
+#
+# uid: user id
+# name: dataframe name, two versions of one dataframe could be stored in the cache, original one and modified one
+# modified: whether to get the modified version
+#
+# if no modified version is found, return a copy of the original one
+# normally, **ALL** operations are performed on the **modified** version
+def _getCache(uid,name,modified = True):
     key = str(uid)+'_'+name
-    df = cache.get(key)
+    df = None
+    copyModified = False
+
+    if modified:
+        df = cache.get(EditedPrefix + name)
+        if df is None:
+            copyModified = True
+
     if df is None:
-        details = mongo_collection.find_one({"file_name": name,"user_id":uid})
-        if not details:
-            return None
-        df = pd.read_csv(StringIO(details['content'].decode('utf8')))
-        _setCache(uid,key,df)
+        df = cache.get(name)
+        if df is None:
+            details = mongo_collection.find_one({"file_name": name,"user_id":uid})
+            if not details:
+                return None
+            df = pd.read_csv(StringIO(details['content'].decode('utf8')))
+            _setCache(uid,key,df,modified = False)
+
+    if copyModified:
+        df = df.copy(deep = True)
+        _setCache(uid, name, df)
+        
     return df
 
 @app.route('/visualization',methods=['POST'])
@@ -507,7 +532,6 @@ def query():
             qObject = json.loads(filter['qString'])
             ndf = ndf[ndf.apply(lambda x:qObject['min'] <= x[qObject['column']] <= qObject['max'], axis = 1)]
 
-    _setCache(user_id,EditedPrefix+filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
@@ -516,38 +540,19 @@ def query():
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 
 # Require last modified dataframe from server
-# First, the original dataframe is identified by user id and filename and assuming the file exists
-
-# if the original dataframe is in the mem cache
-#   do nothing
-# else
-#   get original dataframe by user id and filename, set the dataframe to mem cache
-
-# if the modified dataframe is in the mem cache
-#   get the modified dataframe json
-# else
-#   do nothing since we don't know how to get the modified data even with the filters
-#   and at the same time, since there is no modified data, all filters/cols will be invalid and being rest
-
-# TODO is it better to store the current version of modified data each time the data's been modified?
+# df is the original
 @app.route('/handleCachedData', methods=['POST'])
-@cross_origin()
+@cross_origin('*')
 @jwt_required()
 def handleCachedData():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
-    df = _getCache(user_id,filename)
-    modifiedJson = ''
-
-    if df is not None:
-        ndf = _getCache(user_id,EditedPrefix + filename)
-
-        if ndf is not None: # must be in the mem cache since database does not store modified data
-            modifiedJson = ndf.to_json()
+    df = _getCache(user_id,filename, modified=False)
+    ndf = _getCache(user_id,filename)
 
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf if ndf is not None else df)
-    return jsonify(modifiedJson = modifiedJson,dataJson = df.to_json(),
+    return jsonify(modifiedJson = ndf.to_json(),dataJson = df.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
@@ -558,7 +563,7 @@ def cleanEditedCache():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
-    _clearCache(user_id,EditedPrefix+filename)
+    _clearCache(user_id,filename)
     return jsonify(success=True)
 
 # cleaner data structure
@@ -614,7 +619,7 @@ def cond_clean_json():
                 ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]
                 
        
-    _setCache(user_id,EditedPrefix+filename,ndf)
+    _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
@@ -628,67 +633,169 @@ def current_data_json():
     params = request.json
     filename = params['filename']
 
-    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)
+    df = _getCache(user_id,filename)
     return jsonify(data=df.to_json())
 
 
 @app.route('/feature_engineering', methods=['POST'])
 @cross_origin()
+@jwt_required()
 def cond_eng_json(): 
     params = request.json
-    queries = params['queries']
-    for query in queries:
-        feature_eng = query['feature_eng']
+    filename = params['filename']
+    user_id = get_jwt_identity()
+    df = _getCache(user_id,filename)
+    msg = ''
+    success = True
 
-    df = pd.DataFrame(data=table_DATA, columns=col).reset_index(drop=True)
-    df = df.replace(missing_values, np.nan) 
-    if feature_eng == 'Convert Cases':
-        case_col = params['case_col']
-        case_type = params['case_type']
+    option = params['activeOption']
 
-        for index1, index2 in zip(case_col, case_type):
-            if index2=="lower":
-                df[index1] = df[index1].astype(str).str.lower()
+    try:
+        if option == 0:
+            cols = params['cols']
+            for col,ctype in cols:
+                if ctype == 'to lowercase':
+                    df[col] = df[col].astype(str).str.lower()
+                elif ctype == 'to uppercase':
+                    df[col] = df[col].astype(str).str.upper()
+
+        if option == 1:
+            cols = params['cols']
+            for col in cols:
+                label = LabelEncoder()
+                df[col] = label.fit_transform(df[col].astype(str))
+
+        if option == 2:
+            for col in suboption_checked:
+                params = {}
+                for postAttr in ['Bins','Labels']:
+                    attr = col + '_' + postAttr
+                    params[postAttr] = params[attr]
+                
+                label = LabelEncoder()
+                df[col] = pd.cut(df[col].astype(float), bins=list(params['Bins'].split(",")), 
+                            labels=list(params['Labels'].split(",")))
+
+        if option == 3:
+            cols = params['cols']
+            for col in cols:
+                scaler = StandardScaler()
+                df[col] = scaler.fit_transform(df[col])
+
+        if option == 4:
+            cols = params['cols']
+            for col in cols:
+                scaler = MinMaxScaler()
+                df[col] = scaler.fit_transform(df[col])
+    except e:
+        msg = str(e)
+        success = False
+
+    _setCache(user_id,name,df)
+    return jsonify(success=success, msg = msg, dataJson = df.to_json())
+
+    
+@app.route('/feature_selection', methods=['POST'])
+@cross_origin()
+@jwt_required()
+def cond_select_json(filename):
+    params = request.json
+    filename = params['filename']
+    user_id = get_jwt_identity()
+    df = _getCache(user_id,filename)
+    msg = ''
+    success = True
+
+    DEFAULT_PLOT_SIZE = (5,5)
+    DEFAULT_PLOT_TYPE = 'bar'
+    Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information Classification','Principal Component Analysis'])}
+
+    try:
+        plotSize = tuple(map(int,params['plotsize'].split(','))) if params['plotsize'] else DEFAULT_PLOT_SIZE
+        plotType = params['plottype'] or 'bar'
+        selectKBest = int(params['selectkbest']) if params['selectkbest'] else 0
+        target_Y = params['targety']
+        technique = Techniques[int(params['techinique'])] if params['technique'] else ''
+        variables_X = params['variablesx']
+        df.replace(missing_values, np.nan) 
+
+
+    except e:
+        msg = str(e)
+        success = False
+
+    # if not finalVar:
+    #     if new_colname:
+    #         finalVar.append(new_colname) # or display new created columns in dropdown list
+
+
+    # if final_button == 'off':
+    #     finalVar = col  
+        if Y:
+            data = pd.concat([df[X], df[Y]], axis=1)
+        else:
+            data = df[X]
+
+        for i in data.columns:
+            if data[i].dtypes == object:
+                label = LabelEncoder()
+                data[i] = label.fit_transform(data[i].astype(str))
+        X = data[X]
+        Y = data[Y]
+        
+        if tech in ["Correlation Matrix", 'PCA']:
+            if tech == "Correlation Matrix":
+                featureResult = data.corr(method ='pearson')  # get correlations of each features in dataset
+                featureResult = pd.DataFrame(data=featureResult)
+            elif tech == "PCA":
+                    scaled_data = StandardScaler().fit_transform(data)
+                    pca = PCA(n_components=num_comp)
+                    pca_res = pca.fit_transform(scaled_data) 
+                    col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
+                    pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
+                    featureResult = pd.concat([pca_df, Y], axis=1)
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+
+            if plotType == "bar":
+                featureResult.plot.bar()
+            elif plotType == "scatter":
+                sns.pairplot(featureResult) # plt.scatter(pca_res[:,0], pca_res[:,1])
+            elif plotType == "line":
+                featureResult.plot.line()
+            elif plotType == "heatmap":
+                sns.heatmap(featureResult,annot=True,cmap="RdYlGn") # cmap='RdGy'
+        else:
+            if tech == "VarianceThreshold":
+                fs = VarianceThreshold(threshold=thresh)
+                fs.fit(data)
+                featureResult = pd.DataFrame({"Features":data.columns ,"Boolean Result":fs.get_support()})
+                x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
+                featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
             else:
-                df[index1] = df[index1].astype(str).str.upper()
-    elif feature_eng == 'Convert Categorical to Numerical':
-        for i in categorical_col:
-            label = LabelEncoder()
-            df[i] = label.fit_transform(df[i].astype(str))
-    elif feature_eng == 'Convert Numerical to Categorical':
-        for index1, index2, index3 in zip(numerical_col, bins, labels):
-            label = LabelEncoder()
-            df[index1] = pd.cut(df[index1].astype(float), bins=list(index2.split(",")), labels=list(index3.split(",")))
-    elif feature_eng == "Standard Scaler": 
-        scaler = StandardScaler()
-        df[stand_scaler_col] = scaler.fit_transform(df[stand_scaler_col])
-    elif feature_eng == "Minmax Scaler": 
-        scaler = MinMaxScaler()
-        df[minmax_scaler_col] = scaler.fit_transform(df[minmax_scaler_col])
-    elif feature_eng == 'Text Data: Feature Extraction Models':
-        if feat_extract_model_text_data == 'CountVectorizer':
-            scaler = CountVectorizer()
-        elif feat_extract_model_text_data == 'TfidfVectorizer':
-            scaler = TfidfVectorizer()
-    elif feature_eng == 'Add New Features and Labels':
-        print("********Inside********")
-        print('add_feat_col=',add_feat_col)
-        new_feat_assigns = {}
-        index=0
-        for new_feat_name, orig_feat_name in zip(add_feat_name_in, add_feat_col):
-            print('*****new_feat_name, orig_feat_name== ', new_feat_name, orig_feat_name)
-            unique_values = add_feat_uniq_val_in[index].split(',')
-            new_labels = add_feat_new_label[index].split(',')
-            print('unique_values, new_labels=====> ', unique_values, new_labels)
-            for uniq_val, new_label in zip(unique_values, new_labels):
-                # cond += '\nOriginal Column: ' + orig_feat_name +  '--->'+ 'New Feature:' + new_feat_name + ';  Unique Value: '+ uniq_val + "---> New Label: " + new_label
-                print('********** uniq_val, new_label= ', uniq_val, new_label)
-                new_feat_assigns[uniq_val] = new_label
-            print('new_feat_assigns===============', new_feat_assigns)
-            df[new_feat_name] = df[orig_feat_name].apply(lambda x: new_feat_assigns[x])
-            index+=1
-
-    return jsonify(df_sorted=df.to_json(orient="values"), prep_f=cond, prep_col=list(df.columns))
+                if tech == "Pearson":
+                    fs = SelectKBest(score_func=f_regression, k=K)
+                elif tech == "ANOVA":
+                    fs = SelectKBest(score_func=f_classif, k=K)
+                elif tech == "Chi2":
+                    fs = SelectKBest(score_func=chi2, k=K)
+                elif tech == "Mutual_classification":
+                    fs = SelectKBest(score_func=mutual_info_classif, k=K)
+                fit = fs.fit(X, Y.values.ravel())
+                featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+                featureResult=featureResult.nlargest(K,'Score')  #print k best features
+                x_label, y_label, title = 'Features', 'Score', 'Feature Score'
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+            fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
+            plt.title(title)      
+        # encode plot
+        plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+        plt.clf()
+        img.seek(0)
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        img.close()
+    return jsonify(df_sorted=df.to_json(orient="values"), prep_col=list(df.columns), condition=cond, final_Var=finalVar, final_Y= finalY, plot_url=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
 
 # Sophie merged--> need modify 
 def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):

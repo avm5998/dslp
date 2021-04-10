@@ -163,7 +163,7 @@ export default function(){
             width:'60vw'
         }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
-            setCode(GraphConfigs[currentPlot].getCode(result), dataset)
+            // setCode(GraphConfigs[currentPlot].getCode(result), dataset)
         }}>
             {
                 GraphOptionViews[currentPlot] ? <OptionView setCode={setCode} dataset={dataset} result={result} showOptions={showOptions}/> : ''
