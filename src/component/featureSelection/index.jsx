@@ -6,12 +6,13 @@ import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Checkbox, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
+import { InlineTip } from '../common/tip';
 
 
 
 const FS = () => {
     useCachedData()
-    
+
     let [optionText, setOptionText] = useState('Select operation')
     // let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let [showSubOptionModal, setShowSubOptionModal] = useState(true)
@@ -29,10 +30,10 @@ const FS = () => {
         }} setIsOpen={setShowSubOptionModal}>
             <div className='p-5 flex flex-col'>
                 <div className='grid grid-cols-2 gap-4'>
-                    <div className='flex items-center'>Variables X = </div>
-                    <MultiSelect customHeight={'h-10'} customWidth={'w-96'} defaultText='Select Variables X' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.variablesx = e}/>
-                    <div className='flex items-center'>Target Y = </div>
-                    <DropDown defaultText={'Select Target Y'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={dataset.cols} onSelect={e=>result.targety = e}/>
+                    <div className='flex items-center'>Variables X = <InlineTip info="Variables X can only be numerical"/></div>
+                    <MultiSelect customHeight={'h-10'} customWidth={'w-96'} defaultText='Select Variables X' wrapSelection={false} defaultOpen={false} selections={dataset.num_cols} onSelect={e=>result.variablesx = e}/>
+                    <div className='flex items-center'>Target Y = <InlineTip info="Target Y can only be numerical"/></div>
+                    <DropDown defaultText={'Select Target Y'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={dataset.num_cols} onSelect={e=>result.targety = e}/>
                     <div className='flex items-center'>Select K=? Best Features </div>
                     <input {...input} name="selectkbest" list="select_k_best_list" placeholder='K' className='px-5 py-2 focus:outline-none rounded-full w-96'/>
                     <datalist id="select_k_best_list"><option value="5"></option><option value="10"></option><option value="15"></option></datalist>
@@ -55,10 +56,10 @@ const FS = () => {
                     <DropDown defaultText={'Select Target Y'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={[
                         'Bar','Scatter Plot','Line Graph','Heatmap'
                     ]} onSelect={(e,i)=>result.plottype = i}/>
-                    <div className='flex items-center'>Finalize Variables X</div>
+                    {/* <div className='flex items-center'>Finalize Variables X</div>
                     <DropDown defaultText={'Finalize Variables X'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={['No Finalized X',...dataset.cols]} onSelect={e=>result.finalizex = e}/>
                     <div className='flex items-center'>Finalize Variables Y</div>
-                    <DropDown defaultText={'Finalize Variables Y'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={['No Finalized Y',...dataset.cols]} onSelect={e=>result.finalizey = e}/>
+                    <DropDown defaultText={'Finalize Variables Y'} showOnHover={false} customStyle={'h-10 w-96'} customUlStyle={'h-10 w-96'} items={['No Finalized Y',...dataset.cols]} onSelect={e=>result.finalizey = e}/> */}
                 </div>
                 <div className="flex justify-end mt-10">
                     <Button text='Confirm' customStyle='w-48 h-10 justify-self-end' onClick={()=>{

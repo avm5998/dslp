@@ -711,8 +711,6 @@ def cond_select_json(filename):
     Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information Classification','Principal Component Analysis'])}
 
     try:
-        finalize_X = params['finalizex']
-        finalize_Y = params['finalizey']
         plotSize = tuple(map(int,params['plotsize'].split(','))) if params['plotsize'] else DEFAULT_PLOT_SIZE
         plotType = params['plottype'] or 'bar'
         selectKBest = int(params['selectkbest']) if params['selectkbest'] else 0
@@ -721,8 +719,6 @@ def cond_select_json(filename):
         variables_X = params['variablesx']
         df.replace(missing_values, np.nan) 
 
-        # ? new_colname
-        # ? final_button X or Y
 
     except e:
         msg = str(e)
@@ -731,96 +727,75 @@ def cond_select_json(filename):
     # if not finalVar:
     #     if new_colname:
     #         finalVar.append(new_colname) # or display new created columns in dropdown list
+
+
     # if final_button == 'off':
     #     finalVar = col  
-    #     cond += "\nVariables X = " + str(X) 
-    #     if Y:
-    #         data = pd.concat([df[X], df[Y]], axis=1)
-    #         cond += "\nTarget Y = " + str(Y) 
-    #     else:
-    #         data = df[X]
+        if Y:
+            data = pd.concat([df[X], df[Y]], axis=1)
+        else:
+            data = df[X]
 
-    #     cond += " \nSelect K = " + str(K) + " Best Features  \nFeature Selection Techniques=" + tech
-    #     data = data.apply(pd.to_numeric,errors='ignore') # convert data type
-    #     for i in data.columns:
-    #         if data[i].dtypes == object:
-    #             label = LabelEncoder()
-    #             data[i] = label.fit_transform(data[i].astype(str))
-    #     X = data[X]
-    #     Y = data[Y]
+        for i in data.columns:
+            if data[i].dtypes == object:
+                label = LabelEncoder()
+                data[i] = label.fit_transform(data[i].astype(str))
+        X = data[X]
+        Y = data[Y]
         
-    #     if tech in ["Correlation Matrix", 'PCA']:
-    #         if tech == "Correlation Matrix":
-    #             featureResult = data.corr(method ='pearson')  # get correlations of each features in dataset
-    #             featureResult = pd.DataFrame(data=featureResult)
-    #         elif tech == "PCA":
-    #                 cond += "; \nNumber of Components=" + str(num_comp)
-    #                 scaled_data = StandardScaler().fit_transform(data)
-    #                 pca = PCA(n_components=num_comp)
-    #                 pca_res = pca.fit_transform(scaled_data) 
-    #                 print("pca_res========", pca_res)
-    #                 col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
-    #                 pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
-    #                 print("pca_df=======",pca_df)
-    #                 featureResult = pd.concat([pca_df, Y], axis=1)
-    #         img = BytesIO()
-    #         plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+        if tech in ["Correlation Matrix", 'PCA']:
+            if tech == "Correlation Matrix":
+                featureResult = data.corr(method ='pearson')  # get correlations of each features in dataset
+                featureResult = pd.DataFrame(data=featureResult)
+            elif tech == "PCA":
+                    scaled_data = StandardScaler().fit_transform(data)
+                    pca = PCA(n_components=num_comp)
+                    pca_res = pca.fit_transform(scaled_data) 
+                    col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
+                    pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
+                    featureResult = pd.concat([pca_df, Y], axis=1)
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
 
-    #         if plotType == "bar":
-    #             featureResult.plot.bar()
-    #         elif plotType == "scatter":
-    #             sns.pairplot(featureResult) # plt.scatter(pca_res[:,0], pca_res[:,1])
-    #         elif plotType == "line":
-    #             featureResult.plot.line()
-    #         elif plotType == "heatmap":
-    #             sns.heatmap(featureResult,annot=True,cmap="RdYlGn") # cmap='RdGy'
-    #     else:
-    #         if tech == "VarianceThreshold":
-    #             cond += "\nThreshold=" + str(thresh)
-    #             fs = VarianceThreshold(threshold=thresh)
-    #             fs.fit(data)
-    #             featureResult = pd.DataFrame({"Features":data.columns ,"Boolean Result":fs.get_support()})
-    #             x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
-    #             featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
-    #         else:
-    #             if tech == "Pearson":
-    #                 fs = SelectKBest(score_func=f_regression, k=K)
-    #             elif tech == "ANOVA":
-    #                 fs = SelectKBest(score_func=f_classif, k=K)
-    #             elif tech == "Chi2":
-    #                 fs = SelectKBest(score_func=chi2, k=K)
-    #             elif tech == "Mutual_classification":
-    #                 fs = SelectKBest(score_func=mutual_info_classif, k=K)
-    #             fit = fs.fit(X, Y.values.ravel())
-    #             featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
-    #             featureResult=featureResult.nlargest(K,'Score')  #print k best features
-    #             x_label, y_label, title = 'Features', 'Score', 'Feature Score'
-    #         img = BytesIO()
-    #         plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-    #         fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
-    #         plt.title(title)      
-    #     # encode plot
-    #     plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
-    #     plt.clf()
-    #     img.seek(0)
-    #     plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-    #     img.close()
-    # else:
-    #     cond = "\nFinalize Variables X= " + str(finalVar) 
-    #     # print("cond===", cond)
-    #     final=[]
-    #     final.extend(finalVar)
-    #     if finalY:
-    #         final.append(finalY)
-    #         cond += "\nFinalize Target Y= " + str(finalY)
-    #     print("final=", final)
-    #     final.insert(0,"Index")
-    #     df = df[final]
-    #     # print("df---", df)
-    #     print("finalVar===", finalVar)
-    #     featureResult=pd.DataFrame()
-    #     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-    # return jsonify(df_sorted=df.to_json(orient="values"), prep_col=list(df.columns), condition=cond, final_Var=finalVar, final_Y= finalY, plot_url=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
+            if plotType == "bar":
+                featureResult.plot.bar()
+            elif plotType == "scatter":
+                sns.pairplot(featureResult) # plt.scatter(pca_res[:,0], pca_res[:,1])
+            elif plotType == "line":
+                featureResult.plot.line()
+            elif plotType == "heatmap":
+                sns.heatmap(featureResult,annot=True,cmap="RdYlGn") # cmap='RdGy'
+        else:
+            if tech == "VarianceThreshold":
+                fs = VarianceThreshold(threshold=thresh)
+                fs.fit(data)
+                featureResult = pd.DataFrame({"Features":data.columns ,"Boolean Result":fs.get_support()})
+                x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
+                featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
+            else:
+                if tech == "Pearson":
+                    fs = SelectKBest(score_func=f_regression, k=K)
+                elif tech == "ANOVA":
+                    fs = SelectKBest(score_func=f_classif, k=K)
+                elif tech == "Chi2":
+                    fs = SelectKBest(score_func=chi2, k=K)
+                elif tech == "Mutual_classification":
+                    fs = SelectKBest(score_func=mutual_info_classif, k=K)
+                fit = fs.fit(X, Y.values.ravel())
+                featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+                featureResult=featureResult.nlargest(K,'Score')  #print k best features
+                x_label, y_label, title = 'Features', 'Score', 'Feature Score'
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+            fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
+            plt.title(title)      
+        # encode plot
+        plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+        plt.clf()
+        img.seek(0)
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        img.close()
+    return jsonify(df_sorted=df.to_json(orient="values"), prep_col=list(df.columns), condition=cond, final_Var=finalVar, final_Y= finalY, plot_url=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
 
 # Sophie merged--> need modify 
 def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
