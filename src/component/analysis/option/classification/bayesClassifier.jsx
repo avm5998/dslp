@@ -3,10 +3,7 @@ import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '..
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
-    test_size_logr_list: [30, 20, 10],
-    C_logr_list: [0.1, 0.2, 0.3],
-    find_solver_logr_list: ['newton-cg,lbfgs,liblinear,sag,saga'],
-    find_C_logr_list: ['100,10,1.0,0.1,0.01'],
+    test_size_bayes_list: [30, 20, 10]
 }
 
 export default function ({ dataset, result, submit }) {
@@ -24,18 +21,8 @@ export default function ({ dataset, result, submit }) {
                 <Label text="Choose Test Size(%)" />
                 <Input onInput={(e,v) => {
                     result.test_size = v
-                }} customStyle={`w-64 `} attrs={{ list: 'test_size_logr_list' }} />
+                }} customStyle={`w-64 `} attrs={{ list: 'test_size_bayes_list' }} />
 
-                <Label customStyle={``} text='Set parameters: solver' />
-                <DropDown defaultText={'Select solver'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']}
-                    onSelect={name => {
-                        result.param_solver = name
-                    }} />
-
-                <Label customStyle={``} text='Set parameters: C' />
-                <Input onInput={(e,v) => {
-                    result.param_C = v
-                }} customStyle={`w-64`} attrs={{ list: 'C_logr_list' }} />
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info=""/></Label>
                 <DropDown defaultText={'Select plot type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
@@ -49,15 +36,6 @@ export default function ({ dataset, result, submit }) {
                     onSelect={name => {
                         result.metric = name
                     }} />
-
-                <Label text='Find the Best Hyper-Parameters: C'/>
-                <Input onInput={(e,v) => {
-                    result.find_C = v 
-                }} customStyle={`w-64`} attrs={{ list: 'find_C_logr_list' }} />
-                 <Label text='Find the Best Hyper-Parameters: solver'/>
-                <Input onInput={(e,v) => {
-                    result.find_solver = v 
-                }} customStyle={`w-64`} attrs={{ list: 'find_solver_logr_list' }} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'

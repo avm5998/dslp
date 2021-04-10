@@ -24,8 +24,8 @@ from sklearn.svm import SVR, SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.metrics import confusion_matrix, roc_curve
+# from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.metrics import confusion_matrix, roc_curve, mean_squared_error, r2_score, classification_report, plot_roc_curve, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
 
@@ -74,7 +74,7 @@ matplotlib.use('Agg')
 
 app = Flask(__name__,static_folder="../build")
 
-CORS(app)
+
 app.config.from_envvar('ENV_FILE_LOCATION')
 
 app.config['CACHE_TIMEOUT'] = 60*60
@@ -122,7 +122,7 @@ if env_var == "development":
   
 
 
-
+CORS(app)
 
 
 # Error handling
@@ -714,7 +714,7 @@ def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
     return plotUrl
 
 
-@app.route('/analysis', methods=['POST']) # regression
+@app.route('/analysis/regression', methods=['POST']) # regression
 @cross_origin()
 @jwt_required()
 def cond_Regression_json():
@@ -737,6 +737,7 @@ def cond_Regression_json():
     ndf = df.replace(MISSING_VALUES, np.nan)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
     # print(X_train)
+    cond += "\nFinal Independent Variables: " + str(fianlVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\n\nChoose Test Size: " + str(test_size)
     if analysis_model == "Linear Regression":
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
@@ -866,12 +867,297 @@ def cond_Regression_json():
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+
+
+
+@app.route('/analysis/classification', methods=['POST']) # regression
+@cross_origin()
+@jwt_required()
+def cond_Classification_json():
+    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+    models = {} # to store tested models
+    print(params)
+    analysis_model = params['analysis_model']
+    print(analysis_model)
+    finalVar = ["Sex", "Age", "Embarked"] # test, delete later
+    finalY = "Survived" # test, delete later
+    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    # print(df)
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    cond += "\nFinal Independent Variables: " + str(fianlVar) + "\nFinal Dependent Variable: "+ str(finalY)
+    if analysis_model == "Logistic Regression":
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+
+        find_solver = [x for x in params['find_solver'].split(',') if params['find_solver']] if 'find_solver' in params else None
+        find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
+        param_solver = params['param_solver'] if 'param_solver' in params else 'lbfgs'
+        param_C = float(params['param_C']) if 'param_C' in params else 1.0
+
+        model = LogisticRegression(solver=param_solver, C=param_C)
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_solver or find_C:
+            if find_solver and find_C:
+                tuned_para = [{'solver': find_solver, 'C': find_C}]
+            elif find_solver:
+                tuned_para = [{'solver': find_solver}]
+            elif find_C:
+                tuned_para = [{'C': find_C}]
+            cond = "\nFind Parameter for Logisitic Regression: " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(LogisticRegression(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += 'The best hyper-parameters for Logisitic Regression are: ' + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
+    elif analysis_model == "Decision Tree Classifier":
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+        param_max_depth = params['param_max_depth'] if 'param_max_depth' in params else None
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
+
+        model = DecisionTreeClassifier(criterion=param_criterion, max_depth=param_max_depth, max_leaf_nodes=param_max_leaf_nodes) 
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel: Decision Tree Classifier \nSet Parameters:  max_depth=" + str(param_max_depth) + ", criterion=" + str(param_criterion)  + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_max_depth:
+            tuned_para = [{'max_depth': find_max_depth}]
+            cond = "\nFind Parameter for Decision Tree Classifier: " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(DecisionTreeClassifier(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += 'The best hyper-parameters for Decision Tree Classifier are: ' + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        if 'visual_tree' in params:
+            visual_type = params['visual_tree']
+            cond += "\nVisualize Tree:" + visual_type
+            if  visual_type == 'Text Graph':
+                para_result = '\n' + tree.export_text(model) + '\n'
+                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            elif visual_type == 'Flowchart':
+                img = BytesIO()
+                plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+                tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            else:
+                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+
+    elif analysis_model == 'Random Forests Classifier':
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+        find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
+        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else None
+        param_n_estimators = int(params['param_n_estimators']) if 'param_n_estimators' in params else 100
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
+        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
+        model = RandomForestClassifier(max_depth=param_max_depth, n_estimators=param_n_estimators, criterion=param_criterion, max_leaf_nodes=param_max_leaf_nodes)
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_max_depth or find_n_estimators:
+            if find_max_depth and find_n_estimators:
+                tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
+            elif find_max_depth:
+                tuned_para = [{'max_depth': find_max_depth}]
+            elif find_n_estimators:
+                tuned_para = [{'n_estimators': find_n_estimators}]
+            cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(RandomForestClassifier(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += "The best hyper-parameters for " + analysis_model + " are: " + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
+    elif analysis_model == 'SVM Classifier':
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+
+        find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
+        find_gamma = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
+        param_C = float(params['param_C']) if 'param_C' in params else 1.0
+        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 'scale'
+        param_kernel = params['param_kernel'] if 'param_kernel' in params else 'rbf'
+        model = SVC(C=param_C, gamma=param_gamma, kernel=param_kernel)
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_C or find_gamma:
+            if find_C and find_gamma:
+                tuned_para = [{'C': find_C, 'gamma': find_gamma}]
+            elif find_C:
+                tuned_para = [{'C': find_C}]
+            elif find_gamma:
+                tuned_para = [{'gamma': find_gamma}]
+            cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(SVC(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += "The best hyper-parameters for " + analysis_model + " are: " + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
+    elif analysis_model == 'Naive Bayes Classifier':
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        model = GaussianNB()
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X = scaler.fit_transform(df[finalVar[0]]).toarray()  # test ; change later
+        Y = df[finalY].values
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel:" + analysis_model 
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
         
-    # return jsonify(success=True,info="test string",float_num=15.123)
- 
-    # return jsonify(data=ndf.to_json(),
-    # cols = cols,col_lists = col_lists, num_cols = num_cols, 
-    # cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
 # @app.route('/analysis', methods=['POST']) #/query

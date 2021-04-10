@@ -3,7 +3,7 @@ import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '..
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
-    test_size_list: [30, 20, 10],
+    test_size_svr_list: [30, 20, 10],
     C_svm_list: [1,2,3,4,5],
     gamma_svm_list: [0.001, 0.01, 0.1],
     find_C_svm_list: ["1,2,3,5,6"],
@@ -25,7 +25,7 @@ export default function ({ dataset, result, submit }) {
                 <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default: 30%"/></Label>
                 <Input onInput={(e,v) => {
                     result.test_size = v 
-                }} customStyle={`w-64`} attrs={{ list: 'test_size_list' }} />
+                }} customStyle={`w-64`} attrs={{ list: 'test_size_svr_list' }} />
 
                 <Label text='Set parameters: C'><InlineTip info="Default: 1.0"/></Label>
                 <Input onInput={(e,v) => {

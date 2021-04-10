@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo,useSimpleForm } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo,useCachedData,useSimpleForm } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -14,12 +14,16 @@ import SVMRegressionOptions from './option/regression/svmRegression'
 import LogisticRegressionOptions from './option/classification/logisticRegression'
 import DecisionTreeClassifierOptions from './option/classification/decisiontreeClassifier'
 import RandomForestClassifierOptions from './option/classification/randomforestClassifier'
+import SVMClassifierOptions from './option/classification/svmClassifier'
+import NaiveBayesClassifierOptions from './option/classification/bayesClassifier'
+import KMeansOptions from './option/clustering/kmeans'
 import { construct } from 'core-js/fn/reflect';
 
 
 const OptionModels = {
-    Regression:{'Linear Regression':LinearRegressionOptions, 'Decision Tree Regression':DecisionTreeRegressionOptions, 'Random Forests Regression':RandomForestsRegressionOptions, 'SVM Regression':SVMRegressionOptions}, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
-    Classification:{'Logistic Regression':LogisticRegressionOptions, 'Decision Tree Classifier':DecisionTreeClassifierOptions, 'Random Forests Classifier':RandomForestClassifierOptions}
+    regression:{'Linear Regression':LinearRegressionOptions, 'Decision Tree Regression':DecisionTreeRegressionOptions, 'Random Forests Regression':RandomForestsRegressionOptions, 'SVM Regression':SVMRegressionOptions}, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
+    classification:{'Logistic Regression':LogisticRegressionOptions, 'Decision Tree Classifier':DecisionTreeClassifierOptions, 'Random Forests Classifier':RandomForestClassifierOptions, 'SVM Classifier':SVMClassifierOptions, 'Naive Bayes Classifier':NaiveBayesClassifierOptions},
+    clustering:{'K-means': KMeansOptions}
 }
 
 // const Models = {
@@ -30,6 +34,8 @@ const OptionModels = {
 //     'Associate Rule': ['Apriori']//3
 // }
 const Analysis = () => {
+    useCachedData()
+    
     let [optionText, setOptionText] = useState('Select analytic method')
     let [modelText, setModelText] = useState('Select model')
     let [option, setOption] = useState(-1)
@@ -49,7 +55,7 @@ const Analysis = () => {
     },[option,model])
 
     let submit = useCallback(async ()=>{
-        let res = await fetchByJSON("analysis", {...result, filename:dataset.filename})   //send request
+        let res = await fetchByJSON(`analysis/${option}`, {...result, filename:dataset.filename})   //send request
         let json = await res.json()     // receive request
      
         // json.cond.replace(/&/g, ",  ")
@@ -57,7 +63,7 @@ const Analysis = () => {
         $('#display_results').text(json.para_result)
         document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
         console.log(json)   // print
-    },[result])
+    },[result,option])
 
     let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model)?OptionModels[option][model]:e=><div></div>
 
