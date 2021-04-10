@@ -844,7 +844,7 @@ def cond_Regression_json():
     ndf = df.replace(MISSING_VALUES, np.nan)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
     # print(X_train)
-    cond += "\nFinal Independent Variables: " + str(fianlVar) + "\nFinal Dependent Variable: "+ str(finalY)
+    cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\n\nChoose Test Size: " + str(test_size)
     if analysis_model == "Linear Regression":
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
