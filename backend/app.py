@@ -24,8 +24,8 @@ from sklearn.svm import SVR, SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.metrics import confusion_matrix, roc_curve
+# from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.metrics import confusion_matrix, roc_curve, mean_squared_error, r2_score, classification_report, plot_roc_curve, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
 import cv2
@@ -77,7 +77,7 @@ matplotlib.use('Agg')
 
 app = Flask(__name__,static_folder="../build")
 
-CORS(app)
+
 app.config.from_envvar('ENV_FILE_LOCATION')
 
 app.config['CACHE_TIMEOUT'] = 60*60
@@ -126,7 +126,7 @@ if env_var == "development":
   
 
 
-
+CORS(app)
 
 
 # Error handling
@@ -273,7 +273,6 @@ def reset_link():
         raise InternalServerError('Something went wrong')
 
 
-
 @app.route("/list_files_json",methods=['POST'])
 def file_list():
     files = mongo_collection.find({}, {"_id": 0, "logo_name": 1, "desc": 1, "file_name": 1, "source_link": 1})
@@ -387,11 +386,11 @@ def uploadFile():
 
     buf = StringIO()
     data = ''
-    df = _getCache(user_id,filename)
+    df = _getCache(user_id,filename,modified = False)
     df.info(buf=buf,verbose=True)
     data = df.iloc[:10,].to_json()
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(df)
-    _setCache(user_id,filename,df)
+    _setCache(user_id,filename,df,modified = False)
     return jsonify(success=True, info = buf.getvalue(), data = data, 
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
@@ -406,25 +405,51 @@ def update_user_files_list(user_id, filename):
     queue.appendleft(filename)   
     user_collection.update_one({'_id':ObjectId(user_id)}, {'$set':{'files':list(queue)}})
 
-def _setCache(uid,name,df):
+def _setCache(uid,name,df,modified = True):
+    if modified:
+        name = EditedPrefix + name
     key = str(uid)+'_'+name
     cache.set(key,df,timeout = app.config['CACHE_TIMEOUT'])
     return df
 
-def _clearCache(uid,name):
+def _clearCache(uid,name,modified = True):
+    if modified:
+        name = EditedPrefix + name
     key = str(uid)+'_'+name
     cache.delete(key)
 
-# get dataframe by content in cache or database, then put that datafrome into cache
-def _getCache(uid,name):
+# get dataframe by content in cache, if it does not exist in the cache,
+# get content from database and create dataframe, then put it into cache
+#
+# uid: user id
+# name: dataframe name, two versions of one dataframe could be stored in the cache, original one and modified one
+# modified: whether to get the modified version
+#
+# if no modified version is found, return a copy of the original one
+# normally, **ALL** operations are performed on the **modified** version
+def _getCache(uid,name,modified = True):
     key = str(uid)+'_'+name
-    df = cache.get(key)
+    df = None
+    copyModified = False
+
+    if modified:
+        df = cache.get(EditedPrefix + name)
+        if df is None:
+            copyModified = True
+
     if df is None:
-        details = mongo_collection.find_one({"file_name": name,"user_id":uid})
-        if not details:
-            return None
-        df = pd.read_csv(StringIO(details['content'].decode('utf8')))
-        _setCache(uid,key,df)
+        df = cache.get(name)
+        if df is None:
+            details = mongo_collection.find_one({"file_name": name,"user_id":uid})
+            if not details:
+                return None
+            df = pd.read_csv(StringIO(details['content'].decode('utf8')))
+            _setCache(uid,key,df,modified = False)
+
+    if copyModified:
+        df = df.copy(deep = True)
+        _setCache(uid, name, df)
+        
     return df
 
 # def get_user_id():
@@ -537,7 +562,6 @@ def query():
             qObject = json.loads(filter['qString'])
             ndf = ndf[ndf.apply(lambda x:qObject['min'] <= x[qObject['column']] <= qObject['max'], axis = 1)]
 
-    _setCache(user_id,EditedPrefix+filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
@@ -546,38 +570,19 @@ def query():
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 
 # Require last modified dataframe from server
-# First, the original dataframe is identified by user id and filename and assuming the file exists
-
-# if the original dataframe is in the mem cache
-#   do nothing
-# else
-#   get original dataframe by user id and filename, set the dataframe to mem cache
-
-# if the modified dataframe is in the mem cache
-#   get the modified dataframe json
-# else
-#   do nothing since we don't know how to get the modified data even with the filters
-#   and at the same time, since there is no modified data, all filters/cols will be invalid and being rest
-
-# TODO is it better to store the current version of modified data each time the data's been modified?
+# df is the original
 @app.route('/handleCachedData', methods=['POST'])
-@cross_origin()
-@jwt_required(optional=True)
+@cross_origin('*')
+@jwt_required()
 def handleCachedData():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
-    df = _getCache(user_id,filename)
-    modifiedJson = ''
-
-    if df is not None:
-        ndf = _getCache(user_id,EditedPrefix + filename)
-
-        if ndf is not None: # must be in the mem cache since database does not store modified data
-            modifiedJson = ndf.to_json()
+    df = _getCache(user_id,filename, modified=False)
+    ndf = _getCache(user_id,filename)
 
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf if ndf is not None else df)
-    return jsonify(modifiedJson = modifiedJson,dataJson = df.to_json(),
+    return jsonify(modifiedJson = ndf.to_json(),dataJson = df.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
@@ -588,7 +593,7 @@ def cleanEditedCache():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
-    _clearCache(user_id,EditedPrefix+filename)
+    _clearCache(user_id,filename)
     return jsonify(success=True)
 
 # cleaner data structure
@@ -644,7 +649,7 @@ def cond_clean_json():
                 ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]
                 
        
-    _setCache(user_id,EditedPrefix+filename,ndf)
+    _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
@@ -658,67 +663,169 @@ def current_data_json():
     params = request.json
     filename = params['filename']
 
-    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)
+    df = _getCache(user_id,filename)
     return jsonify(data=df.to_json())
 
 
 @app.route('/feature_engineering', methods=['POST'])
 @cross_origin()
+@jwt_required()
 def cond_eng_json(): 
     params = request.json
-    queries = params['queries']
-    for query in queries:
-        feature_eng = query['feature_eng']
+    filename = params['filename']
+    user_id = get_jwt_identity()
+    df = _getCache(user_id,filename)
+    msg = ''
+    success = True
 
-    df = pd.DataFrame(data=table_DATA, columns=col).reset_index(drop=True)
-    df = df.replace(missing_values, np.nan) 
-    if feature_eng == 'Convert Cases':
-        case_col = params['case_col']
-        case_type = params['case_type']
+    option = params['activeOption']
 
-        for index1, index2 in zip(case_col, case_type):
-            if index2=="lower":
-                df[index1] = df[index1].astype(str).str.lower()
+    try:
+        if option == 0:
+            cols = params['cols']
+            for col,ctype in cols:
+                if ctype == 'to lowercase':
+                    df[col] = df[col].astype(str).str.lower()
+                elif ctype == 'to uppercase':
+                    df[col] = df[col].astype(str).str.upper()
+
+        if option == 1:
+            cols = params['cols']
+            for col in cols:
+                label = LabelEncoder()
+                df[col] = label.fit_transform(df[col].astype(str))
+
+        if option == 2:
+            for col in suboption_checked:
+                params = {}
+                for postAttr in ['Bins','Labels']:
+                    attr = col + '_' + postAttr
+                    params[postAttr] = params[attr]
+                
+                label = LabelEncoder()
+                df[col] = pd.cut(df[col].astype(float), bins=list(params['Bins'].split(",")), 
+                            labels=list(params['Labels'].split(",")))
+
+        if option == 3:
+            cols = params['cols']
+            for col in cols:
+                scaler = StandardScaler()
+                df[col] = scaler.fit_transform(df[col])
+
+        if option == 4:
+            cols = params['cols']
+            for col in cols:
+                scaler = MinMaxScaler()
+                df[col] = scaler.fit_transform(df[col])
+    except e:
+        msg = str(e)
+        success = False
+
+    _setCache(user_id,name,df)
+    return jsonify(success=success, msg = msg, dataJson = df.to_json())
+
+    
+@app.route('/feature_selection', methods=['POST'])
+@cross_origin()
+@jwt_required()
+def cond_select_json(filename):
+    params = request.json
+    filename = params['filename']
+    user_id = get_jwt_identity()
+    df = _getCache(user_id,filename)
+    msg = ''
+    success = True
+
+    DEFAULT_PLOT_SIZE = (5,5)
+    DEFAULT_PLOT_TYPE = 'bar'
+    Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information Classification','Principal Component Analysis'])}
+
+    try:
+        plotSize = tuple(map(int,params['plotsize'].split(','))) if params['plotsize'] else DEFAULT_PLOT_SIZE
+        plotType = params['plottype'] or 'bar'
+        selectKBest = int(params['selectkbest']) if params['selectkbest'] else 0
+        target_Y = params['targety']
+        technique = Techniques[int(params['techinique'])] if params['technique'] else ''
+        variables_X = params['variablesx']
+        df.replace(missing_values, np.nan) 
+
+
+    except e:
+        msg = str(e)
+        success = False
+
+    # if not finalVar:
+    #     if new_colname:
+    #         finalVar.append(new_colname) # or display new created columns in dropdown list
+
+
+    # if final_button == 'off':
+    #     finalVar = col  
+        if Y:
+            data = pd.concat([df[X], df[Y]], axis=1)
+        else:
+            data = df[X]
+
+        for i in data.columns:
+            if data[i].dtypes == object:
+                label = LabelEncoder()
+                data[i] = label.fit_transform(data[i].astype(str))
+        X = data[X]
+        Y = data[Y]
+        
+        if tech in ["Correlation Matrix", 'PCA']:
+            if tech == "Correlation Matrix":
+                featureResult = data.corr(method ='pearson')  # get correlations of each features in dataset
+                featureResult = pd.DataFrame(data=featureResult)
+            elif tech == "PCA":
+                    scaled_data = StandardScaler().fit_transform(data)
+                    pca = PCA(n_components=num_comp)
+                    pca_res = pca.fit_transform(scaled_data) 
+                    col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
+                    pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
+                    featureResult = pd.concat([pca_df, Y], axis=1)
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+
+            if plotType == "bar":
+                featureResult.plot.bar()
+            elif plotType == "scatter":
+                sns.pairplot(featureResult) # plt.scatter(pca_res[:,0], pca_res[:,1])
+            elif plotType == "line":
+                featureResult.plot.line()
+            elif plotType == "heatmap":
+                sns.heatmap(featureResult,annot=True,cmap="RdYlGn") # cmap='RdGy'
+        else:
+            if tech == "VarianceThreshold":
+                fs = VarianceThreshold(threshold=thresh)
+                fs.fit(data)
+                featureResult = pd.DataFrame({"Features":data.columns ,"Boolean Result":fs.get_support()})
+                x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
+                featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
             else:
-                df[index1] = df[index1].astype(str).str.upper()
-    elif feature_eng == 'Convert Categorical to Numerical':
-        for i in categorical_col:
-            label = LabelEncoder()
-            df[i] = label.fit_transform(df[i].astype(str))
-    elif feature_eng == 'Convert Numerical to Categorical':
-        for index1, index2, index3 in zip(numerical_col, bins, labels):
-            label = LabelEncoder()
-            df[index1] = pd.cut(df[index1].astype(float), bins=list(index2.split(",")), labels=list(index3.split(",")))
-    elif feature_eng == "Standard Scaler": 
-        scaler = StandardScaler()
-        df[stand_scaler_col] = scaler.fit_transform(df[stand_scaler_col])
-    elif feature_eng == "Minmax Scaler": 
-        scaler = MinMaxScaler()
-        df[minmax_scaler_col] = scaler.fit_transform(df[minmax_scaler_col])
-    elif feature_eng == 'Text Data: Feature Extraction Models':
-        if feat_extract_model_text_data == 'CountVectorizer':
-            scaler = CountVectorizer()
-        elif feat_extract_model_text_data == 'TfidfVectorizer':
-            scaler = TfidfVectorizer()
-    elif feature_eng == 'Add New Features and Labels':
-        print("********Inside********")
-        print('add_feat_col=',add_feat_col)
-        new_feat_assigns = {}
-        index=0
-        for new_feat_name, orig_feat_name in zip(add_feat_name_in, add_feat_col):
-            print('*****new_feat_name, orig_feat_name== ', new_feat_name, orig_feat_name)
-            unique_values = add_feat_uniq_val_in[index].split(',')
-            new_labels = add_feat_new_label[index].split(',')
-            print('unique_values, new_labels=====> ', unique_values, new_labels)
-            for uniq_val, new_label in zip(unique_values, new_labels):
-                # cond += '\nOriginal Column: ' + orig_feat_name +  '--->'+ 'New Feature:' + new_feat_name + ';  Unique Value: '+ uniq_val + "---> New Label: " + new_label
-                print('********** uniq_val, new_label= ', uniq_val, new_label)
-                new_feat_assigns[uniq_val] = new_label
-            print('new_feat_assigns===============', new_feat_assigns)
-            df[new_feat_name] = df[orig_feat_name].apply(lambda x: new_feat_assigns[x])
-            index+=1
-
-    return jsonify(df_sorted=df.to_json(orient="values"), prep_f=cond, prep_col=list(df.columns))
+                if tech == "Pearson":
+                    fs = SelectKBest(score_func=f_regression, k=K)
+                elif tech == "ANOVA":
+                    fs = SelectKBest(score_func=f_classif, k=K)
+                elif tech == "Chi2":
+                    fs = SelectKBest(score_func=chi2, k=K)
+                elif tech == "Mutual_classification":
+                    fs = SelectKBest(score_func=mutual_info_classif, k=K)
+                fit = fs.fit(X, Y.values.ravel())
+                featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+                featureResult=featureResult.nlargest(K,'Score')  #print k best features
+                x_label, y_label, title = 'Features', 'Score', 'Feature Score'
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+            fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
+            plt.title(title)      
+        # encode plot
+        plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+        plt.clf()
+        img.seek(0)
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        img.close()
+    return jsonify(df_sorted=df.to_json(orient="values"), prep_col=list(df.columns), condition=cond, final_Var=finalVar, final_Y= finalY, plot_url=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
 
 # Sophie merged--> need modify 
 def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
@@ -744,7 +851,7 @@ def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
     return plotUrl
 
 
-@app.route('/analysis', methods=['POST']) # regression
+@app.route('/analysis/regression', methods=['POST']) # regression
 @cross_origin()
 @jwt_required()
 def cond_Regression_json():
@@ -767,6 +874,7 @@ def cond_Regression_json():
     ndf = df.replace(MISSING_VALUES, np.nan)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
     # print(X_train)
+    cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\n\nChoose Test Size: " + str(test_size)
     if analysis_model == "Linear Regression":
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
@@ -896,12 +1004,297 @@ def cond_Regression_json():
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+
+
+
+@app.route('/analysis/classification', methods=['POST']) # regression
+@cross_origin()
+@jwt_required()
+def cond_Classification_json():
+    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+    models = {} # to store tested models
+    print(params)
+    analysis_model = params['analysis_model']
+    print(analysis_model)
+    finalVar = ["Sex", "Age", "Embarked"] # test, delete later
+    finalY = "Survived" # test, delete later
+    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    # print(df)
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
+    if analysis_model == "Logistic Regression":
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+
+        find_solver = [x for x in params['find_solver'].split(',') if params['find_solver']] if 'find_solver' in params else None
+        find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
+        param_solver = params['param_solver'] if 'param_solver' in params else 'lbfgs'
+        param_C = float(params['param_C']) if 'param_C' in params else 1.0
+
+        model = LogisticRegression(solver=param_solver, C=param_C)
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_solver or find_C:
+            if find_solver and find_C:
+                tuned_para = [{'solver': find_solver, 'C': find_C}]
+            elif find_solver:
+                tuned_para = [{'solver': find_solver}]
+            elif find_C:
+                tuned_para = [{'C': find_C}]
+            cond = "\nFind Parameter for Logisitic Regression: " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(LogisticRegression(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += 'The best hyper-parameters for Logisitic Regression are: ' + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
+    elif analysis_model == "Decision Tree Classifier":
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+        param_max_depth = params['param_max_depth'] if 'param_max_depth' in params else None
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
+
+        model = DecisionTreeClassifier(criterion=param_criterion, max_depth=param_max_depth, max_leaf_nodes=param_max_leaf_nodes) 
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel: Decision Tree Classifier \nSet Parameters:  max_depth=" + str(param_max_depth) + ", criterion=" + str(param_criterion)  + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_max_depth:
+            tuned_para = [{'max_depth': find_max_depth}]
+            cond = "\nFind Parameter for Decision Tree Classifier: " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(DecisionTreeClassifier(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += 'The best hyper-parameters for Decision Tree Classifier are: ' + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        if 'visual_tree' in params:
+            visual_type = params['visual_tree']
+            cond += "\nVisualize Tree:" + visual_type
+            if  visual_type == 'Text Graph':
+                para_result = '\n' + tree.export_text(model) + '\n'
+                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            elif visual_type == 'Flowchart':
+                img = BytesIO()
+                plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+                tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            else:
+                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+
+    elif analysis_model == 'Random Forests Classifier':
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+        find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
+        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else None
+        param_n_estimators = int(params['param_n_estimators']) if 'param_n_estimators' in params else 100
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
+        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
+        model = RandomForestClassifier(max_depth=param_max_depth, n_estimators=param_n_estimators, criterion=param_criterion, max_leaf_nodes=param_max_leaf_nodes)
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_max_depth or find_n_estimators:
+            if find_max_depth and find_n_estimators:
+                tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
+            elif find_max_depth:
+                tuned_para = [{'max_depth': find_max_depth}]
+            elif find_n_estimators:
+                tuned_para = [{'n_estimators': find_n_estimators}]
+            cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(RandomForestClassifier(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += "The best hyper-parameters for " + analysis_model + " are: " + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
+    elif analysis_model == 'SVM Classifier':
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+
+        find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
+        find_gamma = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
+        param_C = float(params['param_C']) if 'param_C' in params else 1.0
+        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 'scale'
+        param_kernel = params['param_kernel'] if 'param_kernel' in params else 'rbf'
+        model = SVC(C=param_C, gamma=param_gamma, kernel=param_kernel)
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        if find_C or find_gamma:
+            if find_C and find_gamma:
+                tuned_para = [{'C': find_C, 'gamma': find_gamma}]
+            elif find_C:
+                tuned_para = [{'C': find_C}]
+            elif find_gamma:
+                tuned_para = [{'gamma': find_gamma}]
+            cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
+            MSE = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE:
+                model = GridSearchCV(SVC(), tuned_para, cv=4)
+                model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, model.predict(X_test)
+                para_result += "The best hyper-parameters for " + analysis_model + " are: " + str(model.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
+    elif analysis_model == 'Naive Bayes Classifier':
+        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        metric = params['metric'] if 'metric' in params else 'Classification Report'
+        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        model = GaussianNB()
+        models[analysis_model] = model
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X = scaler.fit_transform(df[finalVar[0]]).toarray()  # test ; change later
+        Y = df[finalY].values
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if metric == "Classification Report":
+            report = classification_report(Y_test, Y_pred)
+            para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+        elif metric == 'ROC Curve':
+            img = BytesIO()
+            plot_roc_curve(model, X_test, Y_test)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif metric == 'Confusion Matrix':
+            img = BytesIO()
+            skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel:" + analysis_model 
+        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
         
-    # return jsonify(success=True,info="test string",float_num=15.123)
- 
-    # return jsonify(data=ndf.to_json(),
-    # cols = cols,col_lists = col_lists, num_cols = num_cols, 
-    # cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
 # @app.route('/analysis', methods=['POST']) #/query

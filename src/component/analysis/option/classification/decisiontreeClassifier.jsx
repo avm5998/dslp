@@ -3,7 +3,7 @@ import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '..
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
-    test_size_logr_list: [30, 20, 10],
+    test_size_dtc_list: [30, 20, 10],
     max_depth_dtc_list: [5, 6, 7, 8, 9],
     find_max_depth_dtc_list: ['1,2,3,4,5,10,15,20,25,50,100'],
     max_leaf_nodes_dtc_list: [5,10,15,20]
@@ -24,18 +24,24 @@ export default function ({ dataset, result, submit }) {
                 <Label text="Choose Test Size(%)" />
                 <Input onInput={(e,v) => {
                     result.test_size = v
-                }} customStyle={`w-64 `} attrs={{ list: 'test_size_logr_list' }} />
+                }} customStyle={`w-64 `} attrs={{ list: 'test_size_dtc_list' }} />
 
                 <Label customStyle={``} text='Set parameters: max_depth' />
                 <Input onInput={(e,v) => {
                     result.param_max_depth = v
                 }} customStyle={`w-64 `} attrs={{ list: 'max_depth_dtc_list' }} />
 
+                <Label customStyle={``} text='Visualize Tree' ><InlineTip info="Plot decision tree"/></Label>
+                <DropDown defaultText={'Select tree type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Text Graph', 'Flowchart', "No Plot"]} 
+                    onSelect={e => {
+                        result.visual_tree = e
+                    } 
+                }/>
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info=""/></Label>
                 <DropDown defaultText={'Select plot type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
-                        result.pre_obs = e
+                        result.pre_obs_plotType = e
                     } 
                 }/>
 
@@ -56,7 +62,7 @@ export default function ({ dataset, result, submit }) {
                 <Label customStyle={``} text='Set parameters: criterion' />
                 <DropDown defaultText={'Select criterion'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['gini', 'entropy']}
                     onSelect={name => {
-                        result.criterion = name
+                        result.param_criterion = name
                     }} />
                 <Label customStyle={``} text='Set parameters: max_leaf_nodes' />
                 <Input onInput={(e,v) => {

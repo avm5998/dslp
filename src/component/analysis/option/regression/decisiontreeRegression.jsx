@@ -44,7 +44,7 @@ export default function ({ dataset, result, submit }) {
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset. Note: Set 'Visualize Tree=No Plot'; Default:line"/></Label>
                 <DropDown defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
-                        result.pre_obs = e
+                        result.pre_obs_plotType = e
                     } 
                 }/>
 

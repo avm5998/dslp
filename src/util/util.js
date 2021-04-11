@@ -1,4 +1,5 @@
 import { actions as DataSetActions } from '../reducer/dataset'
+import { actions as OptionActions } from '../reducer/option'
 import { useDispatch, useSelector } from 'react-redux'
 import ifetch from 'isomorphic-fetch';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -223,17 +224,26 @@ function getInitialForm(fields) {
  * use this function to get data from server when page rereshes
  */
 export function useCachedData(){
-    let info = null;
-
+    let info = null, optionInfo = null
     try{//Strange BUG!
         info = JSON.parse(localStorage.getItem('info'))
+        optionInfo = JSON.parse(localStorage.getItem('optionInfo')) || []
     }catch(e){
 
     }
 
     let dispatch = useDispatch()
     let dataset = useSelector(state=>state.dataset)
+    let option = useSelector(state=>state.option)
 
+    //initialize option from local storage
+    useEffect(()=>{
+        if(option.default && optionInfo){
+            dispatch(OptionActions.setOption(optionInfo))
+        }
+    },[])
+
+    //initialize data from server
     useEffect(()=>{
         if(dataset.data !== null || !info)
             return
@@ -266,6 +276,18 @@ export function useCachedData(){
             }
         })()
     },[])
+}
+
+export function cacheOptionInfo(data){
+    let obj = JSON.parse(JSON.stringify({...data}))
+    let res = []
+    console.log(obj);
+    for(let module in obj)
+        for(let method in obj[module])
+            for (let model in obj[module][method])
+                res.push([module,method,model,obj[module][method][model]])
+
+    localStorage.setItem('optionInfo',JSON.stringify(res))
 }
 
 export function cacheDataInfo(data){
@@ -402,7 +424,6 @@ export function useSimpleForm(initialResult = {}) {
 
     const getData = useCallback(() => {
         let res = result.current
-        
         for (let checkbox of checkboxRefs.current) {
             let { name, element, item } = checkbox
             res[name] = res[name] || []

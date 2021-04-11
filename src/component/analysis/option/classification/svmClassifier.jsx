@@ -3,10 +3,11 @@ import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '..
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
-    test_size_logr_list: [30, 20, 10],
-    C_logr_list: [0.1, 0.2, 0.3],
-    find_solver_logr_list: ['newton-cg,lbfgs,liblinear,sag,saga'],
-    find_C_logr_list: ['100,10,1.0,0.1,0.01'],
+    test_size_svc_list: [30, 20, 10],
+    C_svc_list: [1,2,3,4,5],
+    gamma_svc_list: [0.001, 0.01, 0.1],
+    find_C_svc_list: ["1,2,3,5,6"],
+    find_gamma_svc_list: ["0.0001,0.001"]
 }
 
 export default function ({ dataset, result, submit }) {
@@ -22,20 +23,20 @@ export default function ({ dataset, result, submit }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
                 <Label text="Choose Test Size(%)" />
-                <Input defaultValue={1} onInput={(e,v) => {
-                    result.test_size = v
-                }} customStyle={`w-64 `} attrs={{ list: 'test_size_logr_list' }} />
-
-                <Label customStyle={``} text='Set parameters: solver' />
-                <DropDown defaultText={'Select solver'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']}
-                    onSelect={name => {
-                        result.param_solver = name
-                    }} />
-
-                <Label customStyle={``} text='Set parameters: C' />
                 <Input onInput={(e,v) => {
-                    result.param_C = v
-                }} customStyle={`w-64`} attrs={{ list: 'C_logr_list' }} />
+                    result.test_size = v
+                }} customStyle={`w-64 `} attrs={{ list: 'test_size_svc_list' }} />
+
+                <Label text='Set parameters: C'><InlineTip info="Default: 1.0"/></Label>
+                <Input onInput={(e,v) => {
+                    result.param_C = v 
+                }} customStyle={`w-64`} attrs={{ list: 'C_svc_list' }} />
+
+                <Label text='Set parameters: gamma'><InlineTip info="Default: scale"/></Label>
+                <Input onInput={(e,v) => {
+                    result.param_gamma = v 
+                }} customStyle={`w-64`} attrs={{ list: 'gamma_svc_list' }} />
+
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info=""/></Label>
                 <DropDown defaultText={'Select plot type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
@@ -50,18 +51,23 @@ export default function ({ dataset, result, submit }) {
                         result.metric = name
                     }} />
 
-                <Label text='Find the Best Hyper-Parameters: C'/>
+                <Label text='Find the Best Hyper-Parameters: C'><InlineTip info="Input the result in 'set parameter:C'"/></Label>
                 <Input onInput={(e,v) => {
                     result.find_C = v 
-                }} customStyle={`w-64`} attrs={{ list: 'find_C_logr_list' }} />
-                 <Label text='Find the Best Hyper-Parameters: solver'/>
+                }} customStyle={`w-64`} attrs={{ list: 'find_C_svc_list' }} />
+                 <Label text='Find the Best Hyper-Parameters: gamma'><InlineTip info="Input the result in 'set parameter:gamma'"/></Label>
                 <Input onInput={(e,v) => {
-                    result.find_solver = v 
-                }} customStyle={`w-64`} attrs={{ list: 'find_solver_logr_list' }} />
+                    result.find_gamma = v 
+                }} customStyle={`w-64`} attrs={{ list: 'find_gamma_svc_list' }} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
+                <Label customStyle={``} text='Set Parameters: kernel'><InlineTip info="Default: rbf"/></Label>
+                <DropDown defaultText={'Select kernel'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']}
+                    onSelect={name => {
+                        result.param_kernel = name  
+                }} />
             </div>
             <div className='flex justify-end'>
                 <Button onClick={e => {

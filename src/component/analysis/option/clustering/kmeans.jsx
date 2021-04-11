@@ -1,18 +1,17 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { useSelector } from 'react-redux'
 import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../../../util/ui'
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
-    test_size_lr_list: [30, 20, 10],
-    C_logr_list: [0.1, 0.2, 0.3],
-    find_solver_logr_list: ['newton-cg,lbfgs,liblinear,sag,saga'],
-    find_C_logr_list: ['100,10,1.0,0.1,0.01'],
+    n_clusters_kmeans_list: [1,2,3,4,5,6,7,8],
+    // find_n_clusters_kmeans_list: [5,6,7,8,9,10],
+    random_state_kmeans_list: [0,1,2,3,4,5]
+
+
 }
 
 export default function ({ dataset, result, submit }) {
     let [activeTab, setActiveTab] = useState(0)
-    let option = useSelector(state=>state.option).analysis.regression['Linear Regression'] || {}
 
     return (
         <div className='p-4'>
@@ -23,12 +22,20 @@ export default function ({ dataset, result, submit }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default: 30%"/></Label>
-                <Input defaultValue={option.test_size} onInput={(e,v) => {
-                    result.test_size = v 
-                }} customStyle={`w-64`} attrs={{ list: 'test_size_lr_list' }} />
+            
+                <Label text='Set parameters: n_clusters'><InlineTip info="Default: 8"/></Label>
+                <Input onInput={(e,v) => {
+                    result.param_n_clusters = v 
+                }} customStyle={`w-64`} attrs={{ list: 'n_clusters_kmeans_list' }} />
 
-                <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset.  Default: line"/></Label>
+                {/* <Label customStyle={``} text='Visualize Tree' ><InlineTip info="Plot decision tree"/></Label>
+                <DropDown defaultText={'Select tree type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Text Graph', 'Flowchart', "No Plot"]} 
+                    onSelect={e => {
+                        result.visual_tree = e
+                    } 
+                }/> */}
+
+                <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset. Note: Set 'Visualize Tree=No Plot'; Default:line"/></Label>
                 <DropDown defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
@@ -42,20 +49,32 @@ export default function ({ dataset, result, submit }) {
                     }
                 } />
 
+                <Label text='Find the Best Hyper-Parameters: max_depth'><InlineTip info="Input the result in 'set parameter:max_depth'"/></Label>
+                <Input onInput={(e,v) => {
+                    result.find_max_depth = v 
+                }} customStyle={`w-64`} attrs={{ list: 'find_max_depth_dtr_list' }} />
+
+
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Default: True. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown defaultText={'Select fit_intercept'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
+
+                <Label customStyle={``} text='Set Parameters: init'><InlineTip info="Default: mse"/></Label>
+                <DropDown defaultText={'Select init'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['k-means++','random','centroids']}
                     onSelect={name => {
-                        result.param_fit_intercept_lr = name  //opt_fit_intercept_lr
+                        result.param_init = name  
                 }} />
-                <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Default: False. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown defaultText={'Select normalize'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
-                    onSelect={name => {
-                        result.param_normalize_lr = name  //opt_normalize_lr
-                }} />
+               
+                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="Default: None"/></Label>
+                <Input onInput={(e,v) => {
+                    result.param_random_state = v 
+                }} customStyle={`w-64`} attrs={{ list: 'random_state_kmeans_list' }} />
+
+
+               
+
+
             </div>
             <div className='flex justify-end'>
                 <Button onClick={e => {

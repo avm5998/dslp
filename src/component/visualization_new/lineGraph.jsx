@@ -24,13 +24,13 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <DropDown defaultText='Select Y Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.y = e}/>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
-                gridTemplateColumns:'100px 1fr 200px 1fr'
+                gridTemplateColumns:'5vw 1fr 10vw 1fr'
             }}>
                 {/* <Label text='Draw smoothly:'/>
                 <Checkbox label={'Smoothed'} defaultChecked={false} onChange={e=>result.smoothed = e.target.checked}/> */}
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
-                gridTemplateColumns:'200px 1fr 100px 1fr'
+                gridTemplateColumns:'10vw 1fr 5vw 1fr'
             }}>
                 <CommonOption dataset={dataset} result={result}/>
             </div>
