@@ -27,7 +27,7 @@ if (process.env.NODE_ENV !== 'production') {
 // create the store
 const store = createStore(
   createRootReducer(history),
-  compose(
+  composeWithDevTools(
     applyMiddleware(...middlewares)
   )
 );
