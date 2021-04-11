@@ -16,7 +16,7 @@ const slice = createSlice({
     initialState:DEFAULT_OPTION,
     reducers:{
         setOption(state,action){
-            if (!(action.payload[0] instanceof Array)) action.payload = [action.payload]
+            if (action.payload[0] && !(action.payload[0] instanceof Array)) action.payload = [action.payload]
 
             // action.payload.forEach(payload=>{
             //     let module, levels = [], option;
