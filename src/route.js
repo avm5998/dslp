@@ -233,7 +233,7 @@ const Routes = (props) => {
                     <div    
                     className={currentUser? 'w-10/12 absolute right-0 h-screen': "flex h-screen flex-col justify-center" }
                     >
-                        <div className='block w-full h-16'>&nbsp;</div>
+                        {/* <div className='block w-full h-16'>&nbsp;</div> */}
                         <Switch>
                             <Route path="/login" component={Login}/>
                             <Route path="/register" component={Register}/>
