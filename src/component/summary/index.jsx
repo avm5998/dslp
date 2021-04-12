@@ -3,7 +3,7 @@ import './index.css'
 import { action as DataSetActions } from '../../reducer/dataset'
 import { useSelector, useDispatch } from 'react-redux'
 import { RangeSelector, Modal, Radio, Checkbox } from '../../util/ui'
-import { useForm, initialFormCheckbox } from '../../util/util'
+import { useForm, initialFormCheckbox, useCachedData } from '../../util/util'
 import { elementIsVisibleInViewport, fetchByJSON } from '../../util/util';
 import NoData from '../common/nodata'
 import placeholderImg from '../../assets/images/placeholder.jpg'
@@ -103,19 +103,17 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
   })
 
   useEffect(() => {
-    if (!elementIsVisibleInViewport(parentRef.current)) return
-
+    if(tabpanel!==0) return
+    
     if (dataset.loaded) {
       setCurCol(dataset.num_cols[0])
     }
   }, [tabpanel])
 
   useEffect(() => {
-  }, [form])
-
-  useEffect(() => {
-    if (!elementIsVisibleInViewport(parentRef.current)) return
-    console.log(curCol)
+    console.log(tabpanel);
+    if(tabpanel!==0) return
+    console.log(curCol);
     form.onSubmit()
   },[curCol, tabpanel])
 
@@ -293,6 +291,8 @@ const TabPanels = [
 ]
 
 const Visualization = () => {
+  useCachedData()
+
   let [tabpanel, setTabpanel] = useState(0)
   let dataset = useSelector(state => state.dataset)
 
