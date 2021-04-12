@@ -91,7 +91,7 @@ const Page = () => {
     }
 
     return (<>
-        <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 4rem)'}}>
+        <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 0rem)'}}>
             <div className="flex flex-row h-28 w-full items-end justify-start shadow-sm bg-gray-100">
 
                 <div className='mx-5 my-4 w-2/12'>
