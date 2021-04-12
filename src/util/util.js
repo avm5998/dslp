@@ -4,7 +4,96 @@ import { useDispatch, useSelector } from 'react-redux'
 import ifetch from 'isomorphic-fetch';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { config } from '../config/client'
-import authHeader from '../services/auth-header';
+import authHeader, {authHeaderRefresh} from '../services/auth-header';
+
+// refresh
+
+
+// import { configureRefreshFetch, fetchJSON } from 'refresh-fetch';
+// const saveToken = token =>    {
+//     let user = localStorage.getItem('user')
+//     console.log("saved token\n"+user);
+//     localStorage.setItem('user', user);
+// }     
+// const fetchJSONWithToken = (url, options = {}) => {
+//     console.log("options\n"+JSON.stringify(options));
+//     return fetch(url, options);
+//     // console.log(res);
+//   }
+
+// const refreshToken = async () => {
+//     console.log(authHeaderRefresh());
+//     try {
+//         const response = await fetchJSONWithToken('/api/auth/refresh', {
+//             method: 'POST',
+//             headers: authHeaderRefresh()
+//         });
+//         saveToken(response.body.accessToken);
+//     } catch (error) {
+
+//         // Clear token and continue with the Promise catch chain
+//         // clearToken();
+//         throw error;
+//     }
+//   }
+
+// const shouldRefreshToken = error =>
+//   error.response.status === 401 &&
+//   error.body.message === 'Token has expired'
+
+// export const fetchWithRefresh = configureRefreshFetch({
+//     fetch: fetchJSONWithToken,
+//     shouldRefreshToken,
+//     refreshToken
+// })
+
+  
+//   function configureRefreshFetch (configuration) {
+//     const { refreshToken, shouldRefreshToken, fetch } = configuration
+  
+//     let refreshingTokenPromise = null
+  
+//     return (url, options) => {
+//       if (refreshingTokenPromise !== null) {
+//         return (
+//           refreshingTokenPromise
+//             .then(() => fetch(url, options))
+//             // Even if the refreshing fails, do the fetch so we reject with
+//             // error of that request
+//             .catch(() => fetch(url, options))
+//         )
+//       }
+  
+//       return fetch(url, options).catch(error => {
+//         if (shouldRefreshToken(error)) {
+//           if (refreshingTokenPromise === null) {
+//             refreshingTokenPromise = new Promise((resolve, reject) => {
+//               refreshToken()
+//                 .then(() => {
+//                   refreshingTokenPromise = null
+//                   resolve()
+//                 })
+//                 .catch(refreshTokenError => {
+//                   refreshingTokenPromise = null
+//                   reject(refreshTokenError)
+//                 })
+//             })
+//           }
+  
+//           return refreshingTokenPromise
+//             .catch(() => {
+//               // If refreshing fails, continue with original error
+//               throw error
+//             })
+//             .then(() => fetch(url, options))
+//         } else {
+//           throw error
+//         }
+//       })
+//     }
+//   }
+  
+
 
 /**
  * Assume
@@ -546,3 +635,4 @@ export function GetDataFrameInfo(info) {
         rows: info.split(/\n/).filter(Boolean).slice(1)
     }
 }
+

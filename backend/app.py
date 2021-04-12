@@ -40,11 +40,11 @@ from resources.errors import InternalServerError, SchemaValidationError, EmailAl
     EmailDoesnotExistsError, BadTokenError
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
-    jwt_required
-from database.models import User
+    jwt_required, create_refresh_token, get_jwt
+from database.models import User, TokenBlockList
 from bson.objectid import ObjectId
 import collections
-#  
+#  #
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -69,6 +69,7 @@ from database.models import User
 from threading import Thread
 from flask_mail import Message, Mail
 import datetime
+from datetime import datetime, timedelta, timezone
 from jwt.exceptions import ExpiredSignatureError, DecodeError, \
     InvalidTokenError
 from IPython.display import Image
@@ -117,12 +118,12 @@ EditedPrefix = '__EDITED___'
 
 
 env_var = os.environ.get("FLASK_ENV")
-if env_var == "development":
-    if user_collection.find({"username":"dummy_user"}):
-        user_collection.remove({"username":"dummy_user"})
-    user =  User(username="dummy_user",email="dummy_user@g.com", password="dummy@123")
-    user.hash_password()
-    user.save()
+# if env_var == "development":
+#     if user_collection.find({"username":"dummy_user"}):
+#         user_collection.remove({"username":"dummy_user"})
+#     user =  User(username="dummy_user",email="dummy_user@g.com", password="dummy@123")
+#     user.hash_password()
+#     user.save()
   
 
 
@@ -180,7 +181,62 @@ def send_email(subject, sender, recipients, text_body, html_body):
 
 
 
+# Block expired tokens
+# Callback function to check if a JWT exists in the db blocklist
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload["jti"]
+    try:
+        token = TokenBlockList.objects.get(jti=jti)
+        return token is not None
+    except:
+        return False
+
+
 #APIs
+
+# Endpoint for revoking the current users access token. Save the JWTs unique
+# identifier (jti) in redis. Also set a Time to Live (TTL)  when storing the JWT
+# so that it will automatically be cleared out of redis after the token expires.
+@app.route("/api/auth/logout", methods=["DELETE"])
+@cross_origin(origin="*")
+@jwt_required()
+def logout():
+    jti = get_jwt()["jti"]
+    user_id = get_jwt_identity()
+    now = datetime.now(timezone.utc)
+    last_logged_in = user_collection.find_one({"_id":ObjectId(user_id)})['last_logged_in']
+    last_logged_in = datetime.combine(last_logged_in.date(), last_logged_in.time(), timezone.utc)
+    next_day_sec = 0
+    if now.date() > last_logged_in.date():   
+        my_date = last_logged_in.date()
+        my_time = datetime.min.time()
+        my_datetime = datetime.combine(my_date, my_time, timezone.utc)
+        seconds = (my_datetime - last_logged_in).seconds
+        next_day_sec = (now - my_datetime)
+    else:
+        seconds = (now - last_logged_in).seconds
+    user = User.objects(id=user_id)[0]
+    user_act = user['user_activity']
+    if str(now.date()) in user_act:
+        user_act[str(now.date())] += seconds
+    else:
+        user_act[str(now.date())] = seconds 
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"user_activity":user_act}})       
+    blocklist = TokenBlockList(jti=jti, created_at=now)
+    blocklist.save()
+    return jsonify(msg="Access token revoked"), 200
+
+
+
+@app.route("/api/auth/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    current_user = get_jwt_identity()
+    expires = timedelta(days=1)
+    access_token = create_access_token(identity=current_user)
+    return jsonify(accessToken=access_token), 200
+
 
 @app.route("/change_profile_pic", methods=["PATCH"])
 @cross_origin(origin="*")
@@ -214,7 +270,7 @@ def forgot():
         # if not user:
         #     raise EmailDoesnotExistsError("Couldn't find the user with given email address")
 
-        expires = datetime.timedelta(hours=24)
+        expires = timedelta(hours=24)
         reset_token = create_access_token(str(user.id), expires_delta=expires)
         print("token:"+str(reset_token))
         reset_token = reset_token.replace(".", "$")

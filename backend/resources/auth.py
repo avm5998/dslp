@@ -2,8 +2,8 @@ from flask import request
 from database.models import User
 from flask_restful import Resource
 from flask import Response, request
-from flask_jwt_extended import create_access_token
-import datetime
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity , jwt_required, get_jwt, get_jti
+from datetime import datetime, timezone, timedelta
 import base64
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
 from resources.errors import SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
@@ -40,9 +40,13 @@ class LoginApi(Resource):
             if not authorized:
                 raise UnauthorizedError
             imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
-            expires = datetime.timedelta(days=7)
+            expires = timedelta(minutes=30)
+            expires_refresh = timedelta(days=7)
             access_token = create_access_token(identity=str(user.id), expires_delta=expires)
-            return {'accessToken': access_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr}, 200
+            refresh_token = create_refresh_token(identity=str(user.id), expires_delta=expires_refresh)
+            user.last_logged_in = datetime.now(timezone.utc)
+            user.save()
+            return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr}, 200
         except (UnauthorizedError, DoesNotExist):
             raise UnauthorizedError('Invalid username or password')
         except Exception as e:

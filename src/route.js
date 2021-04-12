@@ -61,6 +61,11 @@ const Menu = {
 const Routes = (props) => {
     const {userEnv} = process.env
     const dispatch = useDispatch();
+    const { user: currentUser } = useSelector((state) => state.auth);
+        
+    let dataset = useSelector(state => state.dataset)
+    let [menuData, setMenuData] = useState(Menu)
+    let [toggle, setToggle] = useState(false)
     if(userEnv === 'default'){
         useEffect(() => {    
             dispatch(login("dummy_user", "dummy@123"))
@@ -74,17 +79,14 @@ const Routes = (props) => {
         }, [])
     }
 
-    const { user: currentUser } = useSelector((state) => state.auth);
+    
     // if(currentUser){
     //     useEffect(() => {
     //         console.log('avatar changed in route')
     //     }, [currentUser])
     // }
 
-    
-    let dataset = useSelector(state => state.dataset)
-    let [menuData, setMenuData] = useState(Menu)
-    let [toggle, setToggle] = useState(false)
+
 
     useEffect(() => {
         setMenuData(data => {
@@ -99,8 +101,16 @@ const Routes = (props) => {
         });
       }, [dispatch]);
     
-    const logOut = () => {
-        dispatch(logout());
+    const logOut = (e) => {
+        e.preventDefault();
+        dispatch(logout()).then(() => {
+            // localStorage.removeItem('user')
+            props.history.push("/login");
+          })
+          .catch(() => {
+            props.history.push("/login");
+            console.log("logout failed")
+          });
       };
     return (
         <Router history={history} >
