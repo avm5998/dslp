@@ -156,7 +156,7 @@ export default function(){
 
     let OptionView = GraphOptionViews[currentPlot]
 
-    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
+    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 0rem)' }}>
         <Modal fixedModalPosition={{
             left:'20vw',
             top:'10vh',

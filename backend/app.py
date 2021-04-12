@@ -28,6 +28,7 @@ from yellowbrick.cluster import KElbowVisualizer
 from sklearn.metrics import confusion_matrix, roc_curve, mean_squared_error, r2_score, classification_report, plot_roc_curve, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
+import cv2
 
 
 
@@ -38,7 +39,8 @@ from flask_bcrypt import Bcrypt
 from resources.errors import InternalServerError, SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
     EmailDoesnotExistsError, BadTokenError
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
-from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, jwt_required
+from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
+    jwt_required
 from database.models import User
 from bson.objectid import ObjectId
 import collections
@@ -69,6 +71,7 @@ from flask_mail import Message, Mail
 import datetime
 from jwt.exceptions import ExpiredSignatureError, DecodeError, \
     InvalidTokenError
+from IPython.display import Image
 
 matplotlib.use('Agg')
 
@@ -82,6 +85,7 @@ app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 app.config['UPLOAD_EXTENSIONS'] = ['.pdf', '.csv', '.json']
 app.config['UPLOAD_PATH'] = 'uploads'
 app.config['LOGO_PATH'] = 'static/logo'
+app.config['IMAGE_EXTENSIONS'] = ['.png', '.jpg', '.jpeg']
 
 
 api = Api(app)
@@ -177,10 +181,28 @@ def send_email(subject, sender, recipients, text_body, html_body):
 
 
 #APIs
+
+@app.route("/change_profile_pic", methods=["PATCH"])
+@cross_origin(origin="*")
+@jwt_required(optional=True)
+def change_profile_pic():
+    user_avatar = request.files['file']
+    filename = request.form['filename']
+    file_ext = os.path.splitext(filename)[-1]
+    if file_ext not in app.config['IMAGE_EXTENSIONS']:
+        return jsonify(message="Invalid image format"), 400
+    user = User.objects(id=get_jwt_identity())[0]
+
+    user.profile_image.replace(user_avatar, filename=filename)
+    user.save()  
+    imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
+
+    return jsonify(base64=imgStr), 200
+
+
 @app.route("/api/auth/forgot", methods=["POST"])
 @cross_origin(origin="*")
-def forgot():
-    
+def forgot():  
     url =  str(request.origin)+'/reset/'
     try:
         body = request.get_json()
@@ -327,7 +349,7 @@ def getDataFrameDetails(df):
 
 
 @app.route('/uploadFile',methods=['POST'])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt_required()
 def uploadFile():
     file = request.files['file']
@@ -430,13 +452,21 @@ def _getCache(uid,name,modified = True):
         
     return df
 
+# def get_user_id():
+
+
+
+
 @app.route('/visualization',methods=['POST'])
+# @cross_origin(headers=['Content-Type', 'Authorization'])
+# @cross_origin(headers=['Content-Type', 'application/json'])
+# @cross_origin(headers=['Access-Control-Allow-Origin', '*'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def visualization():
-    user_id = get_jwt_identity()
-    params = request.json
+    params = json.loads(request.data)
     vis_type = params['type']
+    user_id = get_jwt_identity()
     df = _getCache(user_id, params['filename'])
     code=''
 
@@ -511,10 +541,10 @@ def visualization():
     fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
     plt.close()
     imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
-
+    return jsonify(base64=imgStr,format=ImgFormat,resData = resData, code=code)
 @app.route('/query',methods=['POST'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def query():
     user_id = get_jwt_identity()
     params = request.json
@@ -557,8 +587,8 @@ def handleCachedData():
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
 @app.route('/cleanEditedCache', methods=['POST'])
-@cross_origin()
-@jwt_required()
+@cross_origin(origin="*")
+@jwt_required(optional=True)
 def cleanEditedCache():
     user_id = get_jwt_identity()
     params = request.json
@@ -575,7 +605,7 @@ def cleanEditedCache():
 # }
 @app.route('/clean', methods=['POST'])
 @cross_origin()
-@jwt_required()
+@jwt_required(optional=True)
 def cond_clean_json():
     user_id = get_jwt_identity()
     web = []
