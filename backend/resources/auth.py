@@ -8,6 +8,12 @@ import base64
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
 from resources.errors import SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
 InternalServerError
+import pandas as pd
+import seaborn as sns
+from io import BytesIO
+import matplotlib.pyplot as plt
+import base64
+from dateutil import tz
 # from resources.errors import errors
 
 class SignupApi(Resource):
@@ -40,14 +46,35 @@ class LoginApi(Resource):
             if not authorized:
                 raise UnauthorizedError
             imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
+            progress = extract_report(user)
             expires = timedelta(minutes=30)
             expires_refresh = timedelta(days=7)
             access_token = create_access_token(identity=str(user.id), expires_delta=expires)
             refresh_token = create_refresh_token(identity=str(user.id), expires_delta=expires_refresh)
             user.last_logged_in = datetime.now(timezone.utc)
             user.save()
-            return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr}, 200
+            to_zone = tz.tzlocal()
+            last_logged_in = user.last_logged_in.astimezone(to_zone)
+            return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
+            'progress':progress, 'last_logged':str(last_logged_in)}, 200
         except (UnauthorizedError, DoesNotExist):
             raise UnauthorizedError('Invalid username or password')
         except Exception as e:
             raise InternalServerError('Something went wrong')
+
+
+def extract_report(user):
+    img = BytesIO()
+    plt.figure()
+    if user.user_activity == {}:
+        return ""
+    table = user.user_activity
+    df = pd.DataFrame(table.items(), columns=["date", "sec"])
+    df['date'] = df['date'].apply(lambda a: datetime.strptime(a, '%Y-%m-%d'))
+    df.sort_values(by=['date'], ignore_index=True, inplace=True)
+    line = sns.lineplot(data = df, x = 'sec', y = 'date')
+    # line.set_xticklabels(df.date, rotation=90)
+    plt.savefig(img, format='png') 
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return plotUrl
