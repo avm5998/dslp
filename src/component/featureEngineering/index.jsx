@@ -43,6 +43,9 @@ const FeatureEngineering = () => {
     useEffect(()=>{
         clearData()
         result.activeOption = option
+        if(option == 0){
+            result.cols = []
+        }
     },[option])
 
     console.log(result);
@@ -56,7 +59,7 @@ const FeatureEngineering = () => {
                             <div className='flex flex-row w-full items-center' key={name}>
                                 <div className='px-10 py-2 w-1/3 label-left'>{name + ':'}</div>
                                 <DropDown onSelect={e=>{
-                                    result.type = e
+                                    result.cols.push([name,e])
                                 }} defaultText={`Select convert type`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['No change', 'to lowercase', 'To UpperCase']} />
                             </div>
                         )}
@@ -64,7 +67,7 @@ const FeatureEngineering = () => {
                     : ''}
 
                 {option === 1 ? <div>
-                    <MultiSelect defaultText={`Select columns to convert`} defaultOpen={false} selections={dataset.cate_cols} customHeight='h-32' onSelect={e=>result.cols = e} />
+                    <MultiSelect defaultText={`Select columns to convert`} defaultOpen={false} selections={dataset.cate_cols}  customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" onSelect={e=>result.cols = e} />
                 </div> : ''}
 
                 {option ==  2 ? <div className='grid grid-cols-3'>
@@ -76,12 +79,12 @@ const FeatureEngineering = () => {
                 </div> : ''}
 
                 {option === 3 ? <div>
-                    <MultiSelect defaultText={`Select columns to convert`} selections={dataset.num_cols} onSelect={e=>result.cols = e} />
+                    <MultiSelect customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" defaultText={`Select columns to convert`} selections={dataset.num_cols} onSelect={e=>result.cols = e} />
                 </div> : ''}
 
                 
                 {option === 4 ? <div>
-                    <MultiSelect defaultText={`Select columns to convert`} selections={dataset.num_cols} onSelect={e=>result.cols = e} />
+                    <MultiSelect customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" defaultText={`Select columns to convert`} selections={dataset.num_cols} onSelect={e=>result.cols = e} />
                 </div> : ''}
 
                 <div className="flex justify-end m-3 mt-10">
@@ -118,6 +121,7 @@ const FeatureEngineering = () => {
                     if(!canOperation){
                         alert(errorMsg)
                     }else{
+                        console.log(getData());
                         // let res = await fetchByJSON('feature_engineering',getData())
                         // let json = await res.json()
 

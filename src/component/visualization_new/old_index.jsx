@@ -150,7 +150,7 @@ const Page = () => {
 
     let OptionView = GraphOptionViews[currentPlot]
 
-    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 4rem)' }} ref={parentRef} onClick={e => {
+    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 0rem)' }} ref={parentRef} onClick={e => {
         if (e.target === parentRef.current || e.target === document.querySelector('#vis_main div')) {
             hideSelections()
         }

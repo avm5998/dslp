@@ -8,6 +8,8 @@ import {
   PASSWORD_RESET_FAIL,
   PASSWORD_RESET_CONFIRM_SUCCESS,
   PASSWORD_RESET_CONFIRM_FAIL,
+  CHANGE_PROFILE_PIC_SUCCESS,
+  CHANGE_PROFILE_PIC_FAILURE
 } from "../actions/types";
 
 let user = JSON.parse(localStorage.getItem("user"));
@@ -53,9 +55,18 @@ export default function (state = initialState, action) {
     case PASSWORD_RESET_FAIL:
     case PASSWORD_RESET_CONFIRM_FAIL:
     case PASSWORD_RESET_CONFIRM_SUCCESS:
+    case CHANGE_PROFILE_PIC_FAILURE:
         return {
             ...state
         };
+    case CHANGE_PROFILE_PIC_SUCCESS:
+      return {
+        ...state,
+        user:{
+          ...state.user,
+          avatar : payload.base64
+        }
+      }
     default:
       return state;
   }

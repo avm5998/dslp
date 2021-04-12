@@ -4,6 +4,7 @@ from flask_restful import Resource
 from flask import Response, request
 from flask_jwt_extended import create_access_token
 import datetime
+import base64
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
 from resources.errors import SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
 InternalServerError
@@ -14,6 +15,8 @@ class SignupApi(Resource):
         try:
             body = request.get_json()
             user =  User(**body)
+            user_avatar = open('backend/assets/images/avatar.png','rb')
+            user.profile_image.put(user_avatar, filename='avatar.png')
             user.hash_password()
             user.save()
             id = user.id
@@ -36,10 +39,10 @@ class LoginApi(Resource):
             authorized = user.check_password(body.get('password'))
             if not authorized:
                 raise UnauthorizedError
- 
+            imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
             expires = datetime.timedelta(days=7)
             access_token = create_access_token(identity=str(user.id), expires_delta=expires)
-            return {'accessToken': access_token, 'id': str(user.id), 'username':str(user.username)}, 200
+            return {'accessToken': access_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr}, 200
         except (UnauthorizedError, DoesNotExist):
             raise UnauthorizedError('Invalid username or password')
         except Exception as e:

@@ -156,14 +156,14 @@ export default function(){
 
     let OptionView = GraphOptionViews[currentPlot]
 
-    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
+    return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 0rem)' }}>
         <Modal fixedModalPosition={{
             left:'20vw',
             top:'10vh',
             width:'60vw'
         }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
-            setCode(GraphConfigs[currentPlot].getCode(result), dataset)
+            // setCode(GraphConfigs[currentPlot].getCode(result), dataset)
         }}>
             {
                 GraphOptionViews[currentPlot] ? <OptionView setCode={setCode} dataset={dataset} result={result} showOptions={showOptions}/> : ''
