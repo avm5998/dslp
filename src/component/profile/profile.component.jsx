@@ -99,6 +99,32 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
   </div>
 }
 
+const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
+  const { message } = useSelector(state => state.message);
+  const { progress, last_logged } = currentUser;
+  const [progressImg, setProgressImg] = useState(progress)
+  const parentRef = useRef();
+  useEffect(() => {
+    if (!elementIsVisibleInViewport(parentRef.current)) return
+
+  }, [tabpanel])
+            return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
+                <Form name="uploadFileForm" method="POST">
+                      <ProfileSection currentUser={currentUser}/>
+                      <hr className="my-4" />
+                      <div className='w-full my-4'>
+                        <h1> 
+                          Last Logged In : {last_logged}
+                        </h1>
+
+                      </div>
+                      <img className={progress!=""?`w-50 h-96`:"hidden"} src={'data:image/png;base64,' + progressImg} alt="" />
+                  </Form>
+  </div>
+}
+
+
+
 const vpassword = (value) => {
   if (value.length < 8 || value.length > 40 || !/\d/.test(value) || !/[\s~`!@#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?()\._]/g.test(value)) {
     return (
@@ -245,6 +271,7 @@ const Profile = () => {
   const TabPanels = [
     { name: 'Edit Profile' },
     { name: 'Change password' },
+    { name: 'Your Activity' }
   ]
   let [tabpanel, setTabpanel] = useState(0)
   if (!currentUser) {
@@ -265,6 +292,7 @@ const Profile = () => {
         <>
           <About tabpanelIndex={0} tabpanel={tabpanel} currentUser={currentUser}/>
           <ChangePassword tabpanelIndex={1} tabpanel={tabpanel} currentUser={currentUser}/>
+          <Activity tabpanelIndex={2} tabpanel={tabpanel} currentUser={currentUser}/>
         </>
     </div>)
  
