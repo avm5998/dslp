@@ -1,3 +1,4 @@
+import placeholderImg from '../../assets/images/placeholder.jpg'
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { fetch, fetchByJSON, GetDataFrameInfo,useCachedData,useSimpleForm } from '../../util/util'
 import './index.css'
@@ -12,7 +13,7 @@ import { InlineTip } from '../common/tip';
 
 const FS = () => {
     useCachedData()
-
+    let [curImg, setCurImg] = useState(placeholderImg)
     let [optionText, setOptionText] = useState('Select operation')
     // let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let [showSubOptionModal, setShowSubOptionModal] = useState(true)
@@ -20,6 +21,14 @@ const FS = () => {
     let dispatch = useDispatch()
     let {result,getData,input} = useSimpleForm({plottype:''})
     let [techinique,setTechnique] = useState(-1)
+
+    const submit = useCallback(()=>{
+        (async function(){
+            let result = await fetchByJSON('feature_selection',{filename:dataset.filename,...getData()})
+            let json = await result.json()
+            setCurImg('data:image/png;base64,' + json.base64)
+        })()
+    },[])
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal fixedModalPosition={{
@@ -63,7 +72,7 @@ const FS = () => {
                 </div>
                 <div className="flex justify-end mt-10">
                     <Button text='Confirm' customStyle='w-48 h-10 justify-self-end' onClick={()=>{
-                        console.log(getData())
+                        submit()
                     }}/>
                 </div>
             </div>
@@ -81,7 +90,9 @@ const FS = () => {
                 {/* <MultiSelect defaultText={'Selected operation'} customHeight={`h-10`} selections={dataset.dataFeatureSelection} passiveMode={true} /> */}
             </div>
         </div>
-        <Table PageSize={10}/>
+        <div className={`w-full h-full justify-center items-center flex p-10 `}>
+            <img className={`h-auto w-auto`} src={curImg} alt="" />
+          </div>
     </div>)
 }
 

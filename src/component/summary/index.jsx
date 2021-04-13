@@ -104,7 +104,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
 
   useEffect(() => {
     if(tabpanel!==0) return
-    
+
     if (dataset.loaded) {
       setCurCol(dataset.num_cols[0])
     }
@@ -127,7 +127,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
       <div className="flex flex-col text-center w-full">
         {/* <h1 className="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900">Our Team</h1>
       <p className="lg:w-2/3 mx-auto leading-relaxed text-base">Whatever cardigan tote bag tumblr hexagon brooklyn asymmetrical gentrify, subway tile poke farm-to-table. Franzen you probably haven't heard of them.</p> */}
-        <div className={`${curImg ? '' : 'hiddenn'} flex justify-around items-center py-5`}>
+        <div className={`${curImg ? '' : 'hidden'} flex justify-around items-center py-5`}>
           <div className={`w-1/2 flex px-10`}>
             <img className={`w-full h-96`} src={curImg} alt="" />
           </div>
