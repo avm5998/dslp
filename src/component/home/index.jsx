@@ -38,7 +38,7 @@ const Home = (props) => {
     });
 
     let data = await response.json();
-    setFileList([...data.files_list])
+    if (data.files_list) setFileList([...data.files_list])
   }
 
 
@@ -49,8 +49,6 @@ const Home = (props) => {
     const data = new FormData(form)
     data.append("user", currentUser.username);
     const filename = document.querySelector('#file').files.item(0).name
-    console.log("upload")
-    console.log(filename)
 
     let res = await fetch('/uploadFile', {
       method: 'POST',
@@ -111,7 +109,7 @@ const Home = (props) => {
           <span className="mt-2 text-base leading-normal">Select a file</span>
           <input className="hidden" disabled={dataset.loading} id="file" onChange={uploadFile} type="file" name="file" />
         </label>
-        <label className="inline-flex items-center mt-2 p-3 rounded bg-gray-100">
+        <label className="flex flex-row items-center mt-2 p-3 rounded bg-gray-100">
           <input id="home_force_update" type="checkbox" defaultChecked={true} className="form-checkbox h-5 w-5 text-gray-600 rounded" disabled={dataset.loading} name="forceUpdate" /><span className={`ml-5 ${dataset.loading ? "text-gray-300" : "text-gray-600"}`}>Force Update</span>
           <InlineTip infoPosition={'right'} info={'When this is checked, the file you updated with the same filename will be overwritten. Otherwise it will use the previous one you updated.'} customStyle={'ml-2'} />
         </label>

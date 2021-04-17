@@ -27,7 +27,7 @@ const Tip = ({ info, styleText = '' }) => {
                     positionBinder.current[selector] = element.getBoundingClientRect()
                 }
             }
-            return
+            retu
         }
 
         for (let selector in info) {
@@ -107,6 +107,9 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
     let [showInfo, setShowInfo] = useState(false)
     let [phase, setPhase] = useState('start') //start or end
     let timeoutRef = useRef()
+    let enterCounter = useRef(0)
+    let elements = useRef([])
+
     const closeTip = useCallback(e => {
         setPhase('end')
         timeoutRef.current = setTimeout(() => {
@@ -115,8 +118,31 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
         e.preventDefault()
     }, [])
 
-    return <div className='' style={{ zIndex }}>
-        <FontAwesomeIcon onMouseEnter={() => {
+    const addRef = useCallback(ref=>{
+        elements.current.push(ref)
+    },[])
+
+    const readyToLeave = useCallback((e)=>{
+        enterCounter.current--;
+        if(!enterCounter.current && elements.current.indexOf(e.relatedTarget)==-1){
+            closeTip(e)
+        }
+    },[])
+
+    const countEntry = useCallback((e)=>{
+        e.preventDefault()
+        enterCounter.current++
+    },[])
+
+    return <div className='relative' style={{ zIndex }}>
+        <div className='ml-2'>
+        <FontAwesomeIcon className={`text-gray-300`} icon={['far', 'question-circle']} />
+        </div>
+        {/* hover layer */}
+        <div ref={addRef} style={{zIndex:zIndex+3}} className='absolute ml-2' onMouseLeave={readyToLeave} onMouseEnter={(e) => {
+            e.preventDefault()
+            countEntry(e)
+
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current)
                 timeoutRef.current = null
@@ -124,24 +150,42 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
 
             setShowInfo(true)
             setPhase('start')
-        }} className={`ml-2 text-gray-300`} icon={['far', 'question-circle']} />
+        }} style={{width:'1.5rem',height:'1.5rem',top:0,right:0}}></div>
+            {infoPosition == 'top' ?
+                <svg ref={addRef} className={`${showInfo ? '' : 'hidden'} ${phase == 'start' ? 'animation-popin-' : 'animation-popout-'} ml-2 top-0 left-0 absolute text-white`} style={{ zIndex:zIndex+2, width:'1em',transform: 'translate(0,-1.1em)' }} x="0px" y="0px" viewBox="0 0 255 255">
+                    <path stroke="black" strokeWidth="8" strokeOpacity="0.4" fill='white' d="M 0 0 L 127.5 127.5 L 255,0"/>
+                </svg> :
+                infoPosition == 'bottom' ?
+                    <svg ref={addRef} className={`${showInfo ? '' : 'hidden'} ${phase == 'start' ? 'animation-fadein' : 'animation-fadeout'} ml-2 top-0 left-0 absolute text-white`} style={{ zIndex:zIndex+2, width:'1em',transform: 'translate(0,1.1em)' }}  x="0px" y="0px" viewBox="0 0 255 255">
+                        <path stroke="black" strokeWidth="8" strokeOpacity="0.4" fill='white' d="M 0 127.5 L 127.5 0 L 255,127.5"/>
+                    </svg> :
+                    infoPosition == 'right' ?
+                    <svg ref={addRef} className={`${showInfo ? '' : 'hidden'} ${phase == 'start' ? 'animation-fadein' : 'animation-fadeout'} ml-2 top-0 left-0 absolute text-white`} style={{ zIndex:zIndex+2, width:'1em',transform: 'translate(0.9em,0.3em)' }}  x="0px" y="0px" viewBox="0 0 255 255">
+                        <path stroke="black" strokeWidth="8" strokeOpacity="0.4" fill='white' d="M 127.5 0 L 0 127.5 L 127.5 255"/>
+                    </svg>:
 
-        <div className={`
+                    //TODO LEFT
+                    ''}
+
+        <div ref={addRef} className={`
         ${showInfo ? '' : 'hidden'}
         ${infoPosition == 'bottom' ? 'origin-top' :
                 infoPosition == 'top' ? 'origin-bottom' :
                     infoPosition == 'left' ? 'origin-right' :
                         infoPosition == 'right' ? 'origin-left' : ''
             }
-         ${phase == 'start' ? 'animation-popin-' : 'animation-popout-'}${infoPosition} rounded-lg w-48 absolute border shadow-md bg-white text-gray-400 tracking-normal p-3 ${customStyle}`} onMouseLeave={e => {
-                closeTip(e)
-            }}
+         ${phase == 'start' ? 'animation-popin-' : 'animation-popout-'}${infoPosition} rounded-lg w-96 absolute border shadow-md bg-white text-gray-400 tracking-normal p-3 ${customStyle}`}
+
+         onMouseEnter={countEntry}
+         onMouseLeave={readyToLeave}
+
             style={{
+                zIndex:zIndex+1,
                 transform: infoPosition
             }}
         ><FontAwesomeIcon onClick={e => {
             closeTip(e)
-        }} className={`cursor-pointer hover:text-gray-500 absolute top-2 right-2 text-gray-300`} icon={['fas', 'times']} /><p style={{whiteSpace:'break-spaces',wordBreak:'break-all'}}>{info}</p></div>
+        }} className={`cursor-pointer hover:text-gray-500 absolute top-2 right-2 text-gray-300`} icon={['fas', 'times']} /><p style={{ whiteSpace: 'break-spaces' }}>{info}</p></div>
     </div>
 })
 

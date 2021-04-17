@@ -212,6 +212,7 @@ export const DropDown = forwardRef(({
     id,
     text,
     defaultText = undefined,
+    defaultValue = undefined,
     items = [],
     additionalInput = false,
     additionalInputPosition = 'bottom',
@@ -247,12 +248,22 @@ export const DropDown = forwardRef(({
     if (onSelect) {//items must be string array
         items = items.map((name, i) => ({
             name,
-            onClick() {
-                onSelect(name, i, 'select')
+            onClick(e,triggeredByDefaultValue) {
+                onSelect(name, i, 'select',triggeredByDefaultValue)
                 return false
             }
         }))
     }
+
+    useEffect(()=>{
+        if(defaultValue){
+            for(let item of items){
+                if (item.name == defaultValue){
+                    items.onClick(null,true)
+                }
+            }
+        }
+    },[])
 
     const closeUl = useCallback(()=>{
         if (!showOnHover) {
@@ -308,12 +319,12 @@ export const DropDown = forwardRef(({
             </span>
         </button>
 
-        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?(ulOpen?'':'border'):''} rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?(ulOpen?'':'border'):''} rounded-b-md transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
             {<>
             {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
             {items.map((item,_index) => {
 
-                return <li key={item.name} className={`box-border bg-white cursor-pointer ${_index==items.length-1?'rounded-b-lg':''} text-gray-800 px-3 flex items-center justify-start hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
+                return <li key={item.name} className={`bg-white hover:bg-blue-300 box-border cursor-pointer ${_index==items.length-1?'rounded-b-md':''} text-gray-800 px-3 flex items-center justify-start z-auto ${customUlStyle}`} onClick={e => {
                     if (disabledRef.current) {
                         e.preventDefault()
                         return
