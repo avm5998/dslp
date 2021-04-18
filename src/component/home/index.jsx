@@ -116,7 +116,7 @@ const Home = (props) => {
       </form>
       {/* {console.log("dropdown"+files_list)} */}
       <div className='my-10 w-2/12'>
-        <DropDown className="fileSelect" disabled={!!files_list.length} customStyle='h-10 w-72' customUlStyle={'w-72'} text={selectFile} items={files_list.map(name => ({
+        <DropDown className="fileSelect" disabled={!!files_list.length} customStyle='w-72' height='h-10' text={selectFile} items={files_list.map(name => ({
           name,
           onClick(e) {
             setFile(name);

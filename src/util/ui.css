@@ -29,3 +29,12 @@
   }
 
   .multiselect .rotate180{transform: rotate(-180deg) }
+
+
+  .dropdown ul{
+     border:1px solid #ddd;
+  }
+
+  .dropdown ul li{
+   border-bottom:1px solid #eee;
+}

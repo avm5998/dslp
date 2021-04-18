@@ -60,7 +60,7 @@ export default function({dataset,result}){
         <Label text='Y label:'><InlineTip info={`The label on Y Axis`}/></Label>
         <Input customStyle={'h-10 w-60'} placeholder='Y label' onInput={e=>result.ylabel = e.target.value}/>
         <Label text='Filter column'><InlineTip info={`Filter of some specific data, specified by a column name and a condition`}/></Label>
-        <DropDown defaultText='Select X Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.filter_col = e}/>
+        <DropDown defaultText='Select X Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.filter_col = e} blankOption={'No column'}/>
         <Label text='Filter operator'></Label>
         <DropDown defaultText='Select operator' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={['=','<','>']} onSelect={e=>result.filter_operator = e}/>
         <Label text='Filter value'></Label>

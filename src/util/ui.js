@@ -51,6 +51,12 @@ export const DropDownInput = forwardRef(({
         }))
     }
 
+    useEffect(()=>{
+        ;[ulRef.current, ...ulRef.current.childNodes].forEach(e=>{
+            e.style.width = buttonRef.current.style.width
+        })
+    },[])
+
     let hasControl = defaultText !== undefined //give control to component itself
     return (<div className="w-full dropdown group inline-block">
         <button id={id} onClick={() => {
@@ -216,11 +222,18 @@ export const DropDown = forwardRef(({
     items = [],
     additionalInput = false,
     additionalInputPosition = 'bottom',
+
+    blankOption = undefined,//whether or not to add an empty option which returns '' when clicked
+    blankOptionOnClick = (name='')=>{}, //when onClick is bound for each item, select blank option could trigger special effects
+
     additionalInputPlaceholder,
     onSelect,
-    customStyle,
-    customUlStyle,
+    customStyle='',
+    customUlStyle='',
+    height='h-full',
+    itemHeight='',
     hideArrow,
+    showTexts = {},
     showOnHover = true,
     controlledOpen = false,
     openState = false,
@@ -232,7 +245,8 @@ export const DropDown = forwardRef(({
     let inputRef = useRef(null)
     let [ulOpen, setOpenUl] = useState(0)
     let [currentText, setCurrentText] = useState(defaultText)
-
+    let allOptions = []
+    
     useImperativeHandle(ref, () => ({
         hide: () => {
             setOpenUl(false)
@@ -245,6 +259,20 @@ export const DropDown = forwardRef(({
         }
     }, [controlledOpen, openState])
 
+    if (blankOption!==undefined){
+        allOptions.push({
+            name:blankOption,
+            onClick(){
+                if(onSelect){
+                    onSelect('',-1,'select',false)
+                }else{
+                    blankOptionOnClick('')
+                }
+                return false
+            }
+        })
+    }
+
     if (onSelect) {//items must be string array
         items = items.map((name, i) => ({
             name,
@@ -255,6 +283,9 @@ export const DropDown = forwardRef(({
         }))
     }
 
+    allOptions = allOptions.concat(items)
+
+    //set default value
     useEffect(()=>{
         if(defaultValue){
             for(let item of items){
@@ -264,6 +295,17 @@ export const DropDown = forwardRef(({
             }
         }
     },[])
+
+    //align ul and li to button
+    useEffect(()=>{
+        let width = buttonRef.current.getBoundingClientRect().width + 'px'
+        if(!width) return
+
+        ;[ulRef.current, ...ulRef.current.childNodes].forEach(e=>{
+            if(e.style && (e.tagName == 'UL' || e.tagName == 'LI'))
+                e.style.width = width
+        })
+    },[ulOpen])
 
     const closeUl = useCallback(()=>{
         if (!showOnHover) {
@@ -302,12 +344,12 @@ export const DropDown = forwardRef(({
         </div>
     </li>
 
-    return (<div className="w-full dropdown group inline-block">
+    return (<div className="w-full h-full dropdown group inline-block">
         <button id={id} onClick={() => {
             if (!showOnHover) {
                 setOpenUl(s => !s)
             }
-        }} ref={buttonRef} className={`box-border outline-none focus:outline-none border px-2 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
+        }} ref={buttonRef} className={`box-border outline-none focus:outline-none border px-2 bg-white rounded-sm flex items-center min-w-32 ${height} self-start ${customStyle}`}>
             <span className="pr-1 text-gray-400 flex-1">{hasControl ? currentText : text}</span>
             <span className={`${hideArrow ? 'hidden' : ''}`} >
                 <svg
@@ -319,12 +361,11 @@ export const DropDown = forwardRef(({
             </span>
         </button>
 
-        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?(ulOpen?'':'border'):''} rounded-b-md transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white ${allOptions.length?(ulOpen?'':'border'):''} rounded-b-md transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
             {<>
             {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
-            {items.map((item,_index) => {
-
-                return <li key={item.name} className={`bg-white hover:bg-blue-300 box-border cursor-pointer ${_index==items.length-1?'rounded-b-md':''} text-gray-800 px-3 flex items-center justify-start z-auto ${customUlStyle}`} onClick={e => {
+            {allOptions.map((item,_index) => {
+                return <li key={item.name} className={`bg-white hover:bg-blue-300 box-border cursor-pointer ${_index==allOptions.length-1?'rounded-b-md':''} text-gray-500 hover:text-white px-3 flex items-center justify-start z-auto ${itemHeight} ${customUlStyle}`} onClick={e => {
                     if (disabledRef.current) {
                         e.preventDefault()
                         return
@@ -346,7 +387,7 @@ export const DropDown = forwardRef(({
                             }, 0)
                         }
                     }
-                }}>{item.name}</li>
+                }}>{showTexts[item.name] || item.name}</li>
             }
             )}
             {additionalInput && additionalInputPosition === 'bottom'?AdditionalInput:''}

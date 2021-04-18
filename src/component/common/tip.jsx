@@ -134,12 +134,12 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
         enterCounter.current++
     },[])
 
-    return <div className='relative' style={{ zIndex }}>
+    return <div className='relative'>
         <div className='ml-2'>
         <FontAwesomeIcon className={`text-gray-300`} icon={['far', 'question-circle']} />
         </div>
         {/* hover layer */}
-        <div ref={addRef} style={{zIndex:zIndex+3}} className='absolute ml-2' onMouseLeave={readyToLeave} onMouseEnter={(e) => {
+        <div ref={addRef} style={{zIndex:zIndex}} className='absolute ml-2' onMouseLeave={readyToLeave} onMouseEnter={(e) => {
             e.preventDefault()
             countEntry(e)
 
@@ -153,15 +153,15 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
         }} style={{width:'1.5rem',height:'1.5rem',top:0,right:0}}></div>
             {infoPosition == 'top' ?
                 <svg ref={addRef} className={`${showInfo ? '' : 'hidden'} ${phase == 'start' ? 'animation-popin-' : 'animation-popout-'} ml-2 top-0 left-0 absolute text-white`} style={{ zIndex:zIndex+2, width:'1em',transform: 'translate(0,-1.1em)' }} x="0px" y="0px" viewBox="0 0 255 255">
-                    <path stroke="black" strokeWidth="8" strokeOpacity="0.4" fill='white' d="M 0 0 L 127.5 127.5 L 255,0"/>
+                    <path stroke="black" strokeWidth="8" strokeOpacity="0.2" fill='white' d="M 0 0 L 127.5 127.5 L 255,0"/>
                 </svg> :
                 infoPosition == 'bottom' ?
                     <svg ref={addRef} className={`${showInfo ? '' : 'hidden'} ${phase == 'start' ? 'animation-fadein' : 'animation-fadeout'} ml-2 top-0 left-0 absolute text-white`} style={{ zIndex:zIndex+2, width:'1em',transform: 'translate(0,1.1em)' }}  x="0px" y="0px" viewBox="0 0 255 255">
-                        <path stroke="black" strokeWidth="8" strokeOpacity="0.4" fill='white' d="M 0 127.5 L 127.5 0 L 255,127.5"/>
+                        <path stroke="black" strokeWidth="8" strokeOpacity="0.2" fill='white' d="M 0 127.5 L 127.5 0 L 255,127.5"/>
                     </svg> :
                     infoPosition == 'right' ?
                     <svg ref={addRef} className={`${showInfo ? '' : 'hidden'} ${phase == 'start' ? 'animation-fadein' : 'animation-fadeout'} ml-2 top-0 left-0 absolute text-white`} style={{ zIndex:zIndex+2, width:'1em',transform: 'translate(0.9em,0.3em)' }}  x="0px" y="0px" viewBox="0 0 255 255">
-                        <path stroke="black" strokeWidth="8" strokeOpacity="0.4" fill='white' d="M 127.5 0 L 0 127.5 L 127.5 255"/>
+                        <path stroke="black" strokeWidth="8" strokeOpacity="0.2" fill='white' d="M 127.5 0 L 0 127.5 L 127.5 255"/>
                     </svg>:
 
                     //TODO LEFT
@@ -180,12 +180,12 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
          onMouseLeave={readyToLeave}
 
             style={{
-                zIndex:zIndex+1,
+                zIndex:zIndex-2,
                 transform: infoPosition
             }}
         ><FontAwesomeIcon onClick={e => {
             closeTip(e)
-        }} className={`cursor-pointer hover:text-gray-500 absolute top-2 right-2 text-gray-300`} icon={['fas', 'times']} /><p style={{ whiteSpace: 'break-spaces' }}>{info}</p></div>
+        }} className={`cursor-pointer hover:text-gray-500 absolute top-2 right-2 text-gray-300`} icon={['fas', 'times']} /><p style={{ zIndex:zIndex-1, whiteSpace: 'break-spaces' }}>{info}</p></div>
     </div>
 })
 

@@ -57,7 +57,7 @@ export const config = {
             dfplotArgs.push(`${k}=${plotOptions[k]}`)
         }
 
-        prevSteps.push(`df.index = df['${result.cate_col}']`)
+        prevSteps.push(`df = df.groupby('${result.cate_col}').agg(${result.num_col}=('${result.num_col}','sum'))`)
         return `${prevSteps.length?prevSteps.join('\n'):''}
 df.plot.pie(${dfplotArgs.join(',')})
 ${postSteps.length?postSteps.join('\n'):''}

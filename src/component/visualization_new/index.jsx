@@ -19,6 +19,7 @@ import NightingaleRoseChart from './nightingaleRoseChart';
 import { ChromePicker } from 'react-color';
 import './index.css'
 import { InlineTip } from '../common/tip';
+import Waffle from './waffleChart'
 
 const Graphs = [
     AreaGraph,
@@ -32,6 +33,7 @@ const Graphs = [
     RadarGraph,
     ScatterPlot,
     ThreeDScatterPlot,
+    Waffle
 ]
 
 const Functions = [
@@ -171,20 +173,20 @@ export default function(){
         </Modal>
 
         <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4'>
-            <div className='w-72'>
+            <div className='w-72 h-full'>
                 <MultiSelect customHeight={'h-10'} customeWidth={'w-72'} ref={ref} defaultOpen={false} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
             </div>
-            <div className='w-72'>
-                <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'h-10 w-72'} customUlStyle={'h-10 w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
+            <div className='w-72 h-full'>
+                <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
             </div>
-            <div className='w-auto flex justify-center items-center'>
+            <div className='w-auto h-full flex justify-center items-center'>
                 <div className={``}>{activateStatus}</div>
                 <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.'/>
             </div>
-            <div className='w-72'>
+            <div className='w-72 h-full'>
                 <Button hasPadding={false} disabled={!currentPlot} text="Options" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10  ${!currentPlot ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={e => { if (currentPlot) showOptions(1) }} hoverAnimation={false} />
             </div>
-            <div className='w-72'>
+            <div className='w-72 h-full'>
                 <Button hasPadding={false} disabled={!code} text="Run" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
                      ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
             </div>
