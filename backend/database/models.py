@@ -12,7 +12,7 @@ class User(db.Document):
     profile_image = db.ImageField(thumbnail_size=(40, 40, False))
     last_logged_in = db.DateTimeField(default=datetime.now(timezone.utc), nullable=False)
     user_activity = db.DictField()
-         
+    user_bio = db.StringField()         
     def hash_password(self):
         self.password = generate_password_hash(self.password).decode('utf8')
     

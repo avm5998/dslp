@@ -3,7 +3,7 @@ import './index.css'
 import { action as DataSetActions } from '../../reducer/dataset'
 import { useSelector, useDispatch } from 'react-redux'
 import { RangeSelector, Modal, Radio, Checkbox } from '../../util/ui'
-import { useForm, initialFormCheckbox, useCachedData } from '../../util/util'
+import { useForm, initialFormCheckbox, useCachedData, fetchWithRefresh } from '../../util/util'
 import { elementIsVisibleInViewport, fetchByJSON } from '../../util/util';
 import NoData from '../common/nodata'
 import placeholderImg from '../../assets/images/placeholder.jpg'
@@ -43,7 +43,7 @@ const DisplayCode = ({code}) => {
       setShowCode(!showCode)}}/>
       <div className={showCode?
         
-          "bg-white h-full flex items-start border-gray-200 border p-4 cursor-pointer"+
+          "box h-full flex items-start border-gray-200 border p-4 cursor-pointer"+
            " hover:bg-white justify-between hover:shadow-lg rounded-lg mt-4 whitespace-pre-line align-bottom"
           :
           "hidden invisible"}>
@@ -90,7 +90,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
       console.log("form data")
       // console.log(typeof(formData))
       let data = JSON.stringify(formData);
-      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
+      let res = await fetchWithRefresh(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
       let json_data = await res.json()
       console.log(json_data['code'])
       setCode(json_data['code'])
@@ -175,7 +175,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
           let cur = dataset.col_lists[col]
           {/* console.log(" sub-div "+cur.name) */}
           return (<div key={cur.name} className="p-2 lg:w-1/3 md:w-1/2 w-full">
-            <div className={`${curCol === cur.name ? 'bg-white' : ''} h-full flex items-start border-gray-200 border p-4 cursor-pointer hover:bg-white hover:shadow-lg rounded-lg`} onClick={() => {
+            <div className={`${curCol === cur.name ? 'box-active' : 'box'} flex items-start border-gray-200 border p-4 cursor-pointer hover:shadow-lg rounded-lg`} onClick={() => {
               if (formDisabledRef.current) return
               setCurCol(cur.name)
             }}>
@@ -189,7 +189,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
           </div>)
         })} 
       </div>
-      <DisplayCode code={code} />
+      {/* <DisplayCode code={code} /> */}
     </div>
   </div>)
 }
@@ -248,7 +248,7 @@ const Interactions = ({ tabpanelIndex, tabpanel }) => {
       </div>
 
     </div>
-    <DisplayCode code={code} />
+    {/* <DisplayCode code={code} /> */}
   </div>)
 }
 const Correlations = ({ tabpanelIndex, tabpanel }) => {
@@ -278,7 +278,7 @@ const Correlations = ({ tabpanelIndex, tabpanel }) => {
   return (<div className={`container mx-auto h-full ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
     <div className='flex h-full justify-center flex-wrap flex-col items-center'>
       <img className="my-4"src={curImg} alt="" />
-      <DisplayCode code={code} />
+      {/* <DisplayCode code={code} /> */}
     </div>
 
   </div>)

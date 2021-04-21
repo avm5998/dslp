@@ -196,7 +196,7 @@ const ResetPasswordConfirm = ({ match, reset_password_confirm }) => {
                 )}
                 <span>Reset password</span>
             </button> */}
-            <button className="btn btn-lg btn-primary btn-block col-span-2">Reset password</button>
+            <button className="w-auto btn btn-lg btn-primary btn-block col-span-2">Reset password</button>
             
             
             </div>

@@ -99,7 +99,7 @@ export function Button({
     return <button id={id} onClick={onClick} disabled={disabled} className={
         overrideClass ? overrideClass : `
     ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
-                `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500 border-1' : 'bg-transparent bg-blue-400 text-blue-400 border-blue-400 border-1'} cursor-pointer`} 
+                `${hoverAnimation ? 'hover:border-transparent border-blue-500 border-1 button-style' : 'bg-transparent border-blue-400 border-1 button-style'} cursor-pointer`} 
     rounded font-semibold ${hasPadding?'px-4':''} focus:outline-none ${customStyle}`}>
         {disabled ? disabledText : text}
     </button>

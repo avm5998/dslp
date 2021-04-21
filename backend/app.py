@@ -28,7 +28,7 @@ from yellowbrick.cluster import KElbowVisualizer
 from sklearn.metrics import confusion_matrix, roc_curve, mean_squared_error, r2_score, classification_report, plot_roc_curve, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
-import cv2
+
 
 
 
@@ -146,7 +146,7 @@ def schema_validation_error(e):
     return {"status":e.status, "message":e.message}, 400
 
 @app.errorhandler(EmailDoesnotExistsError)
-def email_already_exists(e):
+def email_does_not_exists(e):
     return {"status":e.status, "message":e.message}, 400
 
 @app.errorhandler(UnauthorizedError)
@@ -233,8 +233,8 @@ def logout():
 @jwt_required(refresh=True)
 def refresh():
     current_user = get_jwt_identity()
-    expires = timedelta(days=1)
-    access_token = create_access_token(identity=current_user)
+    expires = timedelta(days=7)
+    access_token = create_access_token(identity=current_user, expires_delta=expires)
     return jsonify(accessToken=access_token), 200
 
 
@@ -256,7 +256,7 @@ def change_profile_pic():
     return jsonify(base64=imgStr), 200
 
 
-@app.route("/api/auth/forgot", methods=["POST"])
+@app.route("/api/auth/forgot", methods=["GET"])
 @cross_origin(origin="*")
 def forgot():  
     url =  str(request.origin)+'/reset/'
@@ -597,6 +597,7 @@ def visualization():
     fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
     plt.close()
     imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
+    # return jsonify(message='Token has expired'), 401
     return jsonify(base64=imgStr,format=ImgFormat,resData = resData, code=code)
 @app.route('/query',methods=['POST'])
 @cross_origin()

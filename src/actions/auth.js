@@ -86,105 +86,39 @@ export const login = (username, password) => (dispatch) => {
   );
 };
 
-// export const logout = () => (dispatch) => {
-//   console.log('logout actions');
-//   console.log(JSON.stringify(authHeader()))
-//   // return AuthService.logout().then(
-//   //   (response) => {
-//   //     console.log(response);
-//   //     dispatch({
-//   //       type: LOGOUT,
-//   //     });
-//   //     localStorage.removeItem("user");
-//   //     return Promise.resolve();
-//   //   },
-//   //   (error) => {
-//   //     const message =
-//   //       (error.response
-//   //         ) ||
-//   //       error.message ||
-//   //       error.toString();
-//   //     dispatch({
-//   //         type: LOGOUT_FAIL,
-//   //       });
-//   //     dispatch({
-//   //       type: SET_MESSAGE,
-//   //       payload: message,
-//   //     });
-
-//   //     return Promise.reject();
-//   //   }
-//   // );
-//     try {
-//       const res = await axios.delete(API_URL+'logout', { method: 'DELETE', headers: authHeader() });
-//       console.log(res);
-//       localStorage.removeItem("user");
-//       dispatch({
-//           type: LOGOUT
-//       });
-//   } catch (err) {
-//       console.log("errorrorro")
-//       dispatch({
-//           type: LOGOUT_FAIL
-//       });
-//   }
-// };
-
-// export const reset_password = (email) => async dispatch => {
-//   // const config = {
-//   //     headers: {
-//   //         'Content-Type': 'application/json'
-//   //     }
-//   // };
-
-  
-
-//   try {
-//       await axios.post(API_URL+'forgot', { email });
-
-//       dispatch({
-//           type: PASSWORD_RESET_SUCCESS
-//       });
-//   } catch (err) {
-//       dispatch({
-//           type: PASSWORD_RESET_FAIL
-//       });
-//   }
-// };
-
 export const logout = () => (dispatch) => {
   return AuthService.logout().then(
   (response) => {
-    console.log("receive response");
-    localStorage.removeItem('user');
-    dispatch({
-      type: LOGOUT,
-    });
+    // console.log("receive response");
+    // dispatch({
+    //   type: LOGOUT,
+    // });
 
-    dispatch({
-      type: SET_MESSAGE,
-      payload: response.data.message,
-    });
-    return Promise.resolve();
+    // dispatch({
+    //   type: SET_MESSAGE,
+    //   payload: response.data.message,
+    // });
+    // console.log('returning')
+    return Promise.resolve(response);
   },
   (error) => {
-    console.log(error)
-    const message =
-      // (error.response
-      //   ) ||
-      // error.message ||
-      error.toString();
+    // console.log(error)
+    // const message =
+    //   // (error.response
+    //   //   ) ||
+    //   // error.message ||
+    //   error.toString();
 
-    dispatch({
-      type: LOGOUT_FAIL,
-    });
+    // dispatch({
+    //   type: LOGOUT_FAIL,
+    // });
 
-    dispatch({
-      type: SET_MESSAGE,
-      payload: message,
-    });
+    // dispatch({
+    //   type: SET_MESSAGE,
+    //   payload: message,
+    // });
 
-    return Promise.reject();
+    return Promise.reject(error);
   }
 );
 }

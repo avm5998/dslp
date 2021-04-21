@@ -38,3 +38,13 @@
   .dropdown ul li{
    border-bottom:1px solid #eee;
 }
+  .button-style{
+   background-color: #536162;
+   color:#f6f5f5;
+  }
+
+  .button-style:hover{
+   background-color: #276678;
+   color:#f6f5f5;
+  }
+  

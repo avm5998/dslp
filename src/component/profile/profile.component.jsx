@@ -13,14 +13,21 @@ import {change_profile_pic} from '../../actions/profile';
     
 const ProfileSection = ({currentUser}) => {
     const { avatar } = currentUser;
+    const { user_bio } = currentUser;
     const [profileImg, setProfileImg] = useState(avatar)
+    const [bio, setBio] = useState(user_bio);
+    const [editBio, setEditBio] = useState(false)
     const dispatch = useDispatch();
 
     useEffect(async () => {
       
       setProfileImg('data:image/png;base64,' + avatar)
     }, [avatar]);
-  
+
+    const handleChange = event => {
+      const {name, value} = event.target;
+      setBio(value)
+    };
 
     const handleImageUpload = async e => {
       const form = document.forms.namedItem("uploadFileForm");
@@ -39,7 +46,7 @@ const ProfileSection = ({currentUser}) => {
 
             <img src={profileImg} alt="..." className="avatar-img rounded-circle" />
         </div>
-        <label className="w-full p-1 mt-4 flex flex-col items-center text-blue-500 rounded-sm shadow-md tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue-500 hover:text-white">
+        <label className="profile-button w-full p-1 mt-4 flex flex-col items-center rounded-sm shadow-md tracking-wide uppercase border  cursor-pointer">
           <span className="text-base leading-normal">Change profile photo</span>
           <input className="hidden" id="file" onChange={handleImageUpload} type="file" name="file" />
         </label>
@@ -53,9 +60,26 @@ const ProfileSection = ({currentUser}) => {
               </div>
               <div className="row mb-4">
                   <div className="col-md-7">
-                      <p className="text-muted">
-                          Student at Rochester Institue of Technology
-                      </p>
+                    {
+                      editBio?
+                        <textarea name="bio" value={bio} onChange={handleChange} maxLength="200">
+                          
+                        </textarea>
+                        :
+                        <p>
+                        {bio===""?"About yourself...":bio}
+                        </p>
+                    }
+                        {/* <Input type="text" className={editBio? "":"text-muted"}
+                                name="bio"
+                                value={bio}
+                                onChange={handleChange} /> */}
+                         <div>
+                        <label htmlFor="biography">Edit bio</label>
+                        <FontAwesomeIcon icon="edit" onClick={()=>setEditBio(!editBio)}
+                        />
+                        </div>
+                        
                   </div>
               </div>
           </div>
@@ -83,10 +107,10 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                       </div>
                       <div className="form-group my-2">
                           <label >Email</label>
-                          <input type="email" className="form-control-profile" id="inputEmail4" placeholder={currentUser.email} />
+                          <input type="email" className="form-control-profile" id="inputEmail4" placeholder={currentUser.email} disabled/>
                       </div>
                       <hr className="my-4" />  
-                      <Button text='Save Changes' customStyle='h-10 my-4 w-64' hasPadding={false}/>
+                      <Button text='Save Changes' customStyle='h-10 my-4 w-64 profile-button' hasPadding={false}/>
                       {message && (
                             <div className="form-group">
                             <div className="alert alert-danger text-center w-1/3" role="alert">
@@ -257,7 +281,7 @@ const ChangePassword = ({ tabpanelIndex, tabpanel, currentUser }) => {
                           </div>
                       </div>
                       <hr className="my-4" />
-                      <Button text='Save Changes' customStyle='h-10 my-4 w-64' hasPadding={false}/>
+                      <Button text='Save Changes' customStyle='h-10 my-4 w-64 profile-button' hasPadding={false}/>
 
                       <CheckButton style={{ display: "none" }} ref={checkBtn} />
                   </Form>
@@ -283,7 +307,7 @@ const Profile = () => {
       <div className="">
         <nav className="flex flex-col w-full sm:flex-row justify-end">
           {TabPanels.map((panel, i) =>
-            <button key={panel.name} onClick={() => setTabpanel(i)} className={`py-4 px-6 block hover:text-blue-500 focus:outline-none ${i === tabpanel ? 'border-b-2 text-blue-500' : 'text-gray-600'} font-medium border-blue-500`}>
+            <button key={panel.name} onClick={() => setTabpanel(i)} className={`panel py-4 px-6 block focus:outline-none ${i === tabpanel ? 'panel-border' : 'text-gray-600'} font-medium`}>
               {panel.name}
             </button>
           )}

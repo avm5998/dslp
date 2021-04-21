@@ -32,14 +32,24 @@ const login = async (username, password) => {
 const logout = async () => {
   // localStorage.removeItem("user");
 
-  console.log(authHeader());
+  // console.log(authHeader());
   const res = await fetch(API_URL + "logout", {method:'DELETE', headers: authHeader()});
+
   // if (response.msg==="Access token revoked"){
     // localStorage.removeItem("user");
   // }
   // return response
-  console.log(res);
-  return res
+  // const js = await res.json()
+  // console.log(res);
+  if(res.ok){
+    try{
+      localStorage.removeItem('user');
+      return Promise.resolve(js)
+    }catch(err){
+      throw err
+    } 
+  }
+  return Promise.reject(js);
 };
 
 const forgot_password = (email) => {

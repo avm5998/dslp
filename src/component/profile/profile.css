@@ -41,3 +41,27 @@ label{
     display: grid;
 
 }
+
+.profile-button{
+    background-color:#276678;
+    color: #f6f5f5 ;
+
+}
+.profile-button:hover{
+    background-color:#d3e0ea  ;
+    color:#276678 
+}
+
+.panel{
+    color: #276678;
+}
+.panel:hover{
+    color: #276678;
+}
+
+.panel-border{
+    border-style: solid;
+    border-color: #276678;
+    border-bottom-width: 1px;
+    
+}

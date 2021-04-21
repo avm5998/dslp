@@ -1,0 +1,22 @@
+.upload{ 
+    background-color: #276678;
+    color:#f6f5f5;
+}
+
+.upload:hover {
+    background-color: #d3e0ea;
+    color:#276678;
+}
+
+.data-style{
+    background-color:#d3e0ea;
+    color: #276678;
+}
+.revert{ 
+    background-color: #276678;
+    color:#f6f5f5;
+}
+.revert:hover{
+    background-color: #d3e0ea;
+    color:#276678;
+}
