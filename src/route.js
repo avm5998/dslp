@@ -239,7 +239,7 @@ const Routes = (props) => {
                 }
 
                     <div    
-                    className={currentUser? 'w-10/12 absolute right-0 h-screen content': "flex h-screen flex-col justify-center" }
+                    className={currentUser? 'w-10/12 absolute right-0 h-screen content overflow-auto': "flex h-screen flex-col justify-center" }
                     >
                         {/* <div className='block w-full h-16'>&nbsp;</div> */}
                         <Switch>

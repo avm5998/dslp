@@ -42,6 +42,8 @@ from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
     jwt_required, create_refresh_token, get_jwt
 from database.models import User, TokenBlockList
+import bson
+from bson.binary import Binary
 from bson.objectid import ObjectId
 import collections
 #  #
@@ -112,6 +114,7 @@ mongo_collection = mongo_db["files"]
 user_collection = mongo_db["user"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 EditedPrefix = '__EDITED___'
@@ -129,6 +132,20 @@ env_var = os.environ.get("FLASK_ENV")
 
 CORS(app)
 
+
+
+def insert_default_files():
+    path = 'backend\\assets\\files\\'
+    for filename in DEFAULT_FILES:
+        file_details = mongo_collection.find_one({"file_name": filename})
+        if not file_details:
+            file = os.path.join(path, filename)
+            with open(file, "rb") as file_content:
+                content = Binary(file_content.read())
+                # bson_content = BSON::Binary.new(content)
+            mongo_collection.insert_one({"user_id":ObjectId(b"awesomeadmin"),"file_name": filename, "desc": "Default desc", "logo_name": "default_logo.png",
+                        "source_link": "default source link","content":content})
+insert_default_files()
 
 # Error handling
 
@@ -160,7 +177,6 @@ def bad_token(e):
 @app.errorhandler(InternalServerError)
 def internal_server_error(e):
     return {"status":e.status, "message":e.message}, 500
-
 
 
 
@@ -358,15 +374,24 @@ def get_user_files():
 def convertNaN(value):
     return None if math.isnan(value) else value
 
-@app.route('/file/<filename>',methods=['GET'])
+
+@app.route('/file/',methods=['GET'])
 @cross_origin(origin="*")
 @jwt_required()
-def get_file(filename):
+def get_file():
+    filename = request.args.get('filename')
+    default = request.args.get('default')
     user_id = get_jwt_identity()
+    if default!='false':
+        user_id_admin = ObjectId(b'awesomeadmin')
     buf = StringIO()
     data = ''
-    df = _getCache(user_id,filename)
-    update_user_files_list(user_id, filename)
+    if default=='true':
+        df = _getCache(user_id_admin,filename, modified=False)
+    else:
+        df = _getCache(user_id,filename, modified=False)
+    if default == 'false':
+        update_user_files_list(user_id, filename)
     if df is not None:
         df.info(buf=buf,verbose=True)
         data = df.to_json()
@@ -402,6 +427,10 @@ def getDataFrameDetails(df):
 
     for col in cols}
     return cols,col_lists,num_cols,num_lists,cate_cols,cate_lists
+
+
+
+
 
 
 @app.route('/uploadFile',methods=['POST'])
