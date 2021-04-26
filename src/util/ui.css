@@ -33,11 +33,18 @@
 
   .dropdown ul{
      border:1px solid #ddd;
+     color: #276678;
   }
 
+
   .dropdown ul li{
-   border-bottom:1px solid #eee;
-}
+      border-bottom:1px solid #eee;
+      background-color: white;
+   }
+   .dropdown ul li:hover{
+   background-color: #276678;
+   color:#f6f5f5
+ }
   .button-style{
    background-color: #276678;
    color:#f6f5f5;

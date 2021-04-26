@@ -365,7 +365,7 @@ export const DropDown = forwardRef(({
             {<>
             {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
             {allOptions.map((item,_index) => {
-                return <li key={item.name} className={`bg-white hover:bg-blue-300 box-border cursor-pointer ${_index==allOptions.length-1?'rounded-b-md':''} text-gray-500 hover:text-white px-3 flex items-center justify-start z-auto ${itemHeight} ${customUlStyle}`} onClick={e => {
+                return <li key={item.name} className={`box-border cursor-pointer ${_index==allOptions.length-1?'rounded-b-md':''}  px-3 flex items-center justify-start z-auto ${itemHeight} ${customUlStyle}`} onClick={e => {
                     if (disabledRef.current) {
                         e.preventDefault()
                         return
