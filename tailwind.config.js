@@ -1,6 +1,7 @@
 module.exports = {
   purge: [],
-  darkMode: false, // or 'media' or 'class'
+  important:false,
+  // darkMode: false, // or 'media' or 'class'
   theme: {
     extend: {
       gridTemplateColumns:{

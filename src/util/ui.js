@@ -562,7 +562,7 @@ export function Radio({ label, name, customStyle = '', defaultChecked = false, o
 
 export const Checkbox = forwardRef(({ item = '', forwardedRef, disabledRef = {}, label, name, customStyle = '', defaultChecked = false, onClick = () => { }, onChange = () => { } }, ref) => {
     return (
-        <label className={`inline-flex items-center ${customStyle}`} onClick={e => {
+        <div className={`inline-flex items-center ${customStyle}`} onClick={e => {
             if (disabledRef.current) {
                 e.preventDefault()
                 return
@@ -577,6 +577,6 @@ export const Checkbox = forwardRef(({ item = '', forwardedRef, disabledRef = {},
                 }
 
                 onChange(e,e.target.checked)
-            }} type="checkbox" item={item} className="form-checkbox h-5 w-5 bg-gray-100 border-2 border-blue-300" defaultChecked={defaultChecked} /><span className="ml-2 text-gray-700">{label}</span>
-        </label>)
+            }} type="checkbox" item={item} className="form-checkbox h-5 w-5 bg-gray-100 border-2 border-blue-300" defaultChecked={defaultChecked} /><div className="ml-2 text-gray-700">{label}</div>
+        </div>)
 })

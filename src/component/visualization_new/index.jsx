@@ -25,14 +25,14 @@ const Graphs = [
     AreaGraph,
     BarChart,
     BoxPlot,
-    CandleStickChart,
+    // CandleStickChart,
     Histogram,
     LineGraph,
-    NightingaleRoseChart,
+    // NightingaleRoseChart,
     PieChart,
     RadarGraph,
     ScatterPlot,
-    ThreeDScatterPlot,
+    // ThreeDScatterPlot,
     Waffle
 ]
 
@@ -64,10 +64,12 @@ const initialCode = data=>`import pandas as pd
 from io import StringIO
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 
 data_json = StringIO("""${data}""")
 df = pd.read_json(data_json)
+
 `
 
 
@@ -122,6 +124,7 @@ export default function(){
 
                 let g = await res.json()
                 kernelRef.current = data.kernel
+                // alert('X')
                 data.kernel.requestExecute({code:initialCode(g.data)})
                 setDfJSON(g.data)
                 setActivateStatus('Ready')
@@ -162,7 +165,7 @@ export default function(){
         <Modal fixedModalPosition={{
             left:'20vw',
             top:'10vh',
-            width:'60vw'
+            width:'fit-content'
         }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
             // setCode(GraphConfigs[currentPlot].getCode(result), dataset)

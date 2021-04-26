@@ -27,7 +27,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
             }}>
                 </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
-                gridTemplateColumns:'10vw 1fr 5vw 1fr'
+                gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
                 <CommonOption dataset={dataset} result={result}/>
             </div>

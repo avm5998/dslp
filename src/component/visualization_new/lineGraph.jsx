@@ -19,28 +19,27 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
                 <Label text='X Axis:'><InlineTip info={`*Required\nThe data on X Axis`}/></Label>
-                <DropDown defaultText='Select X Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.x = e}/>
+                <DropDown defaultText='Select X Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.x = e}/>
                 <Label text='Y Axis:'><InlineTip info={`*Required\nThe data on Y Axis`}/></Label>
-                <DropDown defaultText='Select Y Axis' customStyle='h-10 w-60' customUlStyle='h-10 w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.y = e}/>
+                <DropDown defaultText='Select Y Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.y = e}/>
             </div>
+
             <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
                 gridTemplateColumns:'5vw 1fr 10vw 1fr'
             }}>
-                {/* <Label text='Draw smoothly:'/>
-                <Checkbox label={'Smoothed'} defaultChecked={false} onChange={e=>result.smoothed = e.target.checked}/> */}
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
-                gridTemplateColumns:'10vw 1fr 5vw 1fr'
+                gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
                 <CommonOption dataset={dataset} result={result}/>
             </div>
             <div className='flex justify-end'>
                 <Button onClick={e=>{
                     showOptions(0)
-                    // confirmOption()
                     setCode(config.getCode({...defaultResult,...result}, dataset))
                 }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`}/>
             </div>
+
         </div>
     </>
 }
