@@ -24,6 +24,8 @@ const Home = (props) => {
   const dataset = useSelector(state => state.dataset)
   const [files_list, setFileList] = useState([])
   let [selectFile, setFile] = useState('Select dataset')
+  let [selectFileType, setFileType] = useState('Select FileType')
+
 
   useEffect(async () => {
     await updateFilesDropdown();
@@ -125,6 +127,22 @@ const Home = (props) => {
             selectFileOption(name);
           }
         }))} />
+
+        <DropDown className="fileSelect" defaultText={'Select File Type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Numerical File Type', 'Text File Type']} 
+        //             onSelect={e => {
+        //                 result.finalY = e
+        //             } 
+        // }
+        />
+
+        {/* <DropDown className="fileSelect" disabled={!!files_list.length} customStyle='h-10 w-72' customUlStyle={'w-72'} text={selectFileType} items={files_list.map(name => ({
+          name,
+          onClick(e) {
+            setFileType(name);
+            selectFileTypeOption(name);
+          }
+        }))} /> */}
+
         <Button text='Revert data' disabled={!dataset.filename} onClick={()=>{
           if(dataset.filename){
             fetchByJSON('cleanEditedCache',{

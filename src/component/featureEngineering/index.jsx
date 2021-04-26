@@ -8,7 +8,7 @@ import { Checkbox, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
 import Tip from '../common/tip'
 
-const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler'];
+const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; //, 'Add New Features'
 const getCanOperation = (dataset, operationIndex)=>{
     switch(operationIndex){
         case 0:
@@ -37,18 +37,21 @@ const FeatureEngineering = () => {
     let dataset = useSelector(state => state.dataset)
     let dispatch = useDispatch()
 
-    let {result,checkbox : checkbox2,input : input2,getData,clearData} = useSimpleForm()
+    let {result,checkbox : checkbox2, input : input2,getData,clearData} = useSimpleForm()
     // let {result,getData,clearData} = useSimpleForm()
 
     useEffect(()=>{
         clearData()
         result.activeOption = option
         if(option == 0){
-            result.cols = []
+            result.cols = {}
         }
     },[option])
 
     console.log(result);
+
+    let ts = new Date().getTime()
+
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showOptionModal} onClose={()=>{
         }} setIsOpen={setShowOptionModal} contentStyleText="mx-auto mt-20">
@@ -56,10 +59,10 @@ const FeatureEngineering = () => {
                 {option === 0 ?
                     <div className="flex flex-col">
                         {dataset.cate_cols.map(name =>
-                            <div className='flex flex-row w-full items-center' key={name}>
+                            <div className='flex flex-row w-full items-center' key={name+ts}>
                                 <div className='px-10 py-2 w-1/3 label-left'>{name + ':'}</div>
                                 <DropDown onSelect={e=>{
-                                    result.cols.push([name,e])
+                                    result.cols[name] = e
                                 }} defaultText={`Select convert type`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['No change', 'to lowercase', 'To UpperCase']} />
                             </div>
                         )}
@@ -87,9 +90,42 @@ const FeatureEngineering = () => {
                     <MultiSelect customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" defaultText={`Select columns to convert`} selections={dataset.num_cols} onSelect={e=>result.cols = e} />
                 </div> : ''}
 
+                {option === 5 ?
+                    <div className="flex flex-col">
+                        <DropDown defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['CountVectorizer', 'TfidfVectorizer']} 
+                    onSelect={e => {
+                        result.text_data_feat_model = e
+                    } 
+                }/>
+
+                        {/* {dataset.cate_cols.map(name =>
+                            <div className='flex flex-row w-full items-center' key={name}>
+                                <div className='px-10 py-2 w-1/3 label-left'>{name + ':'}</div>
+                                <DropDown onSelect={e=>{
+                                    result.cols.push([name,e])
+                                }} defaultText={`Select Model`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['No change', 'to lowercase', 'To UpperCase']} />
+                            </div>
+                        )} */}
+                    </div>
+                    : ''}
+
                 <div className="flex justify-end m-3 mt-10">
-                    <Button text='Confirm' customStyle='h-6 w-24 py-1' onClick={()=>{
+                    <Button text='Confirm' customStyle='h-6 w-24 py-1' onClick={async ()=>{
+                        // console.log(typeof setShowOptionModal)
                         setShowOptionModal(false)
+                        if(!canOperation){
+                            alert(errorMsg)
+                        }else{
+                            let data = getData()
+                            let colarr = []
+                            for(let k in data.cols){
+                                colarr.push([k,data.cols[k]])
+                            }
+                            data.cols = colarr
+                            console.log(data);
+                            let res = await fetchByJSON('featureEngineering',{...data, filename:dataset.filename}) //send request
+                            // let json = await res.json()
+                        }
                     }}/>
                 </div>
             </div>
@@ -113,18 +149,8 @@ const FeatureEngineering = () => {
                 </div>
                 <Button text={'Options'} disabled={!canOperation} customStyle={'h-6 w-48 ml-10 py-1'} onClick={()=>{
                     if(option>-1){
+                        result.cols = {}
                         setShowOptionModal(true)
-                    }
-                }}/>
-
-                <Button text={'Confirm'} customStyle={'h-6 w-48 ml-10 py-1'} onClick={()=>{
-                    if(!canOperation){
-                        alert(errorMsg)
-                    }else{
-                        console.log(getData());
-                        // let res = await fetchByJSON('feature_engineering',getData())
-                        // let json = await res.json()
-
                     }
                 }}/>
             </div>

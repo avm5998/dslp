@@ -18,13 +18,18 @@ import RandomForestClassifierOptions from './option/classification/randomforestC
 import SVMClassifierOptions from './option/classification/svmClassifier'
 import NaiveBayesClassifierOptions from './option/classification/bayesClassifier'
 import KMeansOptions from './option/clustering/kmeans'
+import AgglomerativeOptions from  './option/clustering/agglomerative'
+import AprioriOptions from './option/associate_rule/apriori'
+import SARIMAOptions from './option/time_series_analysis/sarima'
 import { construct } from 'core-js/fn/reflect';
-
-
+//cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js
+//cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css
 const OptionModels = {
     regression:{'Linear Regression':LinearRegressionOptions, 'Decision Tree Regression':DecisionTreeRegressionOptions, 'Random Forests Regression':RandomForestsRegressionOptions, 'SVM Regression':SVMRegressionOptions}, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
     classification:{'Logistic Regression':LogisticRegressionOptions, 'Decision Tree Classifier':DecisionTreeClassifierOptions, 'Random Forests Classifier':RandomForestClassifierOptions, 'SVM Classifier':SVMClassifierOptions, 'Naive Bayes Classifier':NaiveBayesClassifierOptions},
-    clustering:{'K-means': KMeansOptions}
+    clustering:{'K-means': KMeansOptions},//, 'Agglometrative': AgglomerativeOptions},
+    associate_rule: {'Apriori': AprioriOptions},
+    time_series_analysis: {'SARIMA': SARIMAOptions},
 }
 
 // const Models = {
@@ -42,7 +47,9 @@ const Analysis = () => {
     let [option, setOption] = useState(-1)
     let [model, setModel] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
-    let [showConditionModal, setShowConditionModal] = useState(false)
+    // let [showConditionModal, setShowConditionModal] = useState(false)
+    let [visibleModalTabs, setVisibleModalTabs] = useState([0,1])
+
     let dataset = useSelector(state => state.dataset)
     let dispatch = useDispatch()
 
@@ -62,8 +69,9 @@ const Analysis = () => {
      
         // json.cond.replace(/&/g, ",  ")
         $('#display_query').text(json.cond)
-        $('#display_results').text(json.para_result)
+        $('#display_results').html(json.para_result)
         document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
+        setShowSubOptionModal(False)
         console.log(json)   // print
     },[result,option,model])
 
@@ -79,7 +87,7 @@ const Analysis = () => {
             // let data = getData()
             // console.log(data)
             }} setIsOpen={setShowSubOptionModal}>
-            <OptionView dataset={dataset} result={result} submit={submit}/>
+            <OptionView visibleTabs={visibleModalTabs} dataset={dataset} result={result} submit={submit}/>
         </Modal>
 
 
@@ -102,17 +110,23 @@ const Analysis = () => {
                                 setModel(item)
                                 setModelText(item)
                                 setShowSubOptionModal(true)
+                                setVisibleModalTabs([0,1])
                             }
                         }))} />
                 </div>
-                <Button text={'Select The Best Model'} customStyle={'h-10 w-65 ml-0'} onClick={()=>{
+                <Button text={'Option'} customStyle={'h-10 w-65 ml-0'} onClick={()=>{
                     
                     if(model){
                         setShowSubOptionModal(true)
+                        setVisibleModalTabs([0,1])
                     }
                 }}/>
 
                 <Button text={'Predict'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+                    if(model){
+                        setShowSubOptionModal(true)
+                        setVisibleModalTabs([2])
+                    }
                 }}/>
             </div>
         </div>
@@ -120,29 +134,39 @@ const Analysis = () => {
 
      
 
-        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full flex justify-start'>
+        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full justify-start'>
                 <Label text="Model Conditions:" className='w-300'>
                 <div id = "display_query" style={{ whiteSpace: 'pre-wrap' }} ></div>
                 </Label>
             </div>
         </div>
 
-        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full flex justify-start'>
+        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full justify-start'>
             <Label text="Model Results:">
                 <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} ></div>
             </Label>
             </div>
         </div>
 
-        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full flex justify-start'>
+        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full justify-start'>
             <Label text="Model Plot:">
                 <img id="img" src="" />
             </Label>
             </div>
         </div>
+
+        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full justify-start'>
+            <Label text="Related Tables:">
+                <div id = "temp_table" style={{ whiteSpace: 'pre-wrap' }} ></div>
+            </Label>
+            </div>
+        </div>
+
+      
 
 
         
