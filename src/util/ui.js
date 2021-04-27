@@ -3,6 +3,37 @@ import { useThrottle } from './util'
 import './ui.css'
 import { useImperativeHandle } from 'react'
 
+const findOpenStateAncestor = e=>{
+    while (e){
+        if(e.getAttribute('data-component-ancestor') || e === document.querySelector('html')){
+            return e
+        }
+
+        e = e.parentElement
+    }
+
+    return null
+}
+
+//registering the component itself to the closest common ancestor
+//setter: state update function
+//ref: any reference pointing to any element inside that component
+const registerOpenStateSetter = (setter, ref)=>{
+    let ancestor = findOpenStateAncestor(ref.current)
+    ancestor._componentOpenStateSetters ||= []
+    ancestor._componentOpenStateSetters.push(setter)
+}
+
+//once this component opens, find the ancestor and close other registered components
+const closeOtherComponents = (setter, ref)=>{
+    let ancestor = findOpenStateAncestor(ref.current)
+    ancestor._componentOpenStateSetters.forEach(_setter=>{
+        if(_setter!==setter){
+            _setter(false)
+        }
+    })
+}
+
 export const Input = forwardRef(({
     attrs,
     customStyle = '',
@@ -111,52 +142,50 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
+    let [menuOpen, setMenuOpen] = useState(false)
+
     useImperativeHandle(ref, () => ({
         hide: () => {
-            buttonRef.current.classList.toggle('rotate180')
-            menuRef.current.classList.add('invisible')
+            setMenuOpen(false)
         },
         clear:()=>{
             setSelected([])
         },
     }))
 
+    useEffect(()=>{
+        registerOpenStateSetter(setMenuOpen,buttonRef)
+    },[])
+
+    useEffect(()=>{
+        if(menuOpen){
+            closeOtherComponents(setMenuOpen,buttonRef)
+        }
+    },[menuOpen])
+
     useEffect(() => {
         if (passiveMode) {
-            menuRef.current.classList.add('invisible')
+            setMenuOpen(false)
             setSelected([...selections])
         }
 
         if (!defaultOpen)
-            toggleMenu(false)
+            setMenuOpen(false)
     }, [selections])
 
     useEffect(() => {
         if (controlledOpen) {
-            toggleMenu(openState)
+            setMenuOpen(openState)
         }
     }, [controlledOpen, openState])
 
-    const toggleMenu = (state) => {
-        if (state === undefined) {
-            buttonRef.current.classList.toggle('rotate180')
-            menuRef.current.classList.toggle('invisible')
-        } else if (state) {
-            buttonRef.current.classList.add('rotate180')
-            menuRef.current.classList.remove('invisible')
-        } else {
-            buttonRef.current.classList.remove('rotate180')
-            menuRef.current.classList.add('invisible')
-        }
-    }
-    
     return (<div className={`${allowWrap?'':'flex-nowrap'} ${customHeight ? customHeight : 'h-auto'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-start`}>
         <div className="w-full h-full">
             <div className="w-full h-full flex flex-col items-center relative">
                 <div className="w-full h-full">
                     <div className="w-full h-full box-border px-2 flex border border-gray-400 bg-white rounded">
                         <div className={`py-1 flex flex-auto ${wrapSelection ? 'flex-wrap' : 'flex-nowrap overflow-hidden'}`} onClick={() => {
-                            if (!selected.length) toggleMenu()
+                            setMenuOpen(s=>!s)
                         }}>
                             {selected.map(e =>
                                 <div key={e} className="flex justify-center items-center font-medium box-border h-full px-2 bg-white rounded-full text-blue-700 border border-blue-300 ">
@@ -179,8 +208,8 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
                                 <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} flex items-center text-center bg-transparent px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
-                        <div className="text-gray-400 w-4 flex items-center border-gray-200" onClick={() => toggleMenu()}>
-                            <button ref={buttonRef} className="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out">
+                        <div className="text-gray-400 w-4 flex items-center border-gray-200">
+                            <button onClick={() => setMenuOpen(s=>!s)} ref={buttonRef} className={`${menuOpen?'rotate180':''} cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out`}>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-chevron-up w-4 h-4">
                                     <polyline points="18 15 12 9 6 15"></polyline>
                                 </svg>
@@ -188,8 +217,9 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
                         </div>
                     </div>
                 </div>
+
                 {/* transition duration-150 ease-in-out */}
-                <div ref={menuRef} tabIndex={0} onBlur={() => menuRef.current.classList.toggle('invisible')} className="outline-none absolute shadow top-100 bg-white z-40 w-full lef-0 rounded max-h-select overflow-y-auto origin-top" style={{ transition: 'all .15s ease-in-out 0s' }}>
+                <div ref={menuRef} tabIndex={0} className={`outline-none absolute shadow top-100 bg-white z-40 w-full lef-0 rounded max-h-select overflow-y-auto origin-top ${menuOpen?'':'invisible'}`} style={{ transition: 'all .15s ease-in-out 0s' }}>
                     <div className="flex flex-col w-full">
                         {selections.map((selection, i) =>
                             <div key={selection + i} className={`cursor-pointer w-full border-gray-100 border-b hover:bg-blue-600 ${selected.indexOf(selection) !== -1 ? 'bg-blue-100' : ''}`}>
@@ -246,6 +276,17 @@ export const DropDown = forwardRef(({
     let [ulOpen, setOpenUl] = useState(0)
     let [currentText, setCurrentText] = useState(defaultText)
     let allOptions = []
+
+    useEffect(()=>{
+        registerOpenStateSetter(setOpenUl,buttonRef)
+    },[])
+
+    useEffect(()=>{
+        if(ulOpen){
+            closeOtherComponents(setOpenUl,buttonRef)
+        }
+    },[ulOpen])
+
     
     useImperativeHandle(ref, () => ({
         hide: () => {
@@ -540,7 +581,7 @@ export function Modal({ fixedModalPosition=undefined,zIndex=1,isOpen, setIsOpen,
         setTimeout(() => setIsRealOpen(isOpen))
     }, [isOpen])
 
-    return (<div ref={modalBg} onClick={e => {
+    return (<div ref={modalBg} data-component-ancestor onClick={e => {
         if (e.target === modalBg.current) {
             onClose()
             setIsOpen(false)
