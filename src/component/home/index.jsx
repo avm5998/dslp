@@ -168,7 +168,7 @@ const Home = (props) => {
   const dispatch = useDispatch()
   const dataset = useSelector(state => state.dataset)
   const [files_list, setFileList] = useState([])
-  let [selectFile, setFile] = useState('Your previously uploaded')
+  let [selectFile, setFile] = useState('Your previously uploaded datasets')
   const [optionsVisible, showOptions] = useState(0)
 
   useEffect(async () => {
@@ -218,7 +218,7 @@ const Home = (props) => {
       }))
     }
     await updateFilesDropdown();
-    setFile(filename)
+    // setFile(filename)
   }
 
   async function selectFileOption(filename, existing) {
@@ -261,7 +261,7 @@ const Home = (props) => {
       }))
     }
     await updateFilesDropdown();
-    setFile(filename)
+    // setFile(filename)
   }
   return (<div className='flex'>
         <Modal fixedModalPosition={{
@@ -302,7 +302,7 @@ const Home = (props) => {
         <DropDown className="fileSelect" disabled={!!files_list.length} customStyle='w-72' height='h-10' text={selectFile} items={files_list.map(name => ({
           name,
           onClick(e) {
-            setFile(name);
+            // setFile(name);
             selectFileOption(name, false);
           }
         }))} />

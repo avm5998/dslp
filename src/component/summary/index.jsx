@@ -174,7 +174,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
         {Object.keys(dataset.col_lists).map(col => {
           let cur = dataset.col_lists[col]
           {/* console.log(" sub-div "+cur.name) */}
-          return (<div key={cur.name} className="p-2 lg:w-1/3 md:w-1/2 w-full">
+          return (<div key={cur.name} className="p-2 lg:w-1/3 md:w-1/2 w-full lg:h-1/3 md:h-1/2 h-full">
             <div className={`${curCol === cur.name ? 'box-active' : 'box'} flex items-start border-gray-200 border p-4 cursor-pointer hover:shadow-lg rounded-lg`} onClick={() => {
               if (formDisabledRef.current) return
               setCurCol(cur.name)

@@ -2,6 +2,7 @@ from .db import db
 
 from flask_bcrypt import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
+DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
 
 class User(db.Document):
     fullname = db.StringField()
