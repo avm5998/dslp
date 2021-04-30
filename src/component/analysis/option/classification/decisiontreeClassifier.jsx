@@ -28,12 +28,12 @@ export default function ({ dataset, result, submit, visibleTabs}) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                   <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the column containing the id of all transations"/></Label>
-                   <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='Select Variables X' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                   <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
+                   <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
 
-                <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the column containing the items about transations"/></Label>
-                <DropDown defaultValue={option.finalY} defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
+                <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
+                <DropDown defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
                     onSelect={e => {
                         result.finalY = e
                     } 
@@ -45,7 +45,7 @@ export default function ({ dataset, result, submit, visibleTabs}) {
                 }} customStyle={`w-64 `} attrs={{ list: 'test_size_dtc_list' }} />
 
                 <Label customStyle={``} text='Set parameters: max_depth' />
-                <Input defaultValue={'None'} onInput={(e,v) => {
+                <Input defaultValue={4} onInput={(e,v) => {
                     result.param_max_depth = v
                 }} customStyle={`w-64 `} attrs={{ list: 'max_depth_dtc_list' }} />
 
@@ -57,14 +57,14 @@ export default function ({ dataset, result, submit, visibleTabs}) {
                 }/>
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info=""/></Label>
-                <DropDown defaultValue={''} defaultText={'Select plot type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
+                <DropDown defaultValue={''} defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
                     } 
                 }/>
 
                 <Label text='Metrics of Model:' />
-                <DropDown defaultValue={''} defaultText={'Select metrics'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['Classification Report', 'Confusion Matrix', 'ROC Curve']}
+                <DropDown defaultValue={''} defaultText={'Classification Report'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['Classification Report', 'Confusion Matrix', 'ROC Curve']}
                     onSelect={name => {
                         result.metric = name
                     }} />
@@ -78,7 +78,7 @@ export default function ({ dataset, result, submit, visibleTabs}) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Set parameters: criterion' />
-                <DropDown defaultValue={''} defaultText={'Select criterion'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['gini', 'entropy']}
+                <DropDown defaultValue={''} defaultText={'gini'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['gini', 'entropy']}
                     onSelect={name => {
                         result.param_criterion = name
                     }} />
@@ -90,7 +90,7 @@ export default function ({ dataset, result, submit, visibleTabs}) {
             <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                {dataset.cols.map((col,i)=><React.Fragment key={i}>
+                {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
                     <Checkbox label={col} name='suboption_checked' item={col}/>
                         <Input onInput={(e,v) => {
                             result['Decision Tree Classifier' + col] = v 

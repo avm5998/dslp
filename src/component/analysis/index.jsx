@@ -51,6 +51,8 @@ const Analysis = () => {
     let [visibleModalTabs, setVisibleModalTabs] = useState([0,1])
 
     let dataset = useSelector(state => state.dataset)
+
+    let [predictVisible, setPredictVisible] = useState(1)
     let dispatch = useDispatch()
 
     let {getData,result,input} = useSimpleForm({
@@ -71,7 +73,7 @@ const Analysis = () => {
         $('#display_query').text(json.cond)
         $('#display_results').html(json.para_result)
         document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
-        setShowSubOptionModal(False)
+        setShowSubOptionModal(false)
         console.log(json)   // print
     },[result,option,model])
 
@@ -100,6 +102,7 @@ const Analysis = () => {
                                 {/*   0                           1                            2                               3                 4    */ }
                                 setOption(item)
                                 setOptionText(item)
+                                setPredictVisible(item!='clustering')
                             }
                         }))} />
                 </div>
@@ -122,7 +125,7 @@ const Analysis = () => {
                     }
                 }}/>
 
-                <Button text={'Predict'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+                <Button text={'Predict'} customStyle={`h-10 w-60 ml-10 ${predictVisible?'':'hidden'}`} onClick={()=>{
                     if(model){
                         setShowSubOptionModal(true)
                         setVisibleModalTabs([2])
@@ -157,18 +160,6 @@ const Analysis = () => {
             </Label>
             </div>
         </div>
-
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-            <Label text="Related Tables:">
-                <div id = "temp_table" style={{ whiteSpace: 'pre-wrap' }} ></div>
-            </Label>
-            </div>
-        </div>
-
-      
-
-
         
         {/* <Table PageSize={10}/> */}
 

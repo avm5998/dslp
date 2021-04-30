@@ -1,19 +1,19 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo,useSimpleForm } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo,useCachedData,useSimpleForm } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
-import { Checkbox, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
+import { Checkbox, Label, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
 
 const Options = [
     {name:'Convert to',value:''},
-    {name:'String',value:'String'},
-    {name:'Integer',value:'Integer'},
-    {name:'Float',value:'Float'},
-    {name:'Bool',value:'Bool'},
-    {name:'Category',value:'Category'},
+    {name:'String',value:'string'},
+    {name:'Integer',value:'int64'},
+    {name:'Float',value:'float64'},
+    {name:'Bool',value:'bool'},
+    {name:'Category',value:'category'},
 ]
 
 const TextDataCheckFeatOptions = [
@@ -50,11 +50,10 @@ const setSubOption = (option, subOption, condition) => {
 }
 
 const Preprocessing = () => {
+    useCachedData()
 
     let [optionText, setOptionText] = useState('Select operation')
     let [subOptionText, setSubOptionText] = useState('Options')
-    // let [showSubOptionModal, setShowSubOptionModal] = useState(true)
-    // let [option, setOption] = useState(2)
     let [option, setOption] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let dataset = useSelector(state => state.dataset)
@@ -65,27 +64,16 @@ const Preprocessing = () => {
         return res
     }, [])
 
-    // sophie add onConfirm
-    useEffect(() => { 
-        queryPreprocess()
-    },  [dataset.dataPreprossing])
-
-    const queryPreprocess = async() => {}
-    const onConfirm = (e) => {
-        if (option === -1) return
-        let qString = getQString(option, cleaningCondition.current)
-        // let prep = [...dataset.dataPreprossing]
-        // let exist = filters.some(f => f.subOption === option && f.qString === qString)
-        // if (exist) return
-        cleaners.push({
-            subOption: option,
-            qString,
-            desc: getDesc(option, qString)
-        })
-
-        dispatch(DataSetActions.setCleaners(cleaners))
+    const onConfirm = async (e) => {
+        let requestData = null
+        eval(`requestData = getData${option}()`)
+        console.log(requestData)
+        let res = await fetchByJSON('preprocessing', {...requestData, filename:dataset.filename})
+        let json = await res.json()
+        dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        $('#display_cond').text(json.cond)
+        $('#display_para_result').html(json.para_result)
     }
-
 
     let dispatch = useDispatch()
     let subOption = useRef(getDefaultSubOptions())
@@ -93,18 +81,18 @@ const Preprocessing = () => {
     let currentOption = subOption.current[option]
     let {select : select1,getData: getData1} = useSimpleForm()
     let {select : select2,getData: getData2} = useSimpleForm()
-    let {select : select3,getData: getData5} = useSimpleForm()
+    // let {select : select3,getData: getData3} = useSimpleForm()
     let {input : input3,getData: getData3} = useSimpleForm()
     let {input : input4,getData: getData4} = useSimpleForm()
-
-
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showSubOptionModal} onClose={()=>{
             if (option === 1){
                 setSubOption(option, subOption, getData1())
             }
-
+            if (option === 2){
+                setSubOption(option, subOption, getData2())
+            }
             if (option === 3){
                 setSubOption(option, subOption, getData3())
             }
@@ -113,11 +101,11 @@ const Preprocessing = () => {
                 setSubOption(option, subOption, getData4())
             }
             if (option === 5){
-                setSubOption(option, subOption, getData2())
-            }
-            if (option === 6){
                 setSubOption(option, subOption, getData5())
             }
+            // if (option === 6){
+            //     setSubOption(option, subOption, getData5())
+            // }
 
         }} setIsOpen={setShowSubOptionModal} contentStyleText="mx-auto mt-20">
             <div className='p-5 flex flex-col'>
@@ -151,7 +139,7 @@ const Preprocessing = () => {
                     </React.Fragment>)}
                 </div> : ''}
 
-                {option === 5 ? <div className='grid grid-cols-2'>
+                {/* {option === 5 ? <div className='grid grid-cols-2'>
                     {dataset.cols.map((col,i)=><React.Fragment key={i}>
                         <div className='m-3 flex items-center'>{col}</div>
                         <select {...select2} className='text-gray-500 m-3 px-5 py-2 focus:outline-none rounded-full' name={col+'_CheckNewFeat'}>
@@ -167,7 +155,7 @@ const Preprocessing = () => {
                             {TextDataPreprocessOptions.map(o=><option key={o.value} value={o.value}>{o.name}</option>)}
                         </select>
                     </React.Fragment>)}
-                </div> : ''}
+                </div> : ''} */}
                 <div>
                 <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={onConfirm}/>
                 </div>
@@ -177,7 +165,8 @@ const Preprocessing = () => {
             <div className='mx-5 my-10 w-8/12 flex justify-start'>
                 <div className='w-96'>
                     <DropDown text={optionText} customStyle='h-10 w-96' customUlStyle={'w-96'} items={
-                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters from Columns', 'Remove Rows with Specific Values', 'Text Data: Check New Features', 'Text Data: Preprocessing'].map((item, i) => ({
+                        // , 'Text Data: Check New Features', 'Text Data: Preprocessing'
+                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters from Columns', 'Remove Rows with Specific Values'].map((item, i) => ({
                             name: item, onClick(e) {
                                 {/*   0                                              1                            2                               3                                4                                  5                             6*/ }
                                 setOption(i)
@@ -201,6 +190,25 @@ const Preprocessing = () => {
                 <MultiSelect selections={dataset.dataPreprocessing} passiveMode={true} />
             </div> */}
         </div>
+
+        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full justify-start'>
+                <Label text="Preprocessing Conditions:" className='w-300'>
+                <div id = "display_cond" style={{ whiteSpace: 'pre-wrap' }} ></div>
+                </Label>
+            </div>
+        </div>
+
+        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className='mx-5 w-12 w-full justify-start'>
+            <Label text="Preprocessing Results:">
+                <div id = "display_para_result" style={{ whiteSpace: 'pre-wrap' }} ></div>
+            </Label>
+            </div>
+        </div>
+
+        
+
         <Table PageSize={10}/>
     </div>)
 }

@@ -4,9 +4,11 @@ import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
-import { Checkbox, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
+import { Checkbox, Label, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
-import Tip from '../common/tip'
+// import Tip from '../common/tip'
+import { InlineTip } from '../common/tip'
+
 
 const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; //, 'Add New Features'
 const getCanOperation = (dataset, operationIndex)=>{
@@ -43,9 +45,10 @@ const FeatureEngineering = () => {
     useEffect(()=>{
         clearData()
         result.activeOption = option
-        if(option == 0){
-            result.cols = {}
-        }
+        result.cols = {}
+        // if(option == 0){
+        //     result.cols = {}
+        // }
     },[option])
 
     console.log(result);
@@ -63,7 +66,7 @@ const FeatureEngineering = () => {
                                 <div className='px-10 py-2 w-1/3 label-left'>{name + ':'}</div>
                                 <DropDown onSelect={e=>{
                                     result.cols[name] = e
-                                }} defaultText={`Select convert type`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['No change', 'to lowercase', 'To UpperCase']} />
+                                }} defaultText={`Select convert type`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['no change', 'to lowercase', 'to uppercase']} />
                             </div>
                         )}
                     </div>
@@ -73,12 +76,17 @@ const FeatureEngineering = () => {
                     <MultiSelect defaultText={`Select columns to convert`} defaultOpen={false} selections={dataset.cate_cols}  customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" onSelect={e=>result.cols = e} />
                 </div> : ''}
 
-                {option ==  2 ? <div className='grid grid-cols-3'>
+                {option ==  2 ? 
+                <div className='grid grid-cols-3'>
                     {dataset.num_cols.map((col,i)=><React.Fragment key={i}>
                         <Checkbox {...checkbox2} label={col} name='suboption_checked' item={col}/>
-                        <input {...input2} className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins' name={col+'_Bins'}/>
-                        <input {...input2} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Labels' name={col+'_Labels'}/>
+                        <input {...input2} className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins: int list' name={col+'_Bins'}/>
+                        <input {...input2} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Labels: string list' name={col+'_Labels'}/>
                     </React.Fragment>)}
+                    <Label text=''></Label>
+                    <Label customStyle={`w-100 mr-0`} customUlStyle="w-100 mr-0" text="eg. column 'Age', Bins=[0,2,17,65,99], Labels=[Toddler, Child, Adult, Elderly]"/>
+                    <Label customStyle={`w-100 mr-0`} customUlStyle="w-100 mr-0" text="eg. column 'Survived', Bins=[0,1,2], Labels=[Yes, No]"/>
+
                 </div> : ''}
 
                 {option === 3 ? <div>
@@ -124,7 +132,15 @@ const FeatureEngineering = () => {
                             data.cols = colarr
                             console.log(data);
                             let res = await fetchByJSON('featureEngineering',{...data, filename:dataset.filename}) //send request
-                            // let json = await res.json()
+                            let json = await res.json()
+                            dispatch(DataSetActions.setData({
+                                cols: json.cols,
+                                num_cols: json.num_cols,
+                                cate_cols: json.cate_cols,
+                            }))
+                            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+                        
+                            
                         }
                     }}/>
                 </div>

@@ -34,11 +34,10 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the column containing the id of all transations"/></Label>
+                <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
                 <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
-
-                <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the column containing the items about transations"/></Label>
+                <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
                 <DropDown defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
                     onSelect={e => {
                         result.finalY = e
@@ -112,7 +111,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                {dataset.cols.map((col,i)=><React.Fragment key={i}>
+                {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
                     <Checkbox label={col} name='suboption_checked' item={col}/>
                         <Input onInput={(e,v) => {
                             result['Random Forests Regression'+ col] = v 

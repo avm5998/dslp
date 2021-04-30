@@ -26,16 +26,10 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the column containing the id of all transations"/></Label>
+                <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
                 <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
-                {/* <DropDown defaultValue={option.finalVar} defaultText={'Select column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
-                    onSelect={e => {
-                        result.finalVar = e
-                    } 
-                }/> */}
-
-                <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the column containing the items about transations"/></Label>
+                <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
                 <DropDown defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
                     onSelect={e => {
                         result.finalY = e
@@ -65,15 +59,15 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Default: True. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown defaultValue={option.param_fit_intercept_lr} defaultText={'Select fit_intercept'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
+                <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
+                <DropDown defaultValue={option.param_fit_intercept_lr} defaultText={'True'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
                     onSelect={name => {
-                        result.param_fit_intercept_lr = name  //opt_fit_intercept_lr
+                        result.param_fit_intercept_lr = name
                 }} />
-                <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Default: False. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown defaultValue={option.param_normalize_lr} defaultText={'Select normalize'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
+                <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
+                <DropDown defaultValue={option.param_normalize_lr} defaultText={'False'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['True', 'False']}
                     onSelect={name => {
-                        result.param_normalize_lr = name  //opt_normalize_lr
+                        result.param_normalize_lr = name  
                 }} />
             </div>
             <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
