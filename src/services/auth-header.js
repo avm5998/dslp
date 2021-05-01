@@ -7,3 +7,13 @@ export default function authHeader() {
     return {};
   }
 }
+
+export function authHeaderRefresh() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.refreshToken) {
+    return { Authorization: 'Bearer ' + user.refreshToken
+    };
+  } else {
+    return {};
+  }
+}

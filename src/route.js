@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { connect } from "react-redux";
 
 import { Route, Router, Switch, Link, Redirect } from 'react-router-dom';
+import { createBrowserHistory } from 'history';
 import Home from './component/home';
 import Summary from './component/summary';
 import Visualization from './component/visualization_new';
@@ -61,30 +62,36 @@ const Menu = {
 const Routes = (props) => {
     const {userEnv} = process.env
     const dispatch = useDispatch();
-    if(userEnv === 'default'){
-        useEffect(() => {    
-            dispatch(login("dummy_user", "dummy@123"))
-            .then(() => {
-              props.history.push("/home");
-              window.location.reload();
-            })
-            .catch(() => {
-              console.log("loginfailed")
-            });
-        }, [])
-    }
-
     const { user: currentUser } = useSelector((state) => state.auth);
-    // if(currentUser){
-    //     useEffect(() => {
-    //         console.log('avatar changed in route')
-    //     }, [currentUser])
-    // }
-
-    
+        
     let dataset = useSelector(state => state.dataset)
     let [menuData, setMenuData] = useState(Menu)
     let [toggle, setToggle] = useState(false)
+    // if(userEnv === 'default'){
+    //     useEffect(() => {    
+    //         dispatch(login("dummy_user", "dummy@123"))
+    //         .then(() => {
+    //           props.history.push("/home");
+    //           window.location.reload();
+    //         })
+    //         .catch(() => {
+    //           console.log("loginfailed")
+    //         });
+    //     }, [])
+    // }
+    const logOut = (e) => {
+        e.preventDefault();
+        dispatch(logout()).then((res) => {     
+            createBrowserHistory().push("/login");
+            window.location.reload();
+          })
+          .catch((err) => {
+            createBrowserHistory().push("/login");
+            window.location.reload();
+            console.log(err)
+          });
+      };
+
 
     useEffect(() => {
         setMenuData(data => {
@@ -99,13 +106,12 @@ const Routes = (props) => {
         });
       }, [dispatch]);
     
-    const logOut = () => {
-        dispatch(logout());
-      };
+
     return (
         <Router history={history} >
         <div>
-        {     !currentUser && <section class="navigation">
+            
+            {!currentUser && <section class="navigation">
                 <div class="nav-container">
                     <div class="brand">
                     <Link to={"/"}>
@@ -132,20 +138,32 @@ const Routes = (props) => {
                  </nav>
                 </div>
                     
-            </section>}
+            </section>} 
 
+            
             <div>
-                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-600'>
+                <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased'>
+                        
+        {/* {     !currentUser &&
+            <div class="login-page">
+                <div class="overlay"></div>
+                <div class="login-container">
+                    <img class="login-img" src="src\assets\images\image4.jpg" alt="image1" />
+                </div>
+
+            </div>
+            
+            } */}
                 {
                 
                     currentUser &&(
-                        <div className='fixed flex flex-col left-0 w-2/12 bg-white h-full border-r'>
+                        <div className='fixed flex flex-col left-0 w-2/12 h-full border-r'>
 
-                            <div className="flex items-center justify-center h-14 bg-gray-900 border-b">
+                            <div className="flex items-center justify-center h-14 border-b heading">
                                 <div>Awesome data mining</div>
                             </div>
 
-                            <div className="overflow-y-auto bg-gray-800 overflow-x-hidden flex-grow">
+                            <div className="overflow-y-auto overflow-x-hidden flex-grow sidebar">
                                 <div className="user flex" onClick={() => setToggle(!toggle)}>
                                     <div className="user-details w-full">
                                         <div className="profilepic" size ="40">
@@ -163,22 +181,22 @@ const Routes = (props) => {
                                             </div>
                                         </span>
                                     </div>
-                                    <div className={toggle? "profile-dropdown bg-gray-100 text-gray-600":"hidden invisible"} >
+                                    <div className={toggle? "profile-dropdown":"hidden invisible"} >
                                         <ul class="dropdown-items">
                                             <li>
-                                            <a href="">Signed in as {currentUser.username}</a>
-                                            <div className=''></div>
+                                            <a href="" className="w-full">Signed in as {currentUser.username}</a>
+                                            {/* <div className=''></div> */}
                                             </li>
                                             <hr className="hor-row"/>
                                             <li>
-                                            <a href="/profile">Your Profile</a>
+                                            <a href="/profile" className="w-full">Your Profile</a>
                                             </li>
                                             <li>
-                                            <a href="">Settings</a>
+                                            <a href="" className="w-full">Settings</a>
                                             </li>
                                             <hr className="hor-row"/>
                                             <li>
-                                                <a href="/login" onClick={logOut}>
+                                                <a href="/login" className="w-full" onClick={logOut}>
                                                         Sign out
                                                 </a>
                                             </li>
@@ -187,7 +205,7 @@ const Routes = (props) => {
                                 </div>
                                 
                                 <hr className="hor-row"/>
-                                <ul className="flex flex-col py-4 space-y-1">
+                                <ul className="flex flex-col py-4 space-y-1 sidebar-hover">
                                     {Object.keys(menuData).map(menu =>
                                         <React.Fragment key={menu}>
                                             {/* <li className="px-5">
@@ -198,7 +216,7 @@ const Routes = (props) => {
 
                                             {Menu[menu].map(item =>
                                                 <li key={item.text}>
-                                                    <Link to={item.to} className="relative flex flex-row items-center h-11 focus:outline-none hover:bg-gray-50 text-gray-600 hover:text-gray-800 border-l-4 border-transparent hover:border-indigo-500 pr-6">
+                                                    <Link to={item.to} className="relative flex flex-row items-center h-11 focus:outline-none border-l-4 border-transparent hover-border pr-6">
                                                         <span className="inline-flex justify-center items-center ml-4">
                                                             <FontAwesomeIcon icon={item.icon} />
                                                         </span>
@@ -221,7 +239,7 @@ const Routes = (props) => {
                 }
 
                     <div    
-                    className={currentUser? 'w-10/12 absolute right-0 h-screen': "flex h-screen flex-col justify-center" }
+                    className={currentUser? 'w-10/12 absolute right-0 h-screen content overflow-auto': "flex h-screen flex-col justify-center" }
                     >
                         {/* <div className='block w-full h-16'>&nbsp;</div> */}
                         <Switch>

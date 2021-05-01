@@ -3,7 +3,7 @@ import './index.css'
 import { action as DataSetActions } from '../../reducer/dataset'
 import { useSelector, useDispatch } from 'react-redux'
 import { RangeSelector, Modal, Radio, Checkbox } from '../../util/ui'
-import { useForm, initialFormCheckbox } from '../../util/util'
+import { useForm, initialFormCheckbox, useCachedData, fetchWithRefresh } from '../../util/util'
 import { elementIsVisibleInViewport, fetchByJSON } from '../../util/util';
 import NoData from '../common/nodata'
 import placeholderImg from '../../assets/images/placeholder.jpg'
@@ -43,7 +43,7 @@ const DisplayCode = ({code}) => {
       setShowCode(!showCode)}}/>
       <div className={showCode?
         
-          "bg-white h-full flex items-start border-gray-200 border p-4 cursor-pointer"+
+          "box h-full flex items-start border-gray-200 border p-4 cursor-pointer"+
            " hover:bg-white justify-between hover:shadow-lg rounded-lg mt-4 whitespace-pre-line align-bottom"
           :
           "hidden invisible"}>
@@ -90,7 +90,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
       console.log("form data")
       // console.log(typeof(formData))
       let data = JSON.stringify(formData);
-      let res = await fetch(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
+      let res = await fetchWithRefresh(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
       let json_data = await res.json()
       console.log(json_data['code'])
       setCode(json_data['code'])
@@ -103,7 +103,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
   })
 
   useEffect(() => {
-    if (!elementIsVisibleInViewport(parentRef.current)) return
+    if(tabpanel!==0) return
 
     if (dataset.loaded) {
       setCurCol(dataset.num_cols[0])
@@ -111,11 +111,9 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
   }, [tabpanel])
 
   useEffect(() => {
-  }, [form])
-
-  useEffect(() => {
-    if (!elementIsVisibleInViewport(parentRef.current)) return
-    console.log(curCol)
+    console.log(tabpanel);
+    if(tabpanel!==0) return
+    console.log(curCol);
     form.onSubmit()
   },[curCol, tabpanel])
 
@@ -129,7 +127,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
       <div className="flex flex-col text-center w-full">
         {/* <h1 className="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900">Our Team</h1>
       <p className="lg:w-2/3 mx-auto leading-relaxed text-base">Whatever cardigan tote bag tumblr hexagon brooklyn asymmetrical gentrify, subway tile poke farm-to-table. Franzen you probably haven't heard of them.</p> */}
-        <div className={`${curImg ? '' : 'hiddenn'} flex justify-around items-center py-5`}>
+        <div className={`${curImg ? '' : 'hidden'} flex justify-around items-center py-5`}>
           <div className={`w-1/2 flex px-10`}>
             <img className={`w-full h-96`} src={curImg} alt="" />
           </div>
@@ -176,8 +174,8 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
         {Object.keys(dataset.col_lists).map(col => {
           let cur = dataset.col_lists[col]
           {/* console.log(" sub-div "+cur.name) */}
-          return (<div key={cur.name} className="p-2 lg:w-1/3 md:w-1/2 w-full">
-            <div className={`${curCol === cur.name ? 'bg-white' : ''} h-full flex items-start border-gray-200 border p-4 cursor-pointer hover:bg-white hover:shadow-lg rounded-lg`} onClick={() => {
+          return (<div key={cur.name} className="p-2 lg:w-1/3 md:w-1/2 w-full lg:h-1/3 md:h-1/2 h-full">
+            <div className={`${curCol === cur.name ? 'box-active' : 'box'} flex items-start border-gray-200 border p-4 cursor-pointer hover:shadow-lg rounded-lg`} onClick={() => {
               if (formDisabledRef.current) return
               setCurCol(cur.name)
             }}>
@@ -191,7 +189,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
           </div>)
         })} 
       </div>
-      <DisplayCode code={code} />
+      {/* <DisplayCode code={code} /> */}
     </div>
   </div>)
 }
@@ -250,7 +248,7 @@ const Interactions = ({ tabpanelIndex, tabpanel }) => {
       </div>
 
     </div>
-    <DisplayCode code={code} />
+    {/* <DisplayCode code={code} /> */}
   </div>)
 }
 const Correlations = ({ tabpanelIndex, tabpanel }) => {
@@ -280,7 +278,7 @@ const Correlations = ({ tabpanelIndex, tabpanel }) => {
   return (<div className={`container mx-auto h-full ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
     <div className='flex h-full justify-center flex-wrap flex-col items-center'>
       <img className="my-4"src={curImg} alt="" />
-      <DisplayCode code={code} />
+      {/* <DisplayCode code={code} /> */}
     </div>
 
   </div>)
@@ -293,6 +291,8 @@ const TabPanels = [
 ]
 
 const Visualization = () => {
+  useCachedData()
+
   let [tabpanel, setTabpanel] = useState(0)
   let dataset = useSelector(state => state.dataset)
 

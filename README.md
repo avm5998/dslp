@@ -82,6 +82,33 @@ Here Pm2 is suggested for managing applications in Linux.
     - ```export FLASK_APP=backend/app.py```
     - If application does not exist in pm2 ```pm2 start "flask run --host=0.0.0.0"```
     - If application exists in pm2 ```pm2 restart "flask run --host=0.0.0.```
+### Re-deploy
+- Enter this folder
+```bash
+/home/lz3519/data_mining_main/awesome-data-mining
+```
+- update
+```bash
+git pull
+```
+- install python packages if needed
+```
+source backend/venv/bin/activate
+pip install ...
+```
+- build frontend project
+```
+npm run-script build
+```
+- restart
+```
+pm2 restart all
+```
+- check status and see logs
+```
+pm2 ls
+pm2 logs <process number>
+```
 
 ### Tips
 - ```.\backend\.env``` is ignored in git

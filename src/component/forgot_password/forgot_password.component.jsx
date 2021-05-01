@@ -83,7 +83,7 @@ const ForgotPassword = (props) => {
                   validations={[required, validEmail]}
                 />
               </div>
-              <button className="btn btn-lg btn-primary btn-block col-span-2">Send reset link to mail </button>
+              <button className="w-auto btn btn-lg btn-primary btn-block col-span-2">Send reset link to mail </button>
             
             </div>
             {message && (

@@ -42,11 +42,13 @@ from resources.errors import InternalServerError, SchemaValidationError, EmailAl
     EmailDoesnotExistsError, BadTokenError
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
-    jwt_required
-from database.models import User
+    jwt_required, create_refresh_token, get_jwt
+from database.models import User, TokenBlockList
+import bson
+from bson.binary import Binary
 from bson.objectid import ObjectId
 import collections
-#  
+#  #
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -71,6 +73,7 @@ from database.models import User
 from threading import Thread
 from flask_mail import Message, Mail
 import datetime
+from datetime import datetime, timedelta, timezone
 from jwt.exceptions import ExpiredSignatureError, DecodeError, \
     InvalidTokenError
 from IPython.display import Image
@@ -113,23 +116,39 @@ mongo_collection = mongo_db["files"]
 user_collection = mongo_db["user"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+# DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
+DEFAULT_FILES = []
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 EditedPrefix = '__EDITED___'
 
 
 env_var = os.environ.get("FLASK_ENV")
-if env_var == "development":
-    if user_collection.find({"username":"dummy_user"}):
-        user_collection.remove({"username":"dummy_user"})
-    user =  User(username="dummy_user",email="dummy_user@g.com", password="dummy@123")
-    user.hash_password()
-    user.save()
+# if env_var == "development":
+#     if user_collection.find({"username":"dummy_user"}):
+#         user_collection.remove({"username":"dummy_user"})
+#     user =  User(username="dummy_user",email="dummy_user@g.com", password="dummy@123")
+#     user.hash_password()
+#     user.save()
   
 
 
 CORS(app)
 
+
+
+def insert_default_files():
+    path = 'backend\\assets\\files\\'
+    for filename in DEFAULT_FILES:
+        file_details = mongo_collection.find_one({"file_name": filename})
+        if not file_details:
+            file = os.path.join(path, filename)
+            with open(file, "rb") as file_content:
+                content = Binary(file_content.read())
+                # bson_content = BSON::Binary.new(content)
+            mongo_collection.insert_one({"user_id":ObjectId(b"awesomeadmin"),"file_name": filename, "desc": "Default desc", "logo_name": "default_logo.png",
+                        "source_link": "default source link","content":content})
+insert_default_files()
 
 # Error handling
 
@@ -147,7 +166,7 @@ def schema_validation_error(e):
     return {"status":e.status, "message":e.message}, 400
 
 @app.errorhandler(EmailDoesnotExistsError)
-def email_already_exists(e):
+def email_does_not_exists(e):
     return {"status":e.status, "message":e.message}, 400
 
 @app.errorhandler(UnauthorizedError)
@@ -161,7 +180,6 @@ def bad_token(e):
 @app.errorhandler(InternalServerError)
 def internal_server_error(e):
     return {"status":e.status, "message":e.message}, 500
-
 
 
 
@@ -182,7 +200,62 @@ def send_email(subject, sender, recipients, text_body, html_body):
 
 
 
+# Block expired tokens
+# Callback function to check if a JWT exists in the db blocklist
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload["jti"]
+    try:
+        token = TokenBlockList.objects.get(jti=jti)
+        return token is not None
+    except:
+        return False
+
+
 #APIs
+
+# Endpoint for revoking the current users access token. Save the JWTs unique
+# identifier (jti) in redis. Also set a Time to Live (TTL)  when storing the JWT
+# so that it will automatically be cleared out of redis after the token expires.
+@app.route("/api/auth/logout", methods=["DELETE"])
+@cross_origin(origin="*")
+@jwt_required()
+def logout():
+    jti = get_jwt()["jti"]
+    user_id = get_jwt_identity()
+    now = datetime.now(timezone.utc)
+    last_logged_in = user_collection.find_one({"_id":ObjectId(user_id)})['last_logged_in']
+    last_logged_in = datetime.combine(last_logged_in.date(), last_logged_in.time(), timezone.utc)
+    next_day_sec = 0
+    if now.date() > last_logged_in.date():   
+        my_date = last_logged_in.date()
+        my_time = datetime.min.time()
+        my_datetime = datetime.combine(my_date, my_time, timezone.utc)
+        seconds = (my_datetime - last_logged_in).seconds
+        next_day_sec = (now - my_datetime)
+    else:
+        seconds = (now - last_logged_in).seconds
+    user = User.objects(id=user_id)[0]
+    user_act = user['user_activity']
+    if str(now.date()) in user_act:
+        user_act[str(now.date())] += seconds
+    else:
+        user_act[str(now.date())] = seconds 
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"user_activity":user_act}})       
+    blocklist = TokenBlockList(jti=jti, created_at=now)
+    blocklist.save()
+    return jsonify(msg="Access token revoked"), 200
+
+
+
+@app.route("/api/auth/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    current_user = get_jwt_identity()
+    expires = timedelta(days=7)
+    access_token = create_access_token(identity=current_user, expires_delta=expires)
+    return jsonify(accessToken=access_token), 200
+
 
 @app.route("/change_profile_pic", methods=["PATCH"])
 @cross_origin(origin="*")
@@ -202,7 +275,7 @@ def change_profile_pic():
     return jsonify(base64=imgStr), 200
 
 
-@app.route("/api/auth/forgot", methods=["POST"])
+@app.route("/api/auth/forgot", methods=["GET"])
 @cross_origin(origin="*")
 def forgot():  
     url =  str(request.origin)+'/reset/'
@@ -216,7 +289,7 @@ def forgot():
         # if not user:
         #     raise EmailDoesnotExistsError("Couldn't find the user with given email address")
 
-        expires = datetime.timedelta(hours=24)
+        expires = timedelta(hours=24)
         reset_token = create_access_token(str(user.id), expires_delta=expires)
         print("token:"+str(reset_token))
         reset_token = reset_token.replace(".", "$")
@@ -304,15 +377,24 @@ def get_user_files():
 def convertNaN(value):
     return None if math.isnan(value) else value
 
-@app.route('/file/<filename>',methods=['GET'])
+
+@app.route('/file/',methods=['GET'])
 @cross_origin(origin="*")
 @jwt_required()
-def get_file(filename):
+def get_file():
+    filename = request.args.get('filename')
+    default = request.args.get('default')
     user_id = get_jwt_identity()
+    if default!='false':
+        user_id_admin = ObjectId(b'awesomeadmin')
     buf = StringIO()
     data = ''
-    df = _getCache(user_id,filename)
-    update_user_files_list(user_id, filename)
+    if default=='true':
+        df = _getCache(user_id_admin,filename, modified=False)
+    else:
+        df = _getCache(user_id,filename, modified=False)
+    if default == 'false':
+        update_user_files_list(user_id, filename)
     if df is not None:
         df.info(buf=buf,verbose=True)
         data = df.to_json()
@@ -348,6 +430,10 @@ def getDataFrameDetails(df):
 
     for col in cols}
     return cols,col_lists,num_cols,num_lists,cate_cols,cate_lists
+
+
+
+
 
 
 @app.route('/uploadFile',methods=['POST'])
@@ -543,6 +629,7 @@ def visualization():
     fig.savefig(bytesIO, format = ImgFormat, bbox_inches = 'tight')
     plt.close()
     imgStr = base64.b64encode(bytesIO.getvalue()).decode("utf-8").replace("\n", "")
+    # return jsonify(message='Token has expired'), 401
     return jsonify(base64=imgStr,format=ImgFormat,resData = resData, code=code)
 @app.route('/query',methods=['POST'])
 @cross_origin()
@@ -677,8 +764,8 @@ def cond_eng_json():
     print('params=**', params)
     filename = params['filename']
     user_id = get_jwt_identity()
-    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
-    # df = _getCache(user_id,filename)
+    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
     msg = ''
     success = True
@@ -743,9 +830,9 @@ def cond_eng_json():
 
     
 @app.route('/feature_selection', methods=['POST'])
-@cross_origin()
+@cross_origin('*')
 @jwt_required()
-def cond_select_json(filename):
+def cond_select_json():
     params = request.json
     filename = params['filename']
     user_id = get_jwt_identity()
@@ -758,92 +845,79 @@ def cond_select_json(filename):
     DEFAULT_PLOT_TYPE = 'bar'
     Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information Classification','Principal Component Analysis'])}
 
-    try:
-        plotSize = tuple(map(int,params['plotsize'].split(','))) if params['plotsize'] else DEFAULT_PLOT_SIZE
-        plotType = params['plottype'] or 'bar'
-        selectKBest = int(params['selectkbest']) if params['selectkbest'] else 0
-        target_Y = params['targety']
-        technique = Techniques[int(params['techinique'])] if params['technique'] else ''
-        variables_X = params['variablesx']
-        df.replace(missing_values, np.nan) 
+    plotSize = tuple(map(int,params['plotsize'].split(','))) if params['plotsize'] else DEFAULT_PLOT_SIZE
+    plotType = params['plottype'] or 'bar'
+    K = int(params['selectkbest']) if params['selectkbest'] else 0
+    Y = params['targety']
+    tech = Techniques[int(params['technique'])] if params['technique'] else ''
+    X = params['variablesx']
+    df.replace(missing_values, np.nan) 
 
+    if Y:
+        df = pd.concat([df[X], df[Y]], axis=1)
+    else:
+        df = df[X]
 
-    except e:
-        msg = str(e)
-        success = False
+        # for i in data.columns:
+        #     if data[i].dtypes == object:
+        #         label = LabelEncoder()
+        #         data[i] = label.fit_transform(data[i].astype(str))
+    X = df[X]
+    Y = df[Y]
+    img = BytesIO()
+    if tech in ["Correlation Matrix", 'PCA']:
+        if tech == "Correlation Matrix":
+            featureResult = df.corr(method ='pearson')  # get correlations of each features in dataset
+            featureResult = pd.DataFrame(data=featureResult)
+        elif tech == "PCA":
+                scaled_data = StandardScaler().fit_transform(data)
+                pca = PCA(n_components=num_comp)
+                pca_res = pca.fit_transform(scaled_data) 
+                col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
+                pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
+                featureResult = pd.concat([pca_df, Y], axis=1)
+        plt.rcParams["figure.figsize"] = plotSize
 
-    # if not finalVar:
-    #     if new_colname:
-    #         finalVar.append(new_colname) # or display new created columns in dropdown list
-
-
-    # if final_button == 'off':
-    #     finalVar = col  
-        if Y:
-            data = pd.concat([df[X], df[Y]], axis=1)
+        if plotType == "Bar":
+            featureResult.plot.bar()
+        elif plotType == "Scatter Plot":
+            sns.pairplot(featureResult) # plt.scatter(pca_res[:,0], pca_res[:,1])
+        elif plotType == "Line Graph":
+            featureResult.plot.line()
+        elif plotType == "Heatmap":
+            sns.heatmap(featureResult,annot=True,cmap="RdYlGn") # cmap='RdGy'
+    else:
+        if tech == "VarianceThreshold":
+            fs = VarianceThreshold(threshold=thresh)
+            fs.fit(df)
+            featureResult = pd.DataFrame({"Features":df.columns ,"Boolean Result":fs.get_support()})
+            x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
+            featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
         else:
-            data = df[X]
-
-        for i in data.columns:
-            if data[i].dtypes == object:
-                label = LabelEncoder()
-                data[i] = label.fit_transform(data[i].astype(str))
-        X = data[X]
-        Y = data[Y]
-        
-        if tech in ["Correlation Matrix", 'PCA']:
-            if tech == "Correlation Matrix":
-                featureResult = data.corr(method ='pearson')  # get correlations of each features in dataset
-                featureResult = pd.DataFrame(data=featureResult)
-            elif tech == "PCA":
-                    scaled_data = StandardScaler().fit_transform(data)
-                    pca = PCA(n_components=num_comp)
-                    pca_res = pca.fit_transform(scaled_data) 
-                    col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
-                    pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
-                    featureResult = pd.concat([pca_df, Y], axis=1)
-            img = BytesIO()
-            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-
-            if plotType == "bar":
-                featureResult.plot.bar()
-            elif plotType == "scatter":
-                sns.pairplot(featureResult) # plt.scatter(pca_res[:,0], pca_res[:,1])
-            elif plotType == "line":
-                featureResult.plot.line()
-            elif plotType == "heatmap":
-                sns.heatmap(featureResult,annot=True,cmap="RdYlGn") # cmap='RdGy'
-        else:
-            if tech == "VarianceThreshold":
-                fs = VarianceThreshold(threshold=thresh)
-                fs.fit(data)
-                featureResult = pd.DataFrame({"Features":data.columns ,"Boolean Result":fs.get_support()})
-                x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
-                featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
-            else:
-                if tech == "Pearson":
-                    fs = SelectKBest(score_func=f_regression, k=K)
-                elif tech == "ANOVA":
-                    fs = SelectKBest(score_func=f_classif, k=K)
-                elif tech == "Chi2":
-                    fs = SelectKBest(score_func=chi2, k=K)
-                elif tech == "Mutual_classification":
-                    fs = SelectKBest(score_func=mutual_info_classif, k=K)
-                fit = fs.fit(X, Y.values.ravel())
-                featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
-                featureResult=featureResult.nlargest(K,'Score')  #print k best features
-                x_label, y_label, title = 'Features', 'Score', 'Feature Score'
-            img = BytesIO()
-            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+            if tech == "Pearson":
+                fs = SelectKBest(score_func=f_regression, k=K)
+            elif tech == "Classification1: ANOVA":
+                fs = SelectKBest(score_func=f_classif, k=K)
+            elif tech == "Chi2":
+                fs = SelectKBest(score_func=chi2, k=K)
+            elif tech == "Mutual_classification":
+                fs = SelectKBest(score_func=mutual_info_classif, k=K)
+            fit = fs.fit(X, Y.values.ravel())
+            featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+            featureResult=featureResult.nlargest(K,'Score')  #print k best features
+            x_label, y_label, title = 'Features', 'Score', 'Feature Score'
             fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
-            plt.title(title)      
-        # encode plot
-        plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
-        plt.clf()
-        img.seek(0)
-        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-        img.close()
-    return jsonify(df_sorted=df.to_json(orient="values"), prep_col=list(df.columns), condition=cond, final_Var=finalVar, final_Y= finalY, plot_url=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
+        plt.rcParams["figure.figsize"] = plotSize
+        fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
+        plt.title(title)
+    plt.rcParams["figure.figsize"] = plotSize
+    # encode plot
+    plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(base64=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
 
 
 @app.route('/preprocessing', methods=['POST'])

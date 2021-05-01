@@ -3,6 +3,37 @@ import { useThrottle } from './util'
 import './ui.css'
 import { useImperativeHandle } from 'react'
 
+const findOpenStateAncestor = e=>{
+    while (e){
+        if(e.getAttribute('data-component-ancestor') || e === document.querySelector('html')){
+            return e
+        }
+
+        e = e.parentElement
+    }
+
+    return null
+}
+
+//registering the component itself to the closest common ancestor
+//setter: state update function
+//ref: any reference pointing to any element inside that component
+const registerOpenStateSetter = (setter, ref)=>{
+    let ancestor = findOpenStateAncestor(ref.current)
+    ancestor._componentOpenStateSetters ||= []
+    ancestor._componentOpenStateSetters.push(setter)
+}
+
+//once this component opens, find the ancestor and close other registered components
+const closeOtherComponents = (setter, ref)=>{
+    let ancestor = findOpenStateAncestor(ref.current)
+    ancestor._componentOpenStateSetters.forEach(_setter=>{
+        if(_setter!==setter){
+            _setter(false)
+        }
+    })
+}
+
 export const Input = forwardRef(({
     attrs,
     customStyle = '',
@@ -51,6 +82,12 @@ export const DropDownInput = forwardRef(({
         }))
     }
 
+    useEffect(()=>{
+        ;[ulRef.current, ...ulRef.current.childNodes].forEach(e=>{
+            e.style.width = buttonRef.current.style.width
+        })
+    },[])
+
     let hasControl = defaultText !== undefined //give control to component itself
     return (<div className="w-full dropdown group inline-block">
         <button id={id} onClick={() => {
@@ -82,8 +119,11 @@ export const DropDownInput = forwardRef(({
     </div>)
 })
 
-export function Label({ pos = 'left', text = '', customStyle = '', children = '' }) {
-    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
+export function Label({ pos = 'left', text = '', customStyle = '', children = '', childrenPosition = 1 }) {
+    if(childrenPosition)
+        return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
+    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{children}<p>{text}</p></div>)
+
 }
 
 export function Button({
@@ -93,7 +133,7 @@ export function Button({
     return <button id={id} onClick={onClick} disabled={disabled} className={
         overrideClass ? overrideClass : `
     ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
-                `${hoverAnimation ? 'hover:bg-blue-400 hover:text-white hover:border-transparent text-blue-400 border-blue-500 border-1' : 'bg-transparent bg-blue-400 text-blue-400 border-blue-400 border-1'} cursor-pointer`} 
+                `${hoverAnimation ? 'hover:border-transparent border-blue-500 border-1 button-style' : 'bg-transparent border-blue-400 border-1 button-style'} cursor-pointer`} 
     rounded font-semibold ${hasPadding?'px-4':''} focus:outline-none ${customStyle}`}>
         {disabled ? disabledText : text}
     </button>
@@ -105,52 +145,50 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
     let [selected, setSelected] = useState([])
     let buttonRef = useRef()
     let menuRef = useRef()
+    let [menuOpen, setMenuOpen] = useState(false)
+
     useImperativeHandle(ref, () => ({
         hide: () => {
-            buttonRef.current.classList.toggle('rotate180')
-            menuRef.current.classList.add('invisible')
+            setMenuOpen(false)
         },
         clear:()=>{
             setSelected([])
         },
     }))
 
+    useEffect(()=>{
+        registerOpenStateSetter(setMenuOpen,buttonRef)
+    },[])
+
+    useEffect(()=>{
+        if(menuOpen){
+            closeOtherComponents(setMenuOpen,buttonRef)
+        }
+    },[menuOpen])
+
     useEffect(() => {
         if (passiveMode) {
-            menuRef.current.classList.add('invisible')
+            setMenuOpen(false)
             setSelected([...selections])
         }
 
         if (!defaultOpen)
-            toggleMenu(false)
+            setMenuOpen(false)
     }, [selections])
 
     useEffect(() => {
         if (controlledOpen) {
-            toggleMenu(openState)
+            setMenuOpen(openState)
         }
     }, [controlledOpen, openState])
 
-    const toggleMenu = (state) => {
-        if (state === undefined) {
-            buttonRef.current.classList.toggle('rotate180')
-            menuRef.current.classList.toggle('invisible')
-        } else if (state) {
-            buttonRef.current.classList.add('rotate180')
-            menuRef.current.classList.remove('invisible')
-        } else {
-            buttonRef.current.classList.remove('rotate180')
-            menuRef.current.classList.add('invisible')
-        }
-    }
-    
     return (<div className={`${allowWrap?'':'flex-nowrap'} ${customHeight ? customHeight : 'h-auto'} multiselect ${customWidth ? customWidth : 'w-full'} flex flex-col items-start`}>
         <div className="w-full h-full">
             <div className="w-full h-full flex flex-col items-center relative">
                 <div className="w-full h-full">
                     <div className="w-full h-full box-border px-2 flex border border-gray-400 bg-white rounded">
                         <div className={`py-1 flex flex-auto ${wrapSelection ? 'flex-wrap' : 'flex-nowrap overflow-hidden'}`} onClick={() => {
-                            if (!selected.length) toggleMenu()
+                            setMenuOpen(s=>!s)
                         }}>
                             {selected.map(e =>
                                 <div key={e} className="flex justify-center items-center font-medium box-border h-full px-2 bg-white rounded-full text-blue-700 border border-blue-300 ">
@@ -173,8 +211,8 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
                                 <input placeholder={selected.length > 0 ? '' : defaultText} disabled className={`${!selected.length ? 'cursor-pointer' : ''} flex items-center text-center bg-transparent px-2 appearance-none outline-none h-full w-full text-gray-800`} />
                             </div>
                         </div>
-                        <div className="text-gray-400 w-4 flex items-center border-gray-200" onClick={() => toggleMenu()}>
-                            <button ref={buttonRef} className="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out">
+                        <div className="text-gray-400 w-4 flex items-center border-gray-200">
+                            <button onClick={() => setMenuOpen(s=>!s)} ref={buttonRef} className={`${menuOpen?'rotate180':''} cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none transition duration-150 ease-in-out`}>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-chevron-up w-4 h-4">
                                     <polyline points="18 15 12 9 6 15"></polyline>
                                 </svg>
@@ -182,8 +220,9 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
                         </div>
                     </div>
                 </div>
+
                 {/* transition duration-150 ease-in-out */}
-                <div ref={menuRef} tabIndex={0} onBlur={() => menuRef.current.classList.toggle('invisible')} className="outline-none absolute shadow top-100 bg-white z-40 w-full lef-0 rounded max-h-select overflow-y-auto origin-top" style={{ transition: 'all .15s ease-in-out 0s' }}>
+                <div ref={menuRef} tabIndex={0} className={`outline-none absolute shadow top-100 bg-white z-40 w-full lef-0 rounded max-h-select overflow-y-auto origin-top ${menuOpen?'':'invisible'}`} style={{ transition: 'all .15s ease-in-out 0s' }}>
                     <div className="flex flex-col w-full">
                         {selections.map((selection, i) =>
                             <div key={selection + i} className={`cursor-pointer w-full border-gray-100 border-b hover:bg-blue-600 ${selected.indexOf(selection) !== -1 ? 'bg-blue-100' : ''}`}>
@@ -212,14 +251,22 @@ export const DropDown = forwardRef(({
     id,
     text,
     defaultText = undefined,
+    defaultValue = undefined,
     items = [],
     additionalInput = false,
     additionalInputPosition = 'bottom',
+
+    blankOption = undefined,//whether or not to add an empty option which returns '' when clicked
+    blankOptionOnClick = (name='')=>{}, //when onClick is bound for each item, select blank option could trigger special effects
+
     additionalInputPlaceholder,
     onSelect,
-    customStyle,
-    customUlStyle,
+    customStyle='',
+    customUlStyle='',
+    height='h-full',
+    itemHeight='',
     hideArrow,
+    showTexts = {},
     showOnHover = true,
     controlledOpen = false,
     openState = false,
@@ -231,7 +278,19 @@ export const DropDown = forwardRef(({
     let inputRef = useRef(null)
     let [ulOpen, setOpenUl] = useState(0)
     let [currentText, setCurrentText] = useState(defaultText)
+    let allOptions = []
 
+    useEffect(()=>{
+        registerOpenStateSetter(setOpenUl,buttonRef)
+    },[])
+
+    useEffect(()=>{
+        if(ulOpen){
+            closeOtherComponents(setOpenUl,buttonRef)
+        }
+    },[ulOpen])
+
+    
     useImperativeHandle(ref, () => ({
         hide: () => {
             setOpenUl(false)
@@ -244,15 +303,53 @@ export const DropDown = forwardRef(({
         }
     }, [controlledOpen, openState])
 
+    if (blankOption!==undefined){
+        allOptions.push({
+            name:blankOption,
+            onClick(){
+                if(onSelect){
+                    onSelect('',-1,'select',false)
+                }else{
+                    blankOptionOnClick('')
+                }
+                return false
+            }
+        })
+    }
+
     if (onSelect) {//items must be string array
         items = items.map((name, i) => ({
             name,
-            onClick() {
-                onSelect(name, i, 'select')
+            onClick(e,triggeredByDefaultValue) {
+                onSelect(name, i, 'select',triggeredByDefaultValue)
                 return false
             }
         }))
     }
+
+    allOptions = allOptions.concat(items)
+
+    //set default value
+    useEffect(()=>{
+        if(defaultValue){
+            for(let item of items){
+                if (item.name == defaultValue){
+                    items.onClick(null,true)
+                }
+            }
+        }
+    },[])
+
+    //align ul and li to button
+    useEffect(()=>{
+        let width = buttonRef.current.getBoundingClientRect().width + 'px'
+        if(!width) return
+
+        ;[ulRef.current, ...ulRef.current.childNodes].forEach(e=>{
+            if(e.style && (e.tagName == 'UL' || e.tagName == 'LI'))
+                e.style.width = width
+        })
+    },[ulOpen])
 
     const closeUl = useCallback(()=>{
         if (!showOnHover) {
@@ -291,12 +388,12 @@ export const DropDown = forwardRef(({
         </div>
     </li>
 
-    return (<div className="w-full dropdown group inline-block">
+    return (<div className="w-full h-full dropdown group inline-block">
         <button id={id} onClick={() => {
             if (!showOnHover) {
                 setOpenUl(s => !s)
             }
-        }} ref={buttonRef} className={`box-border outline-none focus:outline-none border px-2 bg-white rounded-sm flex items-center min-w-32 ${customStyle}`}>
+        }} ref={buttonRef} className={`box-border outline-none focus:outline-none border px-2 bg-white rounded-sm flex items-center min-w-32 ${height} self-start ${customStyle}`}>
             <span className="pr-1 text-gray-400 flex-1">{hasControl ? currentText : text}</span>
             <span className={`${hideArrow ? 'hidden' : ''}`} >
                 <svg
@@ -308,12 +405,11 @@ export const DropDown = forwardRef(({
             </span>
         </button>
 
-        <ul ref={ulRef} className={`${customUlStyle} bg-white ${items.length?(ulOpen?'':'border'):''} rounded-sm transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
+        <ul ref={ulRef} className={`${customUlStyle} bg-white ${allOptions.length?(ulOpen?'':'border'):''} rounded-b-md transform ${showOnHover ? 'scale-0 group-hover:scale-100' : (ulOpen ? 'scale-100' : 'scale-0')} absolute transition duration-150 ease-in-out origin-top min-w-32 z-10`}>
             {<>
             {additionalInput && additionalInputPosition === 'top'?AdditionalInput:''}
-            {items.map((item,_index) => {
-
-                return <li key={item.name} className={`box-border bg-white cursor-pointer ${_index==items.length-1?'rounded-b-lg':''} text-gray-800 px-3 flex items-center justify-start hover:bg-gray-100 z-auto ${customUlStyle}`} onClick={e => {
+            {allOptions.map((item,_index) => {
+                return <li key={item.name} className={`box-border cursor-pointer ${_index==allOptions.length-1?'rounded-b-md':''}  px-3 flex items-center justify-start z-auto ${itemHeight} ${customUlStyle}`} onClick={e => {
                     if (disabledRef.current) {
                         e.preventDefault()
                         return
@@ -335,7 +431,7 @@ export const DropDown = forwardRef(({
                             }, 0)
                         }
                     }
-                }}>{item.name}</li>
+                }}>{showTexts[item.name] || item.name}</li>
             }
             )}
             {additionalInput && additionalInputPosition === 'bottom'?AdditionalInput:''}
@@ -488,7 +584,7 @@ export function Modal({ fixedModalPosition=undefined,zIndex=1,isOpen, setIsOpen,
         setTimeout(() => setIsRealOpen(isOpen))
     }, [isOpen])
 
-    return (<div ref={modalBg} onClick={e => {
+    return (<div ref={modalBg} data-component-ancestor onClick={e => {
         if (e.target === modalBg.current) {
             onClose()
             setIsOpen(false)
@@ -510,7 +606,7 @@ export function Radio({ label, name, customStyle = '', defaultChecked = false, o
 
 export const Checkbox = forwardRef(({ item = '', forwardedRef, disabledRef = {}, label, name, customStyle = '', defaultChecked = false, onClick = () => { }, onChange = () => { } }, ref) => {
     return (
-        <label className={`inline-flex items-center ${customStyle}`} onClick={e => {
+        <div className={`inline-flex items-center ${customStyle}`} onClick={e => {
             if (disabledRef.current) {
                 e.preventDefault()
                 return
@@ -525,6 +621,6 @@ export const Checkbox = forwardRef(({ item = '', forwardedRef, disabledRef = {},
                 }
 
                 onChange(e,e.target.checked)
-            }} type="checkbox" item={item} className="form-checkbox h-5 w-5 bg-gray-100 border-2 border-blue-300" defaultChecked={defaultChecked} /><span className="ml-2 text-gray-700">{label}</span>
-        </label>)
+            }} type="checkbox" item={item} className="form-checkbox h-5 w-5 bg-gray-100 border-2 border-blue-300" defaultChecked={defaultChecked} /><div className="ml-2 text-gray-700">{label}</div>
+        </div>)
 })

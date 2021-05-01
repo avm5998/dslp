@@ -2,9 +2,113 @@ import { actions as DataSetActions } from '../reducer/dataset'
 import { actions as OptionActions } from '../reducer/option'
 import { useDispatch, useSelector } from 'react-redux'
 import ifetch from 'isomorphic-fetch';
+import {Redirect} from 'react-router-dom';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { config } from '../config/client'
-import authHeader from '../services/auth-header';
+import authHeader, {authHeaderRefresh} from '../services/auth-header';
+import { logout } from '../actions/auth';
+import { createBrowserHistory } from 'history';
+
+// refresh
+
+// const dispatch = useDispatch();
+
+export const fetchWithRefresh = async (url, options) => {
+    // url = url.replace(/$\/+/,'')
+
+    try{
+        const r = await ifetch(url, options)
+        console.log(r)
+        if(!r.ok){
+            throw r
+        }
+        return Promise.resolve(r)
+    }
+    catch(error){
+        console.log('inside error')
+        if (
+		// error.response?.status === 401 && // Use the status code your server returns when token has expired
+            error.status === 401
+            && error.statusText === 'UNAUTHORIZED'
+	    ) {
+            console.log('inside if')
+            return new Promise((resolve, reject) => {
+                refreshToken(url, options)
+                .then((result) => {
+                    resolve(result);
+                })
+                .catch((err) => {
+                    localStorage.removeItem('user');
+                    reject(err);
+                });
+                console.log("refresh token code")
+            });
+        }
+	    return Promise.reject(error);
+    };
+}
+    
+
+const refreshToken = (url, config) => {
+  console.log('refresh token call')
+	return new Promise((resolve, reject) => {
+		getNewToken() // Endpoint to request new token
+			.then((res) => {
+                console.log('store new token')
+                
+				storeToken(res.accessToken); // Store new token locally (Local storage or cookies)
+                console.log("successful")
+                ifetch(url, {...config, headers:authHeader()})
+                .then((result) => {
+                    		return resolve(result);
+                    	})
+                    	.catch((err) => {
+                    		console.log(err);
+                    		return reject(err);
+                    	});
+			})
+			.catch((err) => {
+                localStorage.removeItem('user');
+                createBrowserHistory().push('/login')
+                window.location.reload()
+				console.log(err);
+                return reject(err);
+			});
+	});
+};
+
+const getNewToken = async () => {
+  console.log('get new token')
+//   console.log(authHeaderRefresh());
+  try {
+      const response = await ifetch(config.endpoint +'/api/auth/refresh', {
+          method: 'POST',
+          headers: authHeaderRefresh()
+      });
+      if(!response.ok){
+          throw response
+      }
+      const r = await response.json()
+      return Promise.resolve(r)
+  } catch (error) {
+      // Clear token and continue with the Promise catch chain
+      // clearToken();
+      return Promise.reject(error);
+  }
+}
+
+const storeToken = token =>    {
+  console.log('store token')
+  let user = JSON.parse(localStorage.getItem('user'))
+  user = {
+    ...user,
+    accessToken : token
+  }
+  console.log("saved token\n"+user);
+  localStorage.setItem('user', JSON.stringify(user));
+} 
+
+
 
 /**
  * Assume
@@ -546,3 +650,4 @@ export function GetDataFrameInfo(info) {
         rows: info.split(/\n/).filter(Boolean).slice(1)
     }
 }
+

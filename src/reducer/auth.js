@@ -4,6 +4,7 @@ import {
   LOGIN_SUCCESS,
   LOGIN_FAIL,
   LOGOUT,
+  LOGOUT_FAIL,
   PASSWORD_RESET_SUCCESS,
   PASSWORD_RESET_FAIL,
   PASSWORD_RESET_CONFIRM_SUCCESS,
@@ -56,6 +57,7 @@ export default function (state = initialState, action) {
     case PASSWORD_RESET_CONFIRM_FAIL:
     case PASSWORD_RESET_CONFIRM_SUCCESS:
     case CHANGE_PROFILE_PIC_FAILURE:
+    case LOGOUT_FAIL:
         return {
             ...state
         };

@@ -102,7 +102,7 @@ const Analysis = () => {
                                 {/*   0                           1                            2                               3                 4    */ }
                                 setOption(item)
                                 setOptionText(item)
-                                setPredictVisible(item!='clustering')
+                                setPredictVisible(item!='clustering' && item!='associate_rule' && item!='time_series_analysis')
                             }
                         }))} />
                 </div>

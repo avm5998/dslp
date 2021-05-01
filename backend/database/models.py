@@ -1,7 +1,8 @@
 from .db import db
 
 from flask_bcrypt import generate_password_hash, check_password_hash
-
+from datetime import datetime, timezone
+DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
 
 class User(db.Document):
     fullname = db.StringField()
@@ -10,10 +11,16 @@ class User(db.Document):
     password = db.StringField(required=True, min_length=6)
     files = db.ListField()
     profile_image = db.ImageField(thumbnail_size=(40, 40, False))
-    # movies = db.ListField(db.ReferenceField('Movie', reverse_delete_rule=db.PULL))
-         
+    last_logged_in = db.DateTimeField(default=datetime.now(timezone.utc), nullable=False)
+    user_activity = db.DictField()
+    user_bio = db.StringField()         
     def hash_password(self):
         self.password = generate_password_hash(self.password).decode('utf8')
     
     def check_password(self, password):
         return check_password_hash(self.password, password)
+
+
+class TokenBlockList(db.Document):
+    jti = db.StringField(nullable=False)
+    created_at = db.DateTimeField(nullable=False)

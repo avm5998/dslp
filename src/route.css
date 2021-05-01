@@ -57,8 +57,8 @@ arrow-span{
     height: 1px;
     margin: 0px 8px;
     border: none;
-    color: rgb(85, 85, 85);
-    background-color: rgb(85, 85, 85);
+    color: #276678;
+    background-color:#276678
 }
 
 .profile-dropdown{
@@ -70,13 +70,14 @@ arrow-span{
     display: flex;
     flex-direction: column;
     margin: 7px 5px 7px 20px;
-    border: 1px solid black;
-    background-color: white;
+    border: 1px solid #f6f5f5;
+    background-color: #f6f5f5;
     top: 70px;
     z-index: 99;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
-}
-
+    color: #276678;
+}   
+ 
 .dropdown-items{
     list-style: none;
     padding: 0px;
@@ -87,6 +88,7 @@ arrow-span{
   .dropdown-items a{
     padding: 15px;
     line-height: 20px;
+ 
   }
 
   .dropdown-items li{
@@ -97,3 +99,51 @@ arrow-span{
     cursor: pointer;
     font-size: 16px;
   }
+  .profile-dropdown .dropdown-items li:hover{
+    background-color: #276678;
+    color:#f6f5f5
+  }
+
+  .heading{
+    background-color: #174450;
+    color: #f6f5f5;
+  }
+
+  .sidebar{
+    background-color: #1687a7;
+    color: #f6f5f5;
+    background-image: linear-gradient(#205463, #1687a7);
+  }
+
+  .sidebar-hover li a:hover{
+    background-color: #f6f5f5;
+    color: #276678;
+  }
+
+  /* .content{
+      background-color: #f6f5f5;
+      color:#f6f5f5 ;
+  } */
+
+  .hover-edge{
+      border-color: #276678;
+      border-width: 1rem;
+  }
+
+  /* .login-container{
+      background-image: url('D:\\awesome-data-mining-project\\awesome-data-mining\\src\\assets\\images\\image3.jpg');
+      background-size:100vw;
+      opacity: 0.8;
+  } */
+
+  .overlay{
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	z-index: 3;
+	background-color: rgba(0,0,0, 0.4);
+}
+.login-img{
+    width: 100vw;
+    height: 100vh;
+}

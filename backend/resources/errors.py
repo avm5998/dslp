@@ -11,14 +11,16 @@ class SchemaValidationError(Exception):
         self.payload = payload
 
 class EmailAlreadyExistsError(Exception):
-    def __init__(self, message, status=400):
+    def __init__(self, message, status=400, payload=None):
         self.message = message
         self.status = status
+        self.payload = payload
 
 class UnauthorizedError(Exception):
-    def __init__(self, message, status=401):
+    def __init__(self, message, status=401, payload=None):
         self.message = message
         self.status = status
+        self.payload = payload
 
 class EmailDoesnotExistsError(Exception):
     def __init__(self, message, status=400, payload=None):

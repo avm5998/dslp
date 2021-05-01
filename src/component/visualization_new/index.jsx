@@ -19,19 +19,21 @@ import NightingaleRoseChart from './nightingaleRoseChart';
 import { ChromePicker } from 'react-color';
 import './index.css'
 import { InlineTip } from '../common/tip';
+import Waffle from './waffleChart'
 
 const Graphs = [
     AreaGraph,
     BarChart,
     BoxPlot,
-    CandleStickChart,
+    // CandleStickChart,
     Histogram,
     LineGraph,
-    NightingaleRoseChart,
+    // NightingaleRoseChart,
     PieChart,
     RadarGraph,
     ScatterPlot,
-    ThreeDScatterPlot,
+    // ThreeDScatterPlot,
+    Waffle
 ]
 
 const Functions = [
@@ -62,10 +64,12 @@ const initialCode = data=>`import pandas as pd
 from io import StringIO
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 
 data_json = StringIO("""${data}""")
 df = pd.read_json(data_json)
+
 `
 
 
@@ -120,6 +124,7 @@ export default function(){
 
                 let g = await res.json()
                 kernelRef.current = data.kernel
+                // alert('X')
                 data.kernel.requestExecute({code:initialCode(g.data)})
                 setDfJSON(g.data)
                 setActivateStatus('Ready')
@@ -160,7 +165,7 @@ export default function(){
         <Modal fixedModalPosition={{
             left:'20vw',
             top:'10vh',
-            width:'60vw'
+            width:'fit-content'
         }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
             // setCode(GraphConfigs[currentPlot].getCode(result), dataset)
@@ -171,20 +176,20 @@ export default function(){
         </Modal>
 
         <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4'>
-            <div className='w-72'>
+            <div className='w-72 h-full px-1'>
                 <MultiSelect customHeight={'h-10'} customeWidth={'w-72'} ref={ref} defaultOpen={false} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
             </div>
-            <div className='w-72'>
-                <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'h-10 w-72'} customUlStyle={'h-10 w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
+            <div className='w-72 h-full px-1'>
+                <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
             </div>
-            <div className='w-auto flex justify-center items-center'>
+            <div className='w-auto h-full flex justify-center items-center px-1'>
                 <div className={``}>{activateStatus}</div>
                 <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.'/>
             </div>
-            <div className='w-72'>
+            <div className='w-72 h-full px-1'>
                 <Button hasPadding={false} disabled={!currentPlot} text="Options" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10  ${!currentPlot ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={e => { if (currentPlot) showOptions(1) }} hoverAnimation={false} />
             </div>
-            <div className='w-72'>
+            <div className='w-72 h-full px-1'>
                 <Button hasPadding={false} disabled={!code} text="Run" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
                      ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
             </div>

@@ -27,7 +27,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
             }}>
                 </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==2?'':'hidden'}`} style={{
-                gridTemplateColumns:'10vw 1fr 5vw 1fr'
+                gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
                 <CommonOption dataset={dataset} result={result}/>
             </div>
@@ -57,7 +57,7 @@ export const config = {
             dfplotArgs.push(`${k}=${plotOptions[k]}`)
         }
 
-        prevSteps.push(`df.index = df['${result.cate_col}']`)
+        prevSteps.push(`df = df.groupby('${result.cate_col}').agg(${result.num_col}=('${result.num_col}','sum'))`)
         return `${prevSteps.length?prevSteps.join('\n'):''}
 df.plot.pie(${dfplotArgs.join(',')})
 ${postSteps.length?postSteps.join('\n'):''}

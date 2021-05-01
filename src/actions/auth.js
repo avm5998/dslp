@@ -5,6 +5,7 @@ import {
   LOGIN_SUCCESS,
   LOGIN_FAIL,
   LOGOUT,
+  LOGOUT_FAIL,
   SET_MESSAGE,
   PASSWORD_RESET_SUCCESS,
   PASSWORD_RESET_FAIL,
@@ -16,6 +17,7 @@ import axios from "axios";
 
 const API_URL = "http://localhost:9000/api/auth/";
 import AuthService from "../services/auth.service";
+import authHeader from "../services/auth-header";
 export const register = (fullname, username, email, password) => (dispatch) => {
   return AuthService.register(fullname, username, email, password).then(
     (response) => {
@@ -85,35 +87,41 @@ export const login = (username, password) => (dispatch) => {
 };
 
 export const logout = () => (dispatch) => {
-  AuthService.logout();
+  return AuthService.logout().then(
+  (response) => {
+    // console.log("receive response");
+    // dispatch({
+    //   type: LOGOUT,
+    // });
 
-  dispatch({
-    type: LOGOUT,
-  });
-};
+    // dispatch({
+    //   type: SET_MESSAGE,
+    //   payload: response.data.message,
+    // });
+    // console.log('returning')
+    return Promise.resolve(response);
+  },
+  (error) => {
+    // console.log(error)
+    // const message =
+    //   // (error.response
+    //   //   ) ||
+    //   // error.message ||
+    //   error.toString();
 
-// export const reset_password = (email) => async dispatch => {
-//   // const config = {
-//   //     headers: {
-//   //         'Content-Type': 'application/json'
-//   //     }
-//   // };
+    // dispatch({
+    //   type: LOGOUT_FAIL,
+    // });
 
-  
+    // dispatch({
+    //   type: SET_MESSAGE,
+    //   payload: message,
+    // });
 
-//   try {
-//       await axios.post(API_URL+'forgot', { email });
-
-//       dispatch({
-//           type: PASSWORD_RESET_SUCCESS
-//       });
-//   } catch (err) {
-//       dispatch({
-//           type: PASSWORD_RESET_FAIL
-//       });
-//   }
-// };
-
+    return Promise.reject(error);
+  }
+);
+}
 export const reset_password = ( email) =>  dispatch => {
   return AuthService.forgot_password(email).then(
     (response) => {

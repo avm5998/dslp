@@ -1,3 +1,4 @@
+// import 'bootstrap/dist/css/bootstrap.css'
 import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from 'react-router-dom';
@@ -108,7 +109,7 @@ const Login = (props) => {
             </div>
 
             
-              <button className="btn btn-lg btn-primary btn-block col-span-2" disabled={loading}>
+              <button className="w-auto btn btn-lg btn-primary btn-block col-span-2" disabled={loading}>
                 {loading && (
                   <span className="spinner-border spinner-border-sm"></span>
                 )}

@@ -1,0 +1,78 @@
+.upload{ 
+    background-color: #276678;
+    color:#f6f5f5;
+}
+
+.upload:hover {
+    background-color: #d3e0ea;
+    color:#276678;
+}
+
+.data-style{
+    background-color:#d3e0ea;
+    color: #276678;
+    max-height: 75vw;
+    overflow-y: auto;
+    height: 70vw;
+}
+.revert{ 
+    background-color: #276678;
+    color:#f6f5f5;
+}
+.revert:hover{
+    background-color: #d3e0ea;
+    color:#276678;
+}
+
+/* .data-items{
+    width: 50vw;
+    height: fit-content;
+
+} */
+
+.data-item{
+
+    background-color: #d3e0ea;
+    margin: 12px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.item-details{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    padding: 16px;
+}
+.filename{
+    margin: auto 16px;
+    color:#276678;
+    font-weight: 700;
+    font-size: 20px;
+}
+.description{
+    margin: auto 16px;
+    color:#1687a7;
+    font-size: 16px;
+}
+
+.filters{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 16px 16px 96px 16px;
+}
+
+.use-file{
+    margin-right: 16px;
+    align-self: center;
+}
+
+.icon{
+    color: black;
+    height: 24px;
+    width: 24px;
+    margin-right: 8px;
+}
+

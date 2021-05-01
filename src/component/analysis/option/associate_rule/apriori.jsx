@@ -58,22 +58,22 @@ export default function ({ dataset, result, submit }) {
                     result.params_min_threshold = v 
                 }} customStyle={`w-64`} attrs={{ list: 'min_threshold_metric_apriori_list' }} /> */}
                
-                <Label text="Set parameters: support_min_threshold"><InlineTip info="Association Rules: set threshold for related metrics. Default:0.1"/></Label>
+                <Label childrenPosition={0} text="Set parameters: support_min_threshold"><InlineTip info="Association Rules: set threshold for related metrics. Default:0.1"/></Label>
                 <Input defaultValue={0.1} onInput={(e,v) => {
                     result.params_support_min_thresh = v 
                 }} customStyle={`w-64`} attrs={{ list: 'support_min_threshold_list' }} />
    
-                <Label text="Set parameters: lift_min_threshold"><InlineTip info="Association Rules: set threshold for related metrics. Default:1.0"/></Label>
+                <Label childrenPosition={0} text="Set parameters: lift_min_threshold"><InlineTip info="Association Rules: set threshold for related metrics. Default:1.0"/></Label>
                 <Input defaultValue={1.0} onInput={(e,v) => {
                     result.params_lift_min_thresh = v 
                 }} customStyle={`w-64`} attrs={{ list: 'lift_min_threshold_list' }} />
                 
-                <Label text="Set parameters: confidence_min_threshold"><InlineTip info="Association Rules: set threshold for related metrics. Default:0.5"/></Label>
+                <Label childrenPosition={0} text="Set parameters: confidence_min_threshold"><InlineTip info="Association Rules: set threshold for related metrics. Default:0.5"/></Label>
                 <Input defaultValue={0.5} onInput={(e,v) => {
                     result.params_confidence_min_thresh = v 
                 }} customStyle={`w-64`} attrs={{ list: 'confidence_min_threshold_list' }} />
 
-                <Label text="Set parameters: antecedent_length"><InlineTip info="Association Rules: set threshold for related metrics. Default:1"/></Label>
+                <Label childrenPosition={0} text="Set parameters: antecedent_length"><InlineTip info="Association Rules: set threshold for related metrics. Default:1"/></Label>
                 <Input defaultValue={1} onInput={(e,v) => {
                     result.params_antecedent_len = v 
                 }} customStyle={`w-64`} attrs={{ list: 'antecedent_length_list' }} />
