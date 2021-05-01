@@ -135,11 +135,11 @@ CORS(app)
 
 
 def insert_default_files():
-    path = 'backend\\assets\\files\\'
+    path = 'backend/assets/files/'
     for filename in DEFAULT_FILES:
         file_details = mongo_collection.find_one({"file_name": filename})
         if not file_details:
-            file = os.path.join(path, filename)
+            file = path+filename
             with open(file, "rb") as file_content:
                 content = Binary(file_content.read())
                 # bson_content = BSON::Binary.new(content)
@@ -272,7 +272,7 @@ def change_profile_pic():
     return jsonify(base64=imgStr), 200
 
 
-@app.route("/api/auth/forgot", methods=["GET"])
+@app.route("/api/auth/forgot", methods=["POST"])
 @cross_origin(origin="*")
 def forgot():  
     url =  str(request.origin)+'/reset/'
