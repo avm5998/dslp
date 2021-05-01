@@ -520,14 +520,13 @@ def _getCache(uid,name,modified = True):
     copyModified = False
 
     if modified:
-        name = EditedPrefix + name
-        key = str(uid)+'_'+name
+        key = str(uid)+'_'+EditedPrefix + name
         df = cache.get(key)
         if df is None:
             copyModified = True
 
     if df is None:
-        df = cache.get(name)
+        df = cache.get(str(uid)+'_'+name)
         if df is None:
             details = mongo_collection.find_one({"file_name": name,"user_id":uid})
             if not details:
@@ -673,7 +672,7 @@ def handleCachedData():
 
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf if ndf is not None else df)
     dfJSON = df.to_json()
-    return jsonify(modifiedJson = ndf.to_json() if ndf else dfJSON,dataJson = dfJSON,
+    return jsonify(modifiedJson = ndf.to_json() if ndf is not None else dfJSON,dataJson = dfJSON,
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
