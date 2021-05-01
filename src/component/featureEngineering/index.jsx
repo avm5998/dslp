@@ -41,6 +41,14 @@ const FeatureEngineering = () => {
 
     let {result,checkbox : checkbox2, input : input2,getData,clearData} = useSimpleForm()
     // let {result,getData,clearData} = useSimpleForm()
+    let [isTsv, setIsTsv] = useState(0)
+
+    useEffect(()=>{
+        let extension = dataset.filename.substr(dataset.filename.lastIndexOf('.')+1)
+        if(extension === 'tsv'){
+            setIsTsv(1)
+        }
+    },[])
 
     useEffect(()=>{
         clearData()
@@ -149,7 +157,8 @@ const FeatureEngineering = () => {
         <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
             <div className='mx-5 w-8/12 flex justify-start'>
                 <div className='w-72'>
-                    <DropDown text={optionText} customStyle={'h-8 py-1 w-72'} customUlStyle={'w-72'} items={
+                {/* ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; */}
+                    <DropDown enabledOptionIndex={isTsv?[5]:[0,1,2,3,4,5]} text={optionText} customStyle={'h-8 py-1 w-72'} customUlStyle={'w-72'} items={
                         Options.map((item, i) => ({
                             name: item, onClick(e) {
                                 let [canop,errorMsg] = getCanOperation(dataset, i)

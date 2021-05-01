@@ -250,6 +250,7 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
 export const DropDown = forwardRef(({
     id,
     text,
+    enabledOptionIndex = undefined,
     defaultText = undefined,
     defaultValue = undefined,
     items = [],
