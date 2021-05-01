@@ -368,7 +368,10 @@ def describe(filename):
 @jwt_required()
 def get_user_files():
     user_id = get_jwt_identity()
-    user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
+    try:
+        user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
+    except:
+        user_files_list = []
     return {'files_list': user_files_list}
 
 def convertNaN(value):

@@ -48,9 +48,18 @@ class LoginApi(Resource):
             authorized = user.check_password(body.get('password'))
             if not authorized:
                 raise UnauthorizedError('um')
-            imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
-            progress = extract_report(user)
-            expires = timedelta(days=7)
+            try:
+                imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
+            except:
+                user_avatar = open('backend/assets/images/avatar.png','rb')
+                # imgStr = base64.b64encode(open('backend/assets/images/avatar.png','rb')).decode("utf-8").replace("\n", "")
+                user.profile_image.put(user_avatar, filename='avatar.png')
+                imgStr = ""
+            if "user_activity" in user:
+                progress = extract_report(user)
+            else:
+                progress = ""
+            expires = timedelta(days=25)
             expires_refresh = timedelta(days=30)
             access_token = create_access_token(identity=str(user.id), expires_delta=expires)
             refresh_token = create_refresh_token(identity=str(user.id), expires_delta=expires_refresh)
