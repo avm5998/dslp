@@ -28,7 +28,9 @@ from yellowbrick.cluster import KElbowVisualizer
 from sklearn.metrics import confusion_matrix, roc_curve, mean_squared_error, r2_score, classification_report, plot_roc_curve, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
+from mlxtend.frequent_patterns import apriori, association_rules 
 
+# import cv2
 
 
 
@@ -114,7 +116,8 @@ mongo_collection = mongo_db["files"]
 user_collection = mongo_db["user"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
-DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
+# DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
+DEFAULT_FILES = []
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 EditedPrefix = '__EDITED___'
@@ -135,11 +138,11 @@ CORS(app)
 
 
 def insert_default_files():
-    path = 'backend\\assets\\files\\'
+    path = 'backend/assets/files/'
     for filename in DEFAULT_FILES:
         file_details = mongo_collection.find_one({"file_name": filename})
         if not file_details:
-            file = os.path.join(path, filename)
+            file = path+filename
             with open(file, "rb") as file_content:
                 content = Binary(file_content.read())
                 # bson_content = BSON::Binary.new(content)
@@ -272,7 +275,7 @@ def change_profile_pic():
     return jsonify(base64=imgStr), 200
 
 
-@app.route("/api/auth/forgot", methods=["GET"])
+@app.route("/api/auth/forgot", methods=["POST"])
 @cross_origin(origin="*")
 def forgot():  
     url =  str(request.origin)+'/reset/'
@@ -755,62 +758,77 @@ def current_data_json():
     return jsonify(data=df.to_json())
 
 
-@app.route('/feature_engineering', methods=['POST'])
+@app.route('/featureEngineering', methods=['POST'])
 @cross_origin()
 @jwt_required()
 def cond_eng_json(): 
     params = request.json
+    print('params=**', params)
     filename = params['filename']
     user_id = get_jwt_identity()
+    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     df = _getCache(user_id,filename)
+    ndf = df.replace(MISSING_VALUES, np.nan)
     msg = ''
     success = True
 
     option = params['activeOption']
+    print("option=", option)
 
     try:
         if option == 0:
             cols = params['cols']
+            print("cols=", cols)
             for col,ctype in cols:
+                print('col,ctype=', col,ctype)
                 if ctype == 'to lowercase':
-                    df[col] = df[col].astype(str).str.lower()
+                    ndf[col] = ndf[col].astype(str).str.lower()
                 elif ctype == 'to uppercase':
-                    df[col] = df[col].astype(str).str.upper()
+                    ndf[col] = ndf[col].astype(str).str.upper()
+            print(ndf.head())
 
-        if option == 1:
+        elif option == 1:
             cols = params['cols']
-            for col in cols:
+            print("cols1-=", cols)
+            for index, col in cols:
                 label = LabelEncoder()
-                df[col] = label.fit_transform(df[col].astype(str))
-
-        if option == 2:
+                ndf[col] = label.fit_transform(ndf[col].astype(str))
+        elif option == 2:
+            suboption_checked = params['suboption_checked']
+            print('suboption_checked 2= ', suboption_checked)
             for col in suboption_checked:
-                params = {}
-                for postAttr in ['Bins','Labels']:
-                    attr = col + '_' + postAttr
-                    params[postAttr] = params[attr]
-                
-                label = LabelEncoder()
-                df[col] = pd.cut(df[col].astype(float), bins=list(params['Bins'].split(",")), 
-                            labels=list(params['Labels'].split(",")))
-
-        if option == 3:
+                col_bins = params[col+'_'+'Bins']
+                col_labels = params[col+'_'+'Labels']
+                ndf[col] = pd.cut(ndf[col].astype(float), bins=list(col_bins.split(",")), labels=list(col_labels.split(",")))
+        elif option == 3:
             cols = params['cols']
-            for col in cols:
-                scaler = StandardScaler()
-                df[col] = scaler.fit_transform(df[col])
-
-        if option == 4:
+            print("col3=", cols)
+            print('df', ndf.head())
+            stand_scaler_col=[]
+            for index, col in cols:
+                stand_scaler_col.append(col)
+            print('stand_scaler_col= ', stand_scaler_col)
+            scaler = StandardScaler()
+            ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
+            print(ndf.head())
+        elif option == 4:
             cols = params['cols']
-            for col in cols:
-                scaler = MinMaxScaler()
-                df[col] = scaler.fit_transform(df[col])
-    except e:
-        msg = str(e)
+            print("cols4=", cols)
+            stand_scaler_col=[]
+            for index, col in cols:
+                stand_scaler_col.append(col)
+            scaler = MinMaxScaler()
+            ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
+    except:
         success = False
 
-    _setCache(user_id,name,df)
-    return jsonify(success=success, msg = msg, dataJson = df.to_json())
+    _setCache(user_id,filename,ndf)
+    print("ndf=====",ndf)
+    cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf) # update num_col and cate_col
+    print('cate_cols= ',cate_cols)
+    print('num_cols=',num_cols)
+    return jsonify(data=ndf.to_json(), cols = cols, num_cols = num_cols, cate_cols = cate_cols)
+    # return jsonify(success=success, msg = msg, data = df.to_json())
 
     
 @app.route('/feature_selection', methods=['POST'])
@@ -821,6 +839,7 @@ def cond_select_json():
     filename = params['filename']
     user_id = get_jwt_identity()
     df = _getCache(user_id,filename)
+    print('params=====', params)
     msg = ''
     success = True
 
@@ -902,6 +921,64 @@ def cond_select_json():
     img.close()
     return jsonify(base64=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
 
+
+@app.route('/preprocessing', methods=['POST'])
+@cross_origin()
+@jwt_required()
+def cond_preprocess_json():
+    cond, para_result = '', ''
+    params = request.json
+    filename = params['filename']
+    user_id = get_jwt_identity()
+    df = _getCache(user_id,filename)
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    print('params= ', params)
+    convert_col, convert_type, rm_useless_col, rm_useless_val, rm_spec_col, rm_spec_val = [], [], [], [], [], []
+    for key, val in params.items():
+        if "_Convert" in key and val:
+            convert_col.append(key.split('_')[0])
+            convert_type.append(val)
+        elif "_Useless" in key and val:
+            rm_useless_col.append(key.split('_')[0])
+            rm_useless_val.append(val)
+        elif "_Specific" in key and val:
+            rm_spec_col.append(key.split('_')[0])
+            rm_spec_val.append(val)
+    if convert_col and convert_type: 
+        for index1, index2 in zip(convert_col, convert_type):
+            cond += "\n" + str(index1) + ":  " + str(index2)
+            print("index2==", index2)
+            print("index1=", index1)
+            if index2 in ['int64', 'float64']:
+                ndf[index1] = pd.to_numeric(ndf[index1], errors='coerce')
+            elif index2 == 'datetime':
+                ndf[index1] = pd.to_datetime(ndf[index1])
+                # print(ndf.head(20))
+                # df[index1] = df[index1].dt.strftime('%Y-%m-%d')
+            elif index2 == ['string', 'bool', 'category']:
+                ndf[index1] = ndf[index1].astype(index2)
+        for i,k in zip(list(ndf.columns), ndf.dtypes):
+            para_result +=  "\n" + i + ": " + str(k)
+    elif rm_useless_col and rm_useless_val:
+        for index1, index2 in zip(rm_useless_col, rm_useless_val):
+            cond += "\n" + str(index1) + ":  " + str(index2)
+            for k in index2:
+                ndf[index1] = ndf[index1].str.replace(k, '')
+    elif rm_spec_col and rm_spec_val:
+        for index1, index2 in zip(rm_spec_col, rm_spec_val):
+            cond += "\n" + str(index1) + ":  " + str(index2)
+            temp = index2.split(',')
+            ndf = ndf[~(df[index1].isin(temp))]
+    print(ndf.head(20))
+    print("cond = ", cond)
+    print("para_result=", para_result)
+    _setCache(user_id,filename,ndf)
+    cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
+    return jsonify(data=ndf.to_json(),
+    cols = cols,col_lists = col_lists, num_cols = num_cols, 
+    cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists, cond=cond, para_result=para_result)
+
+
 # Sophie merged--> need modify 
 def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
     Y_test.reset_index(drop=True, inplace=True)
@@ -938,25 +1015,25 @@ def cond_Regression_json():
     models = {} # to store tested models
     print(params)
     analysis_model = params['analysis_model']
-    print(analysis_model)
-    test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+    test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
     metric = params['metric'] if 'metric' in params else 'neg_mean_squared_error'
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
-    finalVar = ["rent amount", "area"] # test, delete later
-    finalY = "total" # test, delete later
+    finalVar = params['finalVar']#["rent amount", "area"] # test, delete later
+    finalY = params['finalY']#"total" # test, delete later
     df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     # print(df)
     ndf = df.replace(MISSING_VALUES, np.nan)
+    kfold = KFold(n_splits=10, random_state=7, shuffle=True)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
     # print(X_train)
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
-    cond += "\n\nChoose Test Size: " + str(test_size)
+    cond += "\nChoose Test Size(%): " + str(test_size*100)
     if analysis_model == "Linear Regression":
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
         param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
         model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
         models[analysis_model] = model
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
@@ -968,7 +1045,7 @@ def cond_Regression_json():
     elif analysis_model == "Decision Tree Regression":
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
         param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
-        param_max_depth = int(params['param_max_depth']) if'param_max_depth' in params else None
+        param_max_depth = int(params['param_max_depth']) if'param_max_depth' in params else 3
         param_max_features = params['param_max_features'] if 'param_max_features' in params else None
         param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
         param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
@@ -976,7 +1053,7 @@ def cond_Regression_json():
         model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
         models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
         cond += "\nModel: Decision Tree Regression \nSet Parameters: criterion=" + str(param_criterion) + ", splitter=" + str(param_splitter) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes="+ str(param_max_leaf_nodes)+ ", random_state=" + str(param_random_state) 
@@ -1014,7 +1091,7 @@ def cond_Regression_json():
     elif analysis_model == 'Random Forests Regression':
         param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else None
         param_n_estimators = int(params['param_n_estimators']) if 'param_n_estimators' in params else 100
-        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else 3
         find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
         param_max_features = params['param_max_features'] if 'param_max_features' in params else 'auto'
@@ -1023,7 +1100,7 @@ def cond_Regression_json():
         model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
         models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
@@ -1047,14 +1124,14 @@ def cond_Regression_json():
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     elif analysis_model == 'SVM Regression':
         param_C = int(params['param_C']) if 'param_C' in params else 1.0
-        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 'scale'
+        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 0.01
         find_C = [int(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
         find_gamma  = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
         param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
         model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
         models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
         cond += "\nModel: SVM Regressor \nSet Parameters:   kernel=" + str(param_kernel) + ", gamma=" + str(param_gamma) + ", C=" + str(param_C)
@@ -1077,6 +1154,21 @@ def cond_Regression_json():
                 Y_true, Y_pred = Y_test, reg_svm.predict(X_test)
                 para_result = 'The best hyper-parameters for SVR are: ' + str(reg_svm.best_params_)
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    pred_var = analysis_model + finalVar[0] 
+    if pred_var in params and params[pred_var]:  
+        predic_var, input_val = [], []
+        for i in df.columns:
+            col_temp = analysis_model+i
+            if col_temp in params and params[col_temp]:
+                predic_var.append(i)
+                input_val.append(params[col_temp])
+        Class_input_val = [input_val]
+        input_val = np.array(Class_input_val, dtype='float64')
+        model = models[analysis_model] # pick the best model    
+        result = model.predict(input_val)
+        cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
+        para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
+        plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
@@ -1094,27 +1186,31 @@ def cond_Classification_json():
     models = {} # to store tested models
     print(params)
     analysis_model = params['analysis_model']
-    print(analysis_model)
-    finalVar = ["Sex", "Age", "Embarked"] # test, delete later
-    finalY = "Survived" # test, delete later
+    test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
+    metric = params['metric'] if 'metric' in params else 'Classification Report'
+    plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+    finalVar = params['finalVar']#["Sex", "Age", "Embarked"] # test, delete later
+    finalY = params['finalY']#"Survived" # test, delete later
     df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
-    # print(df)
     ndf = df.replace(MISSING_VALUES, np.nan)
-    cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
-    if analysis_model == "Logistic Regression":
-        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        metric = params['metric'] if 'metric' in params else 'Classification Report'
-        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+    kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+    X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
 
+    cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
+    # print('predic****=', params['Sex'])
+    cond += "\nChoose Test Size(%): " + str(test_size*100)
+    if analysis_model == "Logistic Regression":
+        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        # metric = params['metric'] if 'metric' in params else 'Classification Report'
+        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
         find_solver = [x for x in params['find_solver'].split(',') if params['find_solver']] if 'find_solver' in params else None
         find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
         param_solver = params['param_solver'] if 'param_solver' in params else 'lbfgs'
         param_C = float(params['param_C']) if 'param_C' in params else 1.0
-
         model = LogisticRegression(solver=param_solver, C=param_C)
         models[analysis_model] = model
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1136,7 +1232,7 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        cond += "\n\nChoose Test Size: " + str(test_size)
+        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1157,18 +1253,18 @@ def cond_Classification_json():
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     elif analysis_model == "Decision Tree Classifier":
-        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        metric = params['metric'] if 'metric' in params else 'Classification Report'
-        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        # test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
+        # metric = params['metric'] if 'metric' in params else 'Classification Report'
+        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
-        param_max_depth = params['param_max_depth'] if 'param_max_depth' in params else None
-        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else 4
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
         param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
 
         model = DecisionTreeClassifier(criterion=param_criterion, max_depth=param_max_depth, max_leaf_nodes=param_max_leaf_nodes) 
         models[analysis_model] = model
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1190,7 +1286,7 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        cond += "\n\nChoose Test Size: " + str(test_size)
+        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel: Decision Tree Classifier \nSet Parameters:  max_depth=" + str(param_max_depth) + ", criterion=" + str(param_criterion)  + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1223,20 +1319,20 @@ def cond_Classification_json():
                 plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
 
     elif analysis_model == 'Random Forests Classifier':
-        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        metric = params['metric'] if 'metric' in params else 'Classification Report'
-        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        # metric = params['metric'] if 'metric' in params else 'Classification Report'
+        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
 
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
         find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
-        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else None
+        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else 4
         param_n_estimators = int(params['param_n_estimators']) if 'param_n_estimators' in params else 100
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
         param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
         model = RandomForestClassifier(max_depth=param_max_depth, n_estimators=param_n_estimators, criterion=param_criterion, max_leaf_nodes=param_max_leaf_nodes)
         models[analysis_model] = model
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1258,7 +1354,7 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        cond += "\n\nChoose Test Size: " + str(test_size)
+        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1279,19 +1375,19 @@ def cond_Classification_json():
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     elif analysis_model == 'SVM Classifier':
-        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        metric = params['metric'] if 'metric' in params else 'Classification Report'
-        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        # metric = params['metric'] if 'metric' in params else 'Classification Report'
+        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
 
         find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
         find_gamma = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
         param_C = float(params['param_C']) if 'param_C' in params else 1.0
-        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 'scale'
+        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 0.01
         param_kernel = params['param_kernel'] if 'param_kernel' in params else 'rbf'
         model = SVC(C=param_C, gamma=param_gamma, kernel=param_kernel)
         models[analysis_model] = model
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1313,8 +1409,8 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        cond += "\n\nChoose Test Size: " + str(test_size)
-        cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+        # cond += "\n\nChoose Test Size: " + str(test_size)
+        cond += "\nModel:" + analysis_model + "\nSet Parameters:  gamma=" + str(param_gamma) + ", C=" + str(param_C) + ", kernel=" + str(param_kernel)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
         if find_C or find_gamma:
@@ -1334,13 +1430,13 @@ def cond_Classification_json():
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     elif analysis_model == 'Naive Bayes Classifier':
-        test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        metric = params['metric'] if 'metric' in params else 'Classification Report'
-        plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
+        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
+        # metric = params['metric'] if 'metric' in params else 'Classification Report'
+        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
         model = GaussianNB()
         models[analysis_model] = model
-        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        X = scaler.fit_transform(df[finalVar[0]]).toarray()  # test ; change later
+        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
         Y = df[finalY].values
         X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -1364,154 +1460,243 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        cond += "\n\nChoose Test Size: " + str(test_size)
+        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel:" + analysis_model 
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
-        
+    pred_var = analysis_model + finalVar[0] # initial
+    if pred_var in params and params[pred_var]:  
+        predic_var, input_val = [], []
+        for i in df.columns:
+            col_temp = analysis_model+i
+            if col_temp in params and params[col_temp]:
+                predic_var.append(i)
+                input_val.append(params[col_temp])
+        Class_input_val = [input_val]
+        input_val = np.array(Class_input_val, dtype='float64')
+        model = models[analysis_model] # pick the best model    
+        result = model.predict(input_val)
+        cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
+        para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
+        plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
-# @app.route('/analysis', methods=['POST']) #/query
-def cond_Kmeans_json(filename):
-    cond, para_result, fig_len, fig_wid = '', '', 5,5
+@app.route('/analysis/clustering', methods=['POST']) 
+@cross_origin()
+@jwt_required()
+def cond_Clustering_json():
+    cond, para_result, fig_len, fig_wid, threeD_columns_kmeans = '', '', 5, 5,[]
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-   
-    web_data = json.loads(request.form.get('ana_data'))
-    print("web_data.keys()", web_data.keys())
-    for key,val in web_data.items():
-        if key == "test_size":
-            test_size = float(val)/100 if val != '' else 0.3
-            print("test_size==", test_size)
-        elif key == "Techniques":
-            tech = val
-            print("tech=", tech)
-        elif key == "Metrics":
-            scoring = val
-            print("scoring=", scoring)
-        elif "plotSize" in key:
-            if val != '':
-                fig_len, fig_wid = int(val.split(',')[0]), int(val.split(',')[1]) 
-                print("fig_len, fig_wid ===============",fig_len, fig_wid)
-        elif "plotType" in key:
-            plotType = val 
-        elif key == "table_COLUMN":
-            col = val
-        elif key == "table_DATA":
-            table_DATA = val
-        elif 'find_parameter' in key:
-            find_parameter = val
-            print('find_parameter=',find_parameter)
-        elif 'opt_k_kmeans_set' in key:
-            opt_k_kmeans_set = int(val) if val else 8
-            print('opt_k_kmeans_set=', opt_k_kmeans_set)
-        elif 'opt_init_kmeans' in key:
-            opt_init_kmeans = val if val else 'k-means++'
-            print('opt_init_kmeans=', opt_init_kmeans)
-        elif 'opt_algo_kmeans' in key:
-            opt_algo_kmeans = val if val else 'auto'
-        elif 'random_state_kmeans_set' in key:
-            random_state_kmeans_set = int(val) if val else None
-        elif 'scatterX_kmeans' in key:
-            scatterX_kmeans = val
-        elif 'scatterY_kmeans' in key:
-            scatterY_kmeans = val
-     
-    df = pd.DataFrame(data=table_DATA, columns=col).reset_index(drop=True)
-    df = df.replace(missing_values, np.nan) 
-    # if finalY:
-    #     X_train, X_test, Y_train, Y_test = train_test_split(df[finalVar], df[finalY], test_size=test_size, random_state=0, shuffle=False) 
-    # else:
-    X_train = X_test = df[finalVar]
+    user_id = get_jwt_identity()
+    params = request.json
+    print('params=', params)
+    filename = params['filename']
+    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    # finalVar = params['finalVar'] if 'finalVar' in params else ndf.Columns
+    # finalVar = [x for x in df.columns if 'finalVar'+x in params]
+    finalVar = params['variablesx']
+    print('finalVar=', finalVar)
+    analysis_model = params['analysis_model']
+    param_n_clusters = int(params['param_n_clusters']) if 'param_n_clusters' in params and params['param_n_clusters'] else 8
+    clustering_plot = params['clustering_plot'] if 'clustering_plot' in params else 'all attributes: 2D plot'
+    metric = params['metric'] if 'metric' in params else None
+    param_init = params['param_init'] if 'param_init' in params else 'k-means++'
+    param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
+    param_algorithm = params['param_algorithm'] if 'param_algorithm' in params else 'auto'
+    find_n_clusters = params['find_n_clusters'] if 'find_n_clusters' in params else None
+    find_n_clusters_pca = params['find_n_clusters_pca'] if 'find_n_clusters_pca' in params else None
+
+    cond += "\nFinal Independent Variables: " + str(finalVar)
+    X_train = ndf[finalVar]
     print('X_train------------',X_train.values)
-    if find_parameter == 'on':
-        cond = "\nFind the Optimal K clusters"
+    cond += '\n' + clustering_plot
+    cond = "\nK-Means Set Parameters: \n  n_clusters=" + str(param_n_clusters) + ", init=" + str(param_init) + ", algorithm=" + str(param_algorithm)+ ", random_state=" + str(param_random_state)
+    img = BytesIO()
+    scaled_data = StandardScaler().fit_transform(X_train) 
+
+    plt.figure(figsize=(fig_len,fig_wid), dpi=80)
+    # plt.rcParams["figure.figsize"] = (fig_len, fig_wid) 
+    if find_n_clusters == 'elbow method':
+        cond = "\nFind the Optimal number of clusters for all selected attributes"
         model = KMeans()
-        visualizer = KElbowVisualizer(model, k=(1,20))
-        img = BytesIO()
+        visualizer = KElbowVisualizer(model, k=(1,10))
         visualizer.fit(X_train.values)
         plt.title('The Elbow Method for KMeans Clustering')
         plt.xlabel('no. of clusters')
         plt.ylabel('Distortion Score')
         plt.legend()
-        plt.savefig(img, format='png') 
-        plt.clf()
-        img.seek(0)
-        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-        img.close()
-        labeledData = df
-    else:
-        cond = "\nK-Means Set Parameters: \n  n_clusters=" + str(opt_k_kmeans_set) + ", init=" + str(opt_init_kmeans) + ", algorithm=" + str(opt_algo_kmeans)+ ", random_state=" + str(random_state_kmeans_set)
-        model = KMeans(n_clusters=opt_k_kmeans_set, init=opt_init_kmeans, algorithm=opt_algo_kmeans, random_state=random_state_kmeans_set)
-        models[tech] = model
-        img = BytesIO()
-        pred = model.fit(X_train)
+        labeledData = ndf
+    elif find_n_clusters_pca == 'elbow method':
+        cond = "\nFind the Optimal number of clusters for PCA"
+        inertias = []
+        reduced_data = PCA(n_components=2).fit_transform(scaled_data)
+        PCA_components = pd.DataFrame(reduced_data)
+        for k in range(1, 10):
+            model = KMeans(n_clusters=k)
+            model.fit(PCA_components.iloc[:,:2])
+            inertias.append(model.inertia_)
+        plt.plot(range(1,10), inertias, '-p', color='gold')
+        plt.title('The Elbow Method for PCA-KMeans Clustering')
+        plt.xlabel('number of clusters, k')
+        plt.ylabel('inertia')
+        plt.legend()
+        labeledData = ndf
+    elif clustering_plot == 'PCA: 2D plot':
+        reduced_data = PCA(n_components=2).fit_transform(scaled_data) 
+        PCA_components = pd.DataFrame(reduced_data)
+        pca_model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
+        pred = pca_model.fit(PCA_components.iloc[:,:2])
+        labels = pca_model.predict(PCA_components.iloc[:,:2])
+        ndf['Clusters'] = pd.DataFrame(pred.labels_)
+        count_val = ndf['Clusters'].value_counts()
+        para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")        
+        labeledData = pd.concat((X_train, ndf['Clusters']), axis=1)
+        fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange',6:'gray',7:'black',8:'pink',9:'purple',10:'violet'}
+        km_colors = [fte_colors[label] for label in pca_model.labels_]
+        plt.scatter(PCA_components[0], PCA_components[1], c=km_colors)
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title(analysis_model + ' Clustering with 2 PCAs')
+    elif clustering_plot == 'PCA: 3D plot':
+        reduced_data = PCA(n_components=3).fit_transform(scaled_data) 
+        PCA_components = pd.DataFrame(reduced_data)
+        pca_model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
+        pred = pca_model.fit(PCA_components.iloc[:,:3])
+        labels = pca_model.predict(PCA_components.iloc[:,:3])
+        ndf['Clusters'] = pd.DataFrame(pred.labels_)
+        count_val = ndf['Clusters'].value_counts()
+        para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")        
+        labeledData = pd.concat((X_train, ndf['Clusters']), axis=1)
+        fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange',6:'gray',7:'black',8:'pink',9:'purple',10:'violet'}
+        km_colors = [fte_colors[label] for label in pca_model.labels_]
+        fig = plt.figure(1, figsize=(4, 3))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(PCA_components[0],PCA_components[1],PCA_components[2],c=km_colors)
+        ax.set_xlabel("PC1")
+        ax.set_ylabel("PC2")
+        ax.set_zlabel("PC3")
+        plt.title(analysis_model + ' Clustering with 3 PCAs')
+    elif clustering_plot == 'all attributes: 2D plot':
+        model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
+        pred = model.fit(scaled_data)
         df['Clusters'] = pd.DataFrame(pred.labels_)
-        print("Clusters====",df['Clusters'])
-        print(df['Clusters'].value_counts())
         count_val = df['Clusters'].value_counts()
         para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")
         labeledData = pd.concat((X_train, df['Clusters']), axis=1)
-        print('labeledData=', labeledData)
+        sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
+    elif clustering_plot == 'three attributes: 3D plot':
+        model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
+        pred = model.fit(scaled_data)
+        ndf['Clusters'] = pd.DataFrame(pred.labels_)
+        count_val = ndf['Clusters'].value_counts()
+        para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")        
+        labeledData = pd.concat((X_train, ndf['Clusters']), axis=1)
+        fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange',6:'gray',7:'black'}
+        km_colors = [fte_colors[label] for label in model.labels_]
+        fig = plt.figure(1, figsize=(4, 3))
+        ax = fig.add_subplot(111, projection='3d')
+        labels = model.labels_
+        print('scaled_data= ',scaled_data)
+        x=[row[0] for row in scaled_data]
+        y=[row[1] for row in scaled_data]
+        z=[row[2] for row in scaled_data]
+        ax.scatter(x,y,z,c=km_colors)
+        ax.set_xlabel(finalVar[0])
+        ax.set_ylabel(finalVar[1])
+        ax.set_zlabel(finalVar[2])
 
-        plt.figure(figsize=(fig_len,fig_wid), dpi=200) 
-        if scoring == 'pca':
-            X = pca_df    # question here: should DO PCA on feature engneering???
-            print("X1=", X)
-            X['Clusters'] = model.fit_predict(X)
-            print("X2=", X)
-            sns.scatterplot(x="PC1", y="PC2", hue=X['Clusters'], data=pca_df)
-            plt.title(tech + 'Clustering with 2 dimensions')
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
-        elif scoring == 'pair':
-            sns.pairplot(labeledData, hue='Clusters')
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
-        elif scoring == 'scatter':
-            sns.scatterplot(x=scatterX_kmeans, y=scatterY_kmeans, hue='Clusters', data=labeledData)
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
-        elif scoring == 'inertia':
-            para_result += '\nInertia -- The Lowest SSE value: \n' + str(model.inertia_)
-        elif scoring == 'centroid':
-            para_result += '\nFind Locations of Centroid: \n' + str(model.cluster_centers_)
-        elif scoring == 'number of iterations':
-            para_result += '\nThe Number of Iterations Required to Converge: ' + str(model.n_iter_)
-        elif scoring == 'silhouette':
-            print(list(df.columns).index(scatterX_kmeans))
-            print(list(df.columns))
-            scaler = StandardScaler()
-            scaled_features = scaler.fit_transform(df[finalVar])
-            kmeans_silhouette = silhouette_score(scaled_features, model.labels_).round(2)
-            # Plot the data and cluster silhouette comparison
-            fig, ax1 = plt.subplots(1, 1, figsize=(8, 6), sharex=True, sharey=True)
-            fig.suptitle(f"Clustering Algorithm: Crescents", fontsize=16)
-            fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange'}
-             # The k-means plot
-            km_colors = [fte_colors[label] for label in model.labels_]
-            ax1.scatter(scaled_features[:, list(df.columns).index(scatterX_kmeans)-1], scaled_features[:, list(df.columns).index(scatterY_kmeans)-1], c=km_colors)
-            ax1.set_title(f"k-means\nSilhouette: {kmeans_silhouette}", fontdict={"fontsize": 12})
-            ax1.set_xlabel(scatterX_kmeans)
-            ax1.set_ylabel(scatterY_kmeans)
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
+    if metric == 'inertia':
+        para_result += '\nInertia -- The Lowest SSE value: \n' + str(model.inertia_)
+    elif metric == 'centroid':
+        para_result += '\nFind Locations of Centroid: \n' + str(model.cluster_centers_)
+    elif metric == 'number of iterations':
+        para_result += '\nThe Number of Iterations Required to Converge: ' + str(model.n_iter_)
+    elif metric == 'silhouette':
+        kmeans_silhouette = silhouette_score(scaled_data, model.labels_).round(2)
+        para_result += 'nSilhouette: ' + str(kmeans_silhouette)
+
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    # para_result += labeledData.to_html(classes='table table-striped" id = "temp_table', index=False, border=0)
+
+    return jsonify(data=labeledData.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
-    print("models=", models)
-    return jsonify(df_sorted=labeledData.to_json(orient="values"), prep_f=cond, result=para_result, prep_col=list(labeledData.columns), plot_url=plotUrl) #final_Var=finalVar,
+@app.route('/analysis/associate_rule', methods=['POST']) # regression
+@cross_origin()
+@jwt_required()
+def cond_associateRule_json():
+    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+    print(params)
+    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    analysis_model = params['analysis_model']
+    metric = params['metric'] if 'metric' in params else 'Classification Report'
+    transid = params['trans_id']
+    transitem = params['trans_item']
+    
+    params_support_min_thresh = float(params['params_support_min_thresh']) if ('params_support_min_thresh' in params) and (params['params_support_min_thresh']) else 0.1
+    params_lift_min_thresh = float(params['params_lift_min_thresh']) if ('params_lift_min_thresh' in params) and (params['params_lift_min_thresh']) else 1.0
+    params_confidence_min_thresh = float(params['params_confidence_min_thresh']) if ('params_confidence_min_thresh' in params) and (params['params_confidence_min_thresh']) else 0.5
+    params_antecedent_len = int(params['params_antecedent_len']) if ('params_antecedent_len' in params) and (params['params_antecedent_len']) else 1
+    print(params_support_min_thresh, params_lift_min_thresh, params_confidence_min_thresh)
+    # params_min_support = float(params['params_min_support']) if ('params_min_support' in params) and (params['params_min_support']) else 0.5
+    # params_metric = params['params_metric'] if 'params_metric' in params else 'confidence'
+    # params_min_threshold = float(params['params_min_threshold']) if ('params_min_threshold' in params) and (params['params_min_threshold'])  else 0.8
+    params_use_colnames = bool(params['params_use_colnames']) if 'params_use_colnames' in params else True
+    params_max_len = int(params['params_max_len']) if 'params_max_len' in params else None
+    param_specific_item = params['param_specific_item'] if 'param_specific_item' in params else None
+    metrics_apriori = params['metrics_apriori'] if 'metrics_apriori' in params else '5.Association Rules: list all items'
+    # cond += "\nSupport Itemsets:\nSet Parameters: min_support=" + str(params_support_min_thresh) + ", use_colnames=" + str(params_use_colnames) + ", max_len=" + str(params_max_len)
+    cond += "\n\nAssociation Rules:\nSet Parameters: support_min_threshold=" + str(params_support_min_thresh) + ", lift_min_threshold=" + str(params_lift_min_thresh) + ", confidence_min_threshold=" + str(params_confidence_min_thresh)
+    # print('metrics_apriori====', metrics_apriori)
+    ndf['Quantity']= 1
+    # print("ndf = ", ndf.head(10))
+    basket_data = ndf.groupby([transid, transitem])['Quantity'].sum().unstack().fillna(0)
+    def encode_units(x):
+        if x <= 0:
+            return 0
+        if x >= 1:
+            return 1
+    basket_sets = basket_data.applymap(encode_units)
+    print('basket_sets=', basket_sets)
+    frequent_itemsets = apriori(basket_sets, min_support=params_support_min_thresh, use_colnames=params_use_colnames)
+    print(frequent_itemsets)
+    rules = association_rules(frequent_itemsets, metric='support', min_threshold=params_support_min_thresh)
+    rules["antecedent_length"] = rules["antecedents"].apply(lambda x: len(x))
+    rules = rules[ (rules['antecedent_length'] >= params_antecedent_len) & (rules['confidence'] > params_confidence_min_thresh) & (rules['lift'] > params_lift_min_thresh) ]
+    print(rules)
+    if param_specific_item:
+        para_result = "\nAssociate Rule for Specific Item"
+        frequent_itemsets = frequent_itemsets[frequent_itemsets['itemsets'].astype(str).str.contains(param_specific_item)]
+        rules = rules[(rules['consequents'].astype(str).str.contains(param_specific_item)) | (rules['antecedents'].astype(str).str.contains(param_specific_item))]        
+
+    if metrics_apriori == '1.Transaction Format Table':
+        print("inside metrics_apriori")
+        para_result = "\nConvert to Transaction Format:\n"
+        para_result += basket_sets.to_html()
+    elif metrics_apriori in ['2.Support Itemsets: list all items', '3.Support Itemsets: list specified items']:
+        para_result = "\nSupport Itemsets:\n"
+        para_result += frequent_itemsets.to_html()
+    elif metrics_apriori == '4.Support Itemsets: list the most popular items':
+        para_result = "\nThe Most Popular Items:\n"
+        frequent_itemsets = frequent_itemsets.sort_values('support', ascending=False).head()
+        para_result += frequent_itemsets.to_html()
+    elif metrics_apriori in ['5.Association Rules: list all items', '6.Association Rules: list specified items']:
+        para_result = "\nAssociation Rules:\n"
+        para_result += rules.to_html()
+   
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
 if __name__ == '__main__':

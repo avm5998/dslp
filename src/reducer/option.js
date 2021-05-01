@@ -8,6 +8,7 @@ const DEFAULT_OPTION = {
         regression:{},
         classification:{},
         clustering:{},
+        associate_rule:{},
     }
 }
 
