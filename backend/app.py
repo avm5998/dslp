@@ -513,12 +513,13 @@ def _clearCache(uid,name,modified = True):
 # if no modified version is found, return a copy of the original one
 # normally, **ALL** operations are performed on the **modified** version
 def _getCache(uid,name,modified = True):
-    key = str(uid)+'_'+name
     df = None
     copyModified = False
 
     if modified:
-        df = cache.get(EditedPrefix + name)
+        name = EditedPrefix + name
+        key = str(uid)+'_'+name
+        df = cache.get(key)
         if df is None:
             copyModified = True
 
@@ -529,7 +530,7 @@ def _getCache(uid,name,modified = True):
             if not details:
                 return None
             df = pd.read_csv(StringIO(details['content'].decode('utf8')))
-            _setCache(uid,key,df,modified = False)
+            _setCache(uid,name,df,modified = False)
 
     if copyModified:
         df = df.copy(deep = True)
