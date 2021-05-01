@@ -669,7 +669,8 @@ def handleCachedData():
     ndf = _getCache(user_id,filename)
 
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf if ndf is not None else df)
-    return jsonify(modifiedJson = ndf.to_json(),dataJson = df.to_json(),
+    dfJSON = df.to_json()
+    return jsonify(modifiedJson = ndf.to_json() if ndf else dfJSON,dataJson = dfJSON,
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
 
