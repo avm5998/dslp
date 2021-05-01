@@ -306,14 +306,19 @@ const Home = (props) => {
             selectFileOption(name, false);
           }
         }))} />
-        <Button text='Revert data' disabled={false} onClick={()=>{
+        <Button text='Revert data' disabled={false} onClick={async ()=>{
           if(dataset.filename){
-            fetchByJSON('cleanEditedCache',{
+            let res = await fetchByJSON('cleanEditedCache',{
               filename:dataset.filename
             })
 
-            dispatch(DataSetActions.emptyInfo())
-            selectFileOption(dataset.filename, false)
+            let json = await res.json()
+
+            if(json.success){
+              alert('Revert data success!')
+              dispatch(DataSetActions.emptyInfo())
+              selectFileOption(dataset.filename, false)
+            }
           }
         }} customStyle='h-10 w-72 my-4 revert' hasPadding={false}/>
 

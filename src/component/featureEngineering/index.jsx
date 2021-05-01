@@ -4,11 +4,13 @@ import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
-import { Checkbox, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
+import { Checkbox, Label, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
-import Tip from '../common/tip'
+// import Tip from '../common/tip'
+import { InlineTip } from '../common/tip'
 
-const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler'];
+
+const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; //, 'Add New Features'
 const getCanOperation = (dataset, operationIndex)=>{
     switch(operationIndex){
         case 0:
@@ -37,18 +39,30 @@ const FeatureEngineering = () => {
     let dataset = useSelector(state => state.dataset)
     let dispatch = useDispatch()
 
-    let {result,checkbox : checkbox2,input : input2,getData,clearData} = useSimpleForm()
+    let {result,checkbox : checkbox2, input : input2,getData,clearData} = useSimpleForm()
     // let {result,getData,clearData} = useSimpleForm()
+    let [isTsv, setIsTsv] = useState(0)
+
+    useEffect(()=>{
+        let extension = dataset.filename.substr(dataset.filename.lastIndexOf('.')+1)
+        if(extension === 'tsv'){
+            setIsTsv(1)
+        }
+    },[])
 
     useEffect(()=>{
         clearData()
         result.activeOption = option
-        if(option == 0){
-            result.cols = []
-        }
+        result.cols = {}
+        // if(option == 0){
+        //     result.cols = {}
+        // }
     },[option])
 
     console.log(result);
+
+    let ts = new Date().getTime()
+
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showOptionModal} onClose={()=>{
         }} setIsOpen={setShowOptionModal} contentStyleText="mx-auto mt-20">
@@ -56,11 +70,11 @@ const FeatureEngineering = () => {
                 {option === 0 ?
                     <div className="flex flex-col">
                         {dataset.cate_cols.map(name =>
-                            <div className='flex flex-row w-full items-center' key={name}>
+                            <div className='flex flex-row w-full items-center' key={name+ts}>
                                 <div className='px-10 py-2 w-1/3 label-left'>{name + ':'}</div>
                                 <DropDown onSelect={e=>{
-                                    result.cols.push([name,e])
-                                }} defaultText={`Select convert type`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['No change', 'to lowercase', 'To UpperCase']} />
+                                    result.cols[name] = e
+                                }} defaultText={`Select convert type`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['no change', 'to lowercase', 'to uppercase']} />
                             </div>
                         )}
                     </div>
@@ -70,12 +84,17 @@ const FeatureEngineering = () => {
                     <MultiSelect defaultText={`Select columns to convert`} defaultOpen={false} selections={dataset.cate_cols}  customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" onSelect={e=>result.cols = e} />
                 </div> : ''}
 
-                {option ==  2 ? <div className='grid grid-cols-3'>
+                {option ==  2 ? 
+                <div className='grid grid-cols-3'>
                     {dataset.num_cols.map((col,i)=><React.Fragment key={i}>
                         <Checkbox {...checkbox2} label={col} name='suboption_checked' item={col}/>
-                        <input {...input2} className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins' name={col+'_Bins'}/>
-                        <input {...input2} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Labels' name={col+'_Labels'}/>
+                        <input {...input2} className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins: int list' name={col+'_Bins'}/>
+                        <input {...input2} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Labels: string list' name={col+'_Labels'}/>
                     </React.Fragment>)}
+                    <Label text=''></Label>
+                    <Label customStyle={`w-100 mr-0`} customUlStyle="w-100 mr-0" text="eg. column 'Age', Bins=[0,2,17,65,99], Labels=[Toddler, Child, Adult, Elderly]"/>
+                    <Label customStyle={`w-100 mr-0`} customUlStyle="w-100 mr-0" text="eg. column 'Survived', Bins=[0,1,2], Labels=[Yes, No]"/>
+
                 </div> : ''}
 
                 {option === 3 ? <div>
@@ -87,9 +106,50 @@ const FeatureEngineering = () => {
                     <MultiSelect customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" defaultText={`Select columns to convert`} selections={dataset.num_cols} onSelect={e=>result.cols = e} />
                 </div> : ''}
 
+                {option === 5 ?
+                    <div className="flex flex-col">
+                        <DropDown defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['CountVectorizer', 'TfidfVectorizer']} 
+                    onSelect={e => {
+                        result.text_data_feat_model = e
+                    } 
+                }/>
+
+                        {/* {dataset.cate_cols.map(name =>
+                            <div className='flex flex-row w-full items-center' key={name}>
+                                <div className='px-10 py-2 w-1/3 label-left'>{name + ':'}</div>
+                                <DropDown onSelect={e=>{
+                                    result.cols.push([name,e])
+                                }} defaultText={`Select Model`} showOnHover={false} customStyle="w-60 mr-0" customUlStyle="w-60 mr-0" items={['No change', 'to lowercase', 'To UpperCase']} />
+                            </div>
+                        )} */}
+                    </div>
+                    : ''}
+
                 <div className="flex justify-end m-3 mt-10">
-                    <Button text='Confirm' customStyle='h-6 w-24 py-1' onClick={()=>{
+                    <Button text='Confirm' customStyle='h-6 w-24 py-1' onClick={async ()=>{
+                        // console.log(typeof setShowOptionModal)
                         setShowOptionModal(false)
+                        if(!canOperation){
+                            alert(errorMsg)
+                        }else{
+                            let data = getData()
+                            let colarr = []
+                            for(let k in data.cols){
+                                colarr.push([k,data.cols[k]])
+                            }
+                            data.cols = colarr
+                            console.log(data);
+                            let res = await fetchByJSON('featureEngineering',{...data, filename:dataset.filename}) //send request
+                            let json = await res.json()
+                            dispatch(DataSetActions.setData({
+                                cols: json.cols,
+                                num_cols: json.num_cols,
+                                cate_cols: json.cate_cols,
+                            }))
+                            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+                        
+                            
+                        }
                     }}/>
                 </div>
             </div>
@@ -97,7 +157,8 @@ const FeatureEngineering = () => {
         <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
             <div className='mx-5 w-8/12 flex justify-start'>
                 <div className='w-72'>
-                    <DropDown text={optionText} customStyle={'h-8 py-1 w-72'} customUlStyle={'w-72'} items={
+                {/* ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; */}
+                    <DropDown enabledOptionIndex={isTsv?[5]:[0,1,2,3,4,5]} text={optionText} customStyle={'h-8 py-1 w-72'} customUlStyle={'w-72'} items={
                         Options.map((item, i) => ({
                             name: item, onClick(e) {
                                 let [canop,errorMsg] = getCanOperation(dataset, i)
@@ -113,18 +174,8 @@ const FeatureEngineering = () => {
                 </div>
                 <Button text={'Options'} disabled={!canOperation} customStyle={'h-6 w-48 ml-10 py-1'} onClick={()=>{
                     if(option>-1){
+                        result.cols = {}
                         setShowOptionModal(true)
-                    }
-                }}/>
-
-                <Button text={'Confirm'} customStyle={'h-6 w-48 ml-10 py-1'} onClick={()=>{
-                    if(!canOperation){
-                        alert(errorMsg)
-                    }else{
-                        console.log(getData());
-                        // let res = await fetchByJSON('feature_engineering',getData())
-                        // let json = await res.json()
-
                     }
                 }}/>
             </div>

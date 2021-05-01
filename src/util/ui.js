@@ -119,8 +119,11 @@ export const DropDownInput = forwardRef(({
     </div>)
 })
 
-export function Label({ pos = 'left', text = '', customStyle = '', children = '' }) {
-    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
+export function Label({ pos = 'left', text = '', customStyle = '', children = '', childrenPosition = 1 }) {
+    if(childrenPosition)
+        return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
+    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{children}<p>{text}</p></div>)
+
 }
 
 export function Button({
@@ -247,6 +250,7 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
 export const DropDown = forwardRef(({
     id,
     text,
+    enabledOptionIndex = undefined,
     defaultText = undefined,
     defaultValue = undefined,
     items = [],
