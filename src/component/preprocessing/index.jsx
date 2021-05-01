@@ -65,10 +65,11 @@ const Preprocessing = () => {
     }, [])
 
     const onConfirm = async (e) => {
-        let requestData = null
-        eval(`requestData = getData${option}()`)
+        let requestData = {}
+        if(option!==0)
+            eval(`requestData = getData${option}()`)
         console.log(requestData)
-        let res = await fetchByJSON('preprocessing', {...requestData, filename:dataset.filename})
+        let res = await fetchByJSON('preprocessing', {...requestData,option, filename:dataset.filename})
         let json = await res.json()
         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
         $('#display_cond').text(json.cond)
@@ -80,7 +81,7 @@ const Preprocessing = () => {
 
     let currentOption = subOption.current[option]
     let {select : select1,getData: getData1} = useSimpleForm()
-    let {select : select2,getData: getData2} = useSimpleForm()
+    let {select : select2,getData: getData2,result:result2} = useSimpleForm()
     // let {select : select3,getData: getData3} = useSimpleForm()
     let {input : input3,getData: getData3} = useSimpleForm()
     let {input : input4,getData: getData4} = useSimpleForm()
@@ -118,9 +119,9 @@ const Preprocessing = () => {
                     </React.Fragment>)}
                 </div> : ''}
 
-                {option === 2 ? <div className='grid grid-cols-2'>
+                {option === 2 ? <div className='grid grid-cols-1'>
                     <MultiSelect selections={dataset.cols} onSelect={(e) => {
-                        setSubOption(option, subOption, e)
+                        result2.cols = e
                     }} />
                 </div> : ''}
 
