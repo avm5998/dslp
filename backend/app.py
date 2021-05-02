@@ -119,8 +119,8 @@ mongo_collection = mongo_db["files"]
 user_collection = mongo_db["user"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
-# DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
-DEFAULT_FILES = []
+DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv', 'amazon_alexa_text.csv']
+# DEFAULT_FILES = []
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 EditedPrefix = '__EDITED___'
@@ -630,7 +630,12 @@ def _getCache(uid,name,modified = True):
         if df is None:
             details = mongo_collection.find_one({"file_name": name,"user_id":uid})
             if not details:
-                return None
+                if name in DEFAULT_FILES:
+                    details = mongo_collection.find_one({"file_name": name,"user_id":ObjectId(b"awesomeadmin")})
+                    if not details:
+                        return None
+                else:
+                    return None
             df = pd.read_csv(StringIO(details['content'].decode('utf8')))
             _setCache(uid,name,df,modified = False)
 
