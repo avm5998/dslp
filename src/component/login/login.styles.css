@@ -121,8 +121,27 @@
   h1{
     color: black;
   }
+
   .alert-danger, .alert-success{
     padding: 2px 5px;
     margin-top: 5px;
     font-size: smaller;
+    background-color:#d3e0ea;
+
   }
+  .form-control {
+    width: 100%;
+  }
+
+
+  .login-button{
+    background-color:#276678;
+    color: #f6f5f5 ;
+
+}
+.login-button:hover{
+    background-color:#d3e0ea  ;
+    color:#276678 
+}
+
+

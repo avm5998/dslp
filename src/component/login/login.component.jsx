@@ -1,4 +1,4 @@
-// import 'bootstrap/dist/css/bootstrap.css'
+// import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from 'react-router-dom';
@@ -70,7 +70,7 @@ const Login = (props) => {
   }
 
   return (
-    <div className="form-signin flex flex-col justifyy-center">
+    <div className="form-signin flex flex-col justify-center">
 
       <div className="card card-container">
         <img
@@ -109,7 +109,7 @@ const Login = (props) => {
             </div>
 
             
-              <button className="w-auto btn btn-lg btn-primary btn-block col-span-2" disabled={loading}>
+              <button className="w-auto login-button col-span-2" disabled={loading}>
                 {loading && (
                   <span className="spinner-border spinner-border-sm"></span>
                 )}
