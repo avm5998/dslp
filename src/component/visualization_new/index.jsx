@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, MultiSelect, Modal, Checkbox, DropDownInput, Input } from '../../util/ui'
+import { Label, Button, DropDown, Modal, Checkbox, DropDownInput, Input } from '../../util/ui'
+import { MultiSelect } from '../../util/ui_components'
 
 import { useDispatch, useSelector } from 'react-redux';
 import { loadScript, useSimpleForm, useToggleGroup,fetchByJSON,useCachedData } from '../../util/util'
@@ -44,7 +45,6 @@ const Functions = [
     'Comparisons',
     'Proportions',
     'Relationships',
-    'Comparisons',
     '3D'
 ]
 
@@ -136,7 +136,14 @@ export default function(){
 
     const setPlotsByFunctions = useCallback((functions) => {
         if (!functions || functions.length === 0) {
-            setPlots(Object.keys(PLOTS))
+            let filteredPLOTS = Object.keys(PLOTS).filter(p=>{
+                for(let ff of functions){
+                    for(let cf of  p.function)
+                        if (ff == cf) return 1
+                }
+                return 0
+            })
+            setPlots(Object.keys(filteredPLOTS))
             return
         }
 
