@@ -13,9 +13,14 @@ const DataLists = {
 export default function ({ dataset, result, submit, visibleTabs }) {
     let [activeTab, setActiveTab] = useState(0)
     let option = useSelector(state=>state.option).analysis.classification['Logistic Regression'] || {}
+    let [isTsv, setIsTsv] = useState(0)
 
     useEffect(()=>{
         setActiveTab(visibleTabs[0])
+        let extension = dataset.filename.substr(dataset.filename.lastIndexOf('.')+1)
+        if(extension === 'tsv'){
+            setIsTsv(1)
+        }
     },[visibleTabs])
 
     return (
@@ -29,6 +34,13 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
+                    {/* how to make it hidden  */}
+                <Label customStyle={``} text='Select Extract Model:' ><InlineTip info="Select one extraction model for text data"/></Label>
+                <DropDown defaultText={'Select model'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['CountVectorizer', 'TfidfVectorizer']} 
+                        onSelect={e => {
+                            result.text_data_feat_model = e
+                        }}/>
+
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
                 <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
@@ -82,7 +94,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             }}>
             </div>
             <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '10vw 1fr 10vw 1fr'
+                gridTemplateColumns: '5vw 1fr 5vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
                     <Checkbox label={col} name='suboption_checked' item={col}/>
@@ -90,6 +102,8 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                             result['Logistic Regression'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 
                 </React.Fragment>)}
+                <Label text='Note:'/>
+                <Label text="The Target Column: ">{result.finalY}</Label>
             </div>
             
             <div className='flex justify-end'>

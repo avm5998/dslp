@@ -24,11 +24,17 @@ from sklearn.svm import SVR, SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
-# from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics import confusion_matrix, roc_curve, mean_squared_error, r2_score, classification_report, plot_roc_curve, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
 from mlxtend.frequent_patterns import apriori, association_rules 
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from wordcloud import WordCloud
+from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 
 # import cv2
 
@@ -72,7 +78,7 @@ from database.models import User
 #forgot password imports
 from threading import Thread
 from flask_mail import Message, Mail
-import datetime
+# import datetime
 from datetime import datetime, timedelta, timezone
 from jwt.exceptions import ExpiredSignatureError, DecodeError, \
     InvalidTokenError
@@ -416,7 +422,7 @@ def getDataFrameDetails(df):
     num_lists = {num:{
         'max':convertNaN(float(df[num].max())),
         'min':convertNaN(float(df[num].min())),
-        'distinct':format('%.2f'%(100*len(df[num].unique())/df[num].count()))+'%',
+        'distinct':format('%.2f'%(100*len(df[num].unique())/(df[num].count()+0.0001)))+'%',
         'mean':convertNaN(float(df[num].mean())),
         'count':convertNaN(float(df[num].count())),
         'dtype':str(df[num].dtype)
@@ -700,6 +706,7 @@ def cond_clean_json():
     user_id = get_jwt_identity()
     web = []
     params = request.json
+    print('params=', params)
     filename = params['filename']
     cleaners = json.loads(params['cleaners'])
     df = _getCache(user_id, filename)
@@ -716,21 +723,21 @@ def cond_clean_json():
         # 5 Remove Outliers 
         if option == 0:
             ndf = ndf.dropna(axis=0)
-        elif option == 1:
+        if option == 1:
             ndf = ndf.dropna(axis=1)
-        elif option == 2:
+        if option == 2:
             condition = cleaner['condition']
             for col in condition['cols']:
                 ndf[col].fillna(ndf[col].astype(float).mean(), inplace=True)
-        elif option == 3:
+        if option == 3:
             condition = cleaner['condition']
             for col in condition['cols']:
                 ndf[col].fillna(ndf[col].astype(float).median(), inplace=True)
-        elif option == 4:
+        if option == 4:
             condition = cleaner['condition']
             for item in condition['items']:
                 ndf[item['col']].fillna(item['val'], inplace=True)
-        elif option == 5:
+        if option == 5:
             condition = cleaner['condition']
             for item in condition['items']:
                 ndf[item['col']] =  ndf[item['col']].astype(float)
@@ -744,6 +751,7 @@ def cond_clean_json():
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 
     cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists)
+
 
 @app.route('/current_data_json', methods=['POST']) #/query
 @cross_origin('*')
@@ -768,66 +776,202 @@ def cond_eng_json():
     # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
-    msg = ''
-    success = True
-
+    para_result = ''
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    img = BytesIO()
+    plt.figure(figsize=(20,20))
     option = params['activeOption']
     print("option=", option)
 
-    try:
-        if option == 0:
-            cols = params['cols']
-            print("cols=", cols)
-            for col,ctype in cols:
-                print('col,ctype=', col,ctype)
-                if ctype == 'to lowercase':
-                    ndf[col] = ndf[col].astype(str).str.lower()
-                elif ctype == 'to uppercase':
-                    ndf[col] = ndf[col].astype(str).str.upper()
-            print(ndf.head())
+    if option == 0:
+        cols = params['cols']
+        print("cols=", cols)
+        for col,ctype in cols:
+            print('col,ctype=', col,ctype)
+            if ctype == 'to lowercase':
+                ndf[col] = ndf[col].astype(str).str.lower()
+            elif ctype == 'to uppercase':
+                ndf[col] = ndf[col].astype(str).str.upper()
+        print(ndf.head())
 
-        elif option == 1:
-            cols = params['cols']
-            print("cols1-=", cols)
-            for index, col in cols:
-                label = LabelEncoder()
-                ndf[col] = label.fit_transform(ndf[col].astype(str))
-        elif option == 2:
-            suboption_checked = params['suboption_checked']
-            print('suboption_checked 2= ', suboption_checked)
-            for col in suboption_checked:
-                col_bins = params[col+'_'+'Bins']
-                col_labels = params[col+'_'+'Labels']
-                ndf[col] = pd.cut(ndf[col].astype(float), bins=list(col_bins.split(",")), labels=list(col_labels.split(",")))
-        elif option == 3:
-            cols = params['cols']
-            print("col3=", cols)
-            print('df', ndf.head())
-            stand_scaler_col=[]
-            for index, col in cols:
-                stand_scaler_col.append(col)
-            print('stand_scaler_col= ', stand_scaler_col)
-            scaler = StandardScaler()
-            ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
-            print(ndf.head())
-        elif option == 4:
-            cols = params['cols']
-            print("cols4=", cols)
-            stand_scaler_col=[]
-            for index, col in cols:
-                stand_scaler_col.append(col)
-            scaler = MinMaxScaler()
-            ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
-    except:
-        success = False
+    elif option == 1:
+        cols = params['cols']
+        print("cols1-=", cols)
+        for index, col in cols:
+            label = LabelEncoder()
+            ndf[col] = label.fit_transform(ndf[col].astype(str))
+    elif option == 2:
+        suboption_checked = params['suboption_checked']
+        print('suboption_checked 2= ', suboption_checked)
+        for col in suboption_checked:
+            col_bins = params[col+'_'+'Bins']
+            col_labels = params[col+'_'+'Labels']
+            ndf[col] = pd.cut(ndf[col].astype(float), bins=list(col_bins.split(",")), labels=list(col_labels.split(",")))
+    elif option == 3:
+        col1_arithmetic = params['col1_arithmetic']
+        operation = params['operation']
+        col2_arithmetic = params['col2_arithmetic']
+        new_colname = params['new_colname']
+        if operation == '+':
+            ndf[new_colname] = ndf[col1_arithmetic] + ndf[col2_arithmetic]
+        elif operation == '-':
+            ndf[new_colname] = ndf[col1_arithmetic] - ndf[col2_arithmetic]
+        elif operation == '*':
+            ndf[new_colname] = ndf[col1_arithmetic] * ndf[col2_arithmetic]
+        elif operation == '/':
+            ndf[new_colname] = ndf[col1_arithmetic] / ndf[col2_arithmetic]
+    elif option == 4:
+        cols = params['cols']
+        print("col3=", cols)
+        print('df', ndf.head())
+        stand_scaler_col=[]
+        for index, col in cols:
+            stand_scaler_col.append(col)
+        print('stand_scaler_col= ', stand_scaler_col)
+        scaler = StandardScaler()
+        ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
+        print(ndf.head())
+    elif option == 5:
+        cols = params['cols']
+        print("cols4=", cols)
+        stand_scaler_col=[]
+        for index, col in cols:
+            stand_scaler_col.append(col)
+        scaler = MinMaxScaler()
+        ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
+    elif option == 6:
+        basic_col = params['check_basic_col']
+        basic_operation = params['basic_operation']
+        if basic_operation == 'check most common words':
+            all_words=[]
+            for msg in df[basic_col]:
+                words=word_tokenize(msg)
+                for w in words:
+                    all_words.append(w)
+            #Frequency of Most Common Words
+            frequency_dist=nltk.FreqDist(all_words)
+            para_result += '\nMost Common Words(100): \n'+  "\n".join(['%s : %s' % (key, str(value)) for key, value in frequency_dist.most_common(100)])#'\n'.join(frequency_dist.most_common(100))
+            #Frequency Plot for first 100 most frequently occuring words
+            frequency_dist.plot(100,cumulative=False)
+            plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif basic_operation == 'visualize: wordcloud':
+            wc = WordCloud(width=1000, height=1000, background_color="black", max_words=2000, random_state=42, max_font_size=30)
+            wc.generate(' '.join(df[basic_col]))
+            plt.imshow(wc)
+            plt.axis("off")
+            plt.savefig(img, format='png',facecolor='k', bbox_inches='tight') #, bbox_inches='tight', plt.close(fig)
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif basic_operation == 'words count':
+            new_basic_col = basic_col + '_words_count'
+            ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len(str(x).split(" ")))
+        elif basic_operation == "charactures count":
+            new_basic_col = basic_col + '_charactures_count'
+            ndf[new_basic_col] = ndf[basic_col].apply(len)
+        elif basic_operation == "average word length":
+            def avg_word(sentence):
+                words = sentence.split()
+                return (sum(len(word) for word in words)/len(words)) if len(words)!=0 else 0
+            new_basic_col = basic_col + '_average_word_length'
+            ndf[new_basic_col] = ndf[basic_col].apply(lambda x: avg_word(x))
+        elif basic_operation == "stopwords count":
+            stop = stopwords.words('english')
+            new_basic_col = basic_col + '_stopwords_count'
+            ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len([x for x in x.split() if x in stop]))
+        elif basic_operation == "numbers count":
+            new_basic_col = basic_col + '_numbers_count'
+            ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len([x for x in x.split() if x.isdigit()]))
+        elif basic_operation == "uppercase count":
+            new_basic_col = basic_col + '_uppercase_count'
+            ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len([x for x in x.split() if x.isupper()]))
+
+    elif option == 7:
+        suboption_checked_text = params['suboption_checked_text']
+        for col in suboption_checked_text:
+            col_currVal = params[col+'_CurrVal']
+            new_colname = params[col+'_NewCol']
+            col_newVal = params[col+'_NewVal']
+            new_feat_assigns = {}
+            col_currVal_list = col_currVal.split(',')
+            col_newVal_list = col_newVal.split(',')
+            for uniq_val, new_label in zip(col_currVal_list, col_newVal_list):
+                new_feat_assigns[uniq_val] = new_label
+            ndf[new_colname] = ndf[col].apply(lambda x: new_feat_assigns.get[x])
+    elif option == 8:
+        text_feateng_col = params['text_feateng_col']
+        text_feateng_option = params['text_feateng_operation']
+        if 'convert to lower case' in text_feateng_option:
+            ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(x.lower() for x in x.split()))
+        if 'expand contraction' in text_feateng_option:
+            print('contraction------')
+            # Dictionary of English Contractions
+            contractions_dict = { "ain't": "are not","'s":" is","aren't": "are not",
+                        "can't": "cannot","can't've": "cannot have",
+                        "'cause": "because","could've": "could have","couldn't": "could not",
+                        "couldn't've": "could not have", "didn't": "did not","doesn't": "does not",
+                        "don't": "do not","hadn't": "had not","hadn't've": "had not have",
+                        "hasn't": "has not","haven't": "have not","he'd": "he would",
+                        "he'd've": "he would have","he'll": "he will", "he'll've": "he will have",
+                        "how'd": "how did","how'd'y": "how do you","how'll": "how will",
+                        "I'd": "I would", "i'd": "i would","I'd've": "I would have", "i'd've": "i would have",
+                        "I'll": "I will", "i'll": "i will", "i'll've": "i will have","i'm": "i am",
+                        "I'll've": "I will have","I'm": "I am", "I've": "I have", "i've": "i have", "isn't": "is not",
+                        "it'd": "it would","it'd've": "it would have","it'll": "it will", "it's": "it is",
+                        "it'll've": "it will have", "let's": "let us","ma'am": "madam",
+                        "mayn't": "may not","might've": "might have","mightn't": "might not", 
+                        "mightn't've": "might not have","must've": "must have","mustn't": "must not",
+                        "mustn't've": "must not have", "needn't": "need not",
+                        "needn't've": "need not have","o'clock": "of the clock","oughtn't": "ought not",
+                        "oughtn't've": "ought not have","shan't": "shall not","sha'n't": "shall not",
+                        "shan't've": "shall not have","she'd": "she would","she'd've": "she would have",
+                        "she'll": "she will", "she'll've": "she will have","should've": "should have",
+                        "shouldn't": "should not", "shouldn't've": "should not have", "so've": "so have",
+                        "that'd": "that would","that'd've": "that would have", "there'd": "there would",
+                        "there'd've": "there would have", "they'd": "they would",
+                        "they'd've": "they would have","they'll": "they will",
+                        "they'll've": "they will have", "they're": "they are","they've": "they have",
+                        "to've": "to have","wasn't": "was not","we'd": "we would",
+                        "we'd've": "we would have","we'll": "we will","we'll've": "we will have",
+                        "we're": "we are","we've": "we have", "weren't": "were not","what'll": "what will",
+                        "what'll've": "what will have","what're": "what are", "what've": "what have",
+                        "when've": "when have","where'd": "where did", "where've": "where have",
+                        "who'll": "who will","who'll've": "who will have","who've": "who have",
+                        "why've": "why have","will've": "will have","won't": "will not",
+                        "won't've": "will not have", "would've": "would have","wouldn't": "would not",
+                        "wouldn't've": "would not have","y'all": "you all", "y'all'd": "you all would",
+                        "y'all'd've": "you all would have","y'all're": "you all are",
+                        "y'all've": "you all have", "you'd": "you would","you'd've": "you would have",
+                        "you'll": "you will","you'll've": "you will have", "you're": "you are",
+                        "you've": "you have"}
+            contractions_re = re.compile('(%s)' % '|'.join(contractions_dict.keys()))
+            def expand_contractions(text,contractions_dict=contractions_dict):
+                def replace(match):
+                    return contractions_dict[match.group(0)]
+                return contractions_re.sub(replace, text)
+            ndf[text_feateng_col]=ndf[text_feateng_col].apply(lambda x:expand_contractions(x))
+        if 'remove punctuation' in text_feateng_option:
+            ndf[text_feateng_col] = ndf[text_feateng_col].str.replace('[^\w\s]','')
+        if 'remove stopwords automatically' in text_feateng_option:
+            stop = stopwords.words('english')
+            ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(x for x in x.split() if x not in stop))
+        if 'remove digits' in text_feateng_option:
+            ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ''.join([i for i in x if not i.isdigit()]))
+        if 'lemmatization' in text_feateng_option:
+            lemma = WordNetLemmatizer()
+            ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ' '.join(lemma.lemmatize(term, pos="v") for term in x.split()))           
+        if 'stemming' in text_feateng_option:
+            ps=PorterStemmer()
+            ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ' '.join(ps.stem(term) for term in x.split()))           
 
     _setCache(user_id,filename,ndf)
-    print("ndf=====",ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf) # update num_col and cate_col
-    print('cate_cols= ',cate_cols)
-    print('num_cols=',num_cols)
-    return jsonify(data=ndf.to_json(), cols = cols, num_cols = num_cols, cate_cols = cate_cols)
-    # return jsonify(success=success, msg = msg, data = df.to_json())
+    return jsonify(data=ndf.to_json(), cols = cols, num_cols = num_cols, cate_cols = cate_cols, para_result=para_result, plot_url=plotUrl)
 
     
 @app.route('/feature_selection', methods=['POST'])
@@ -932,42 +1076,55 @@ def cond_preprocess_json():
     df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
     print('params= ', params)
-    convert_col, convert_type, rm_useless_col, rm_useless_val, rm_spec_col, rm_spec_val = [], [], [], [], [], []
+    target_col, target_operation = [], []
+    option = int(params['option'])
     for key, val in params.items():
-        if "_Convert" in key and val:
-            convert_col.append(key.split('_')[0])
-            convert_type.append(val)
-        elif "_Useless" in key and val:
-            rm_useless_col.append(key.split('_')[0])
-            rm_useless_val.append(val)
-        elif "_Specific" in key and val:
-            rm_spec_col.append(key.split('_')[0])
-            rm_spec_val.append(val)
-    if convert_col and convert_type: 
-        for index1, index2 in zip(convert_col, convert_type):
+        if val and key in ndf.columns:
+            target_col.append(key)
+            target_operation.append(val)
+    print('target_col, target_operation', target_col, target_operation)
+    if option == 0:
+        ndf = ndf.apply(pd.to_numeric, errors='ignore')
+        for i,k in zip(list(ndf.columns), ndf.dtypes):
+            para_result += "\n" + i + ": " + str(k)
+    elif option == 1:
+        for index1, index2 in zip(target_col, target_operation):
             cond += "\n" + str(index1) + ":  " + str(index2)
             print("index2==", index2)
             print("index1=", index1)
             if index2 in ['int64', 'float64']:
                 ndf[index1] = pd.to_numeric(ndf[index1], errors='coerce')
             elif index2 == 'datetime':
-                ndf[index1] = pd.to_datetime(ndf[index1])
-                # print(ndf.head(20))
-                # df[index1] = df[index1].dt.strftime('%Y-%m-%d')
-            elif index2 == ['string', 'bool', 'category']:
+                # ndf[index1] = pd.to_datetime(ndf[index1]) # json problem: turn into a sequence of num
+                ndf[index1] = ndf[index1].datetime.strftime('%Y-%m-%d')
+            elif index2 == ['int64', 'float64', 'string', 'bool', 'category']:
                 ndf[index1] = ndf[index1].astype(index2)
         for i,k in zip(list(ndf.columns), ndf.dtypes):
             para_result +=  "\n" + i + ": " + str(k)
-    elif rm_useless_col and rm_useless_val:
-        for index1, index2 in zip(rm_useless_col, rm_useless_val):
+    elif option == 2:
+        remove_cols = params['cols']
+        cond += "\n" + str(remove_cols)
+        ndf = ndf.drop(remove_cols, axis=1)
+    elif option == 3:
+        for index1, index2 in zip(target_col, target_operation):
             cond += "\n" + str(index1) + ":  " + str(index2)
             for k in index2:
                 ndf[index1] = ndf[index1].str.replace(k, '')
-    elif rm_spec_col and rm_spec_val:
-        for index1, index2 in zip(rm_spec_col, rm_spec_val):
+    elif option == 4:
+        for index1, index2 in zip(target_col, target_operation):
             cond += "\n" + str(index1) + ":  " + str(index2)
             temp = index2.split(',')
             ndf = ndf[~(df[index1].isin(temp))]
+    elif option == 5:
+        for index1, index2 in zip(target_col, target_operation):
+            cond += "\n" + str(index1) + ":  " + str(index2)
+            temp = index2.split(',') if ',' in index2 else index2
+            if ',' in index2:
+                for each_word in temp:
+                    ndf[index1] = ndf[index1].str.replace(each_word, '')   
+            else:
+                ndf[index1] = ndf[index1].str.replace(temp, '')    
+        
     print(ndf.head(20))
     print("cond = ", cond)
     print("para_result=", para_result)
@@ -980,25 +1137,28 @@ def cond_preprocess_json():
 
 # Sophie merged--> need modify 
 def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
-    Y_test.reset_index(drop=True, inplace=True)
-    comp_df = pd.concat([Y_test, pd.DataFrame(Y_pred)], axis=1)
-    comp_df.columns = ["Actual(Y_test)", "Prediction(Y_pred)"]
-    comp_df=comp_df.apply(pd.to_numeric, errors='ignore') 
-    print("comp_df", comp_df, comp_df.dtypes)
-    img = BytesIO()
-    plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-    plt.title("Actual vs. Prediction Result")
-    if plotType in ['bar', 'line']:
-        comp_df.plot(kind=plotType)
-    elif plotType == 'scatter':
-        comp_df.plot.scatter(x='Actual(Y_test)', y="Prediction(Y_pred)")
-    elif plotType == 'heatmap':
-        sns.heatmap(comp_df,annot=True,cmap="RdYlGn")
-    plt.savefig(img, format='png') 
-    plt.clf()
-    img.seek(0)
-    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-    img.close()
+    if isinstance(Y_test, pd.DataFrame):
+        Y_test.reset_index(drop=True, inplace=True)
+        comp_df = pd.concat([Y_test, pd.DataFrame(Y_pred)], axis=1)
+        comp_df.columns = ["Actual(Y_test)", "Prediction(Y_pred)"]
+        comp_df=comp_df.apply(pd.to_numeric, errors='ignore') 
+        print("comp_df", comp_df, comp_df.dtypes)
+        img = BytesIO()
+        plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+        plt.title("Actual vs. Prediction Result")
+        if plotType in ['bar', 'line']:
+            comp_df.plot(kind=plotType)
+        elif plotType == 'scatter':
+            comp_df.plot.scatter(x='Actual(Y_test)', y="Prediction(Y_pred)")
+        elif plotType == 'heatmap':
+            sns.heatmap(comp_df,annot=True,cmap="RdYlGn")
+        plt.savefig(img, format='png') 
+        plt.clf()
+        img.seek(0)
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        img.close()
+    else:
+        plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     return plotUrl
 
 
@@ -1020,6 +1180,7 @@ def cond_Regression_json():
     finalVar = params['finalVar']#["rent amount", "area"] # test, delete later
     finalY = params['finalY']#"total" # test, delete later
     df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    # df = _getCache(user_id, filename)   
     # print(df)
     ndf = df.replace(MISSING_VALUES, np.nan)
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
@@ -1177,7 +1338,7 @@ def cond_Regression_json():
 @cross_origin()
 @jwt_required()
 def cond_Classification_json():
-    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    cond, para_result, fig_len, fig_wid, isTsv = '', '', 5, 5, False
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     user_id = get_jwt_identity()
     params = request.json
@@ -1190,10 +1351,27 @@ def cond_Classification_json():
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
     finalVar = params['finalVar']#["Sex", "Age", "Embarked"] # test, delete later
     finalY = params['finalY']#"Survived" # test, delete later
-    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    df = _getCache(user_id, filename)
+    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
-    kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-    X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+    print("****&&&&&&test******")
+    # isTsv = True if filename.split('.')[-1]=='tsv' else False
+    isTsv = True
+    print('isTsv=', isTsv)
+    if isTsv:
+        text_data_feat_model = params['text_data_feat_model']
+        if text_data_feat_model == 'CountVectorizer':
+            scaler = CountVectorizer()
+        elif text_data_feat_model == 'TfidfVectorizer':
+            scaler = TfidfVectorizer()
+        X = scaler.fit_transform(ndf[finalVar[0]]).toarray()
+        Y = ndf[finalY].values
+        print("X=",X)
+        print('Y=',Y)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = test_size, random_state = 0)
+    else:
+        kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
 
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     # print('predic****=', params['Sex'])
@@ -1435,9 +1613,10 @@ def cond_Classification_json():
         model = GaussianNB()
         models[analysis_model] = model
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
-        Y = df[finalY].values
-        X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        if not isTsv:
+            X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
+            Y = df[finalY].values
+            X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1471,8 +1650,10 @@ def cond_Classification_json():
             if col_temp in params and params[col_temp]:
                 predic_var.append(i)
                 input_val.append(params[col_temp])
-        Class_input_val = [input_val]
-        input_val = np.array(Class_input_val, dtype='float64')
+        if isTsv:
+            input_val = scaler.transform(input_val).toarray()
+        else:
+            input_val = np.array([input_val], dtype='float64')
         model = models[analysis_model] # pick the best model    
         result = model.predict(input_val)
         cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
@@ -1492,6 +1673,7 @@ def cond_Clustering_json():
     params = request.json
     print('params=', params)
     filename = params['filename']
+    # df = _getCache(user_id, filename)
     df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
     # finalVar = params['finalVar'] if 'finalVar' in params else ndf.Columns
@@ -1637,6 +1819,7 @@ def cond_associateRule_json():
     params = request.json
     filename = params['filename']
     print(params)
+    # df = _getCache(user_id, filename)
     df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
     analysis_model = params['analysis_model']

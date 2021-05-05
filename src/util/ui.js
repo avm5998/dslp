@@ -119,11 +119,8 @@ export const DropDownInput = forwardRef(({
     </div>)
 })
 
-export function Label({ pos = 'left', text = '', customStyle = '', children = '', childrenPosition = 1 }) {
-    if(childrenPosition)
-        return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
-    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}>{children}<p>{text}</p></div>)
-
+export function Label({ pos = 'left', text = '', customStyle = '', children = '' }) {
+    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
 }
 
 export function Button({
@@ -198,7 +195,7 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
                                             all.splice(all.indexOf(e), 1)
                                             onSelect(all)
                                             return [...all]
-                                        })}}>
+                                            })}}>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-x cursor-pointer hover:text-blue-400 rounded-full w-4 h-4 ml-2">
                                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -233,7 +230,7 @@ customHeight = '', customWidth = '', allowWrap = true, allowDelete = true }, ref
                                         all.splice(all.indexOf(selection), 1)
                                     onSelect(all)
                                     return [...all]
-                                })}>
+                                    })}>
                                     <div className="w-full items-center flex">
                                         <div className="mx-2 leading-6  ">{getDesc(selection)}</div>
                                     </div>
@@ -335,7 +332,7 @@ export const DropDown = forwardRef(({
         if(defaultValue){
             for(let item of items){
                 if (item.name == defaultValue){
-                    items.onClick(null,true)
+                    item.onClick(null,true)
                 }
             }
         }

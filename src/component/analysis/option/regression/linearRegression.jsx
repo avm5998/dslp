@@ -79,6 +79,8 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                             result['Linear Regression'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 
                 </React.Fragment>)}
+                <Label text='Note:'/>
+                <Label text="The Target Column: ">{result.finalY}</Label>
             </div>
             <div className='flex justify-end'>
                 <Button onClick={e => {

@@ -109,7 +109,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
 
             </div>
             <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '10vw 1fr 10vw 1fr'
+                gridTemplateColumns: '5vw 1fr 5vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
                     <Checkbox label={col} name='suboption_checked' item={col}/>
@@ -117,6 +117,8 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                             result['Random Forests Regression'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 
                 </React.Fragment>)}
+                <Label text='Note:'/>
+                <Label text="The Target Column: ">{result.finalY}</Label>
             </div>
             <div className='flex justify-end'>
                 <Button onClick={e => {

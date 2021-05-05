@@ -10,7 +10,7 @@ import { data } from 'autoprefixer';
 import Tip from '../common/tip'
 
 const CleanTypes = ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'];
-
+//                        0                    1                       2                     3                          4                             5                   
 const Cleaning = () => {
     useCachedData()
     let multiSelect23Ref = useRef()
@@ -98,7 +98,7 @@ const Cleaning = () => {
             }
 
             cleaningCondition.current[5].condition.items = items
-        }
+        } 
 
         setShowSubOptionModal(false)
     }
@@ -158,6 +158,8 @@ const Cleaning = () => {
                             </div>
                         </div>)}
                     </div>
+                 
+
                 </div>
                 <div className="flex justify-end m-3 mt-10">
                     <Button text='Confirm' customStyle='bordered-light' onClick={onConfirmSubOption} />
@@ -177,7 +179,7 @@ const Cleaning = () => {
                             if (multiSelect23Ref.current){
                                 multiSelect23Ref.current.clear()
                             }
-                            if (i === 4 || i === 5) {
+                            if (i === 4 || i === 5 ) {
                                 setShowSubOptionModal(true)
                             }
                         }
@@ -194,7 +196,7 @@ const Cleaning = () => {
 
                 {/* Replace N/A By Specific Value, open a modal which contains col names and inputs */}
                 {/* Remove Outliers, open a modal which contains col names and inputs */}
-                {(option === 4 || option === 5) ?
+                {(option === 4 || option === 5 ) ?
                     <>
                         <Button onClick={() => setShowSubOptionModal(s => !s)} text={subOptionText} customStyle={'h-10 w-60 ml-10'} />
                     </>

@@ -47,7 +47,6 @@ const Analysis = () => {
     let [option, setOption] = useState(-1)
     let [model, setModel] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
-    // let [showConditionModal, setShowConditionModal] = useState(false)
     let [visibleModalTabs, setVisibleModalTabs] = useState([0,1])
 
     let dataset = useSelector(state => state.dataset)

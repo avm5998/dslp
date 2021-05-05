@@ -12,31 +12,32 @@ const Options = [
     {name:'String',value:'string'},
     {name:'Integer',value:'int64'},
     {name:'Float',value:'float64'},
+    {name:'Datetime',value:'datetime'},
     {name:'Bool',value:'bool'},
     {name:'Category',value:'category'},
 ]
 
-const TextDataCheckFeatOptions = [
-    {name:'Select Operation',value:''},
-    {name:'Words Count',value:'Words Count'},
-    {name:'Characture Count',value:'Characture Count'},
-    {name:'Average Word Length',value:'Average Word Length'},
-    {name:'Stopwords Count',value:'Stopwords Count'},
-    {name:'Numerics Count',value:'Numerics Count'},
-    {name:'Upper Count',value:'Upper Count'},
-]
-const TextDataPreprocessOptions =[
-    {name:'Select Operation',value:''},
-    {name:'Convert to Lower Case',value:'Convert to Lower Case'},
-    {name:'Expand Contractions',value:'Expand Contractions'},
-    {name:'Remove Punctuation',value:'Remove Punctuation'},
-    {name:'Remove Stopwords',value:'Remove Stopwords'},
-    {name:'Remove Digits',value:'Remove Digits'},
-    {name:'Remove URL',value:'Remove URL'},
-    {name:'Remove Specific Words',value:'Remove Specific Words'},//7
-    {name:'Lemmatization',value:'Lemmatization'},
-    {name:'Stemming',value:'Stemming'},
-]
+// const TextDataCheckFeatOptions = [
+//     {name:'Select Operation',value:''},
+//     {name:'Words Count',value:'Words Count'},
+//     {name:'Characture Count',value:'Characture Count'},
+//     {name:'Average Word Length',value:'Average Word Length'},
+//     {name:'Stopwords Count',value:'Stopwords Count'},
+//     {name:'Numerics Count',value:'Numerics Count'},
+//     {name:'Upper Count',value:'Upper Count'},
+// ]
+// const TextDataPreprocessOptions =[
+//     {name:'Select Operation',value:''},
+//     {name:'Convert to Lower Case',value:'Convert to Lower Case'},
+//     {name:'Expand Contractions',value:'Expand Contractions'},
+//     {name:'Remove Punctuation',value:'Remove Punctuation'},
+//     {name:'Remove Stopwords',value:'Remove Stopwords'},
+//     {name:'Remove Digits',value:'Remove Digits'},
+//     {name:'Remove URL',value:'Remove URL'},
+//     {name:'Remove Specific Words',value:'Remove Specific Words'},//7
+//     {name:'Lemmatization',value:'Lemmatization'},
+//     {name:'Stemming',value:'Stemming'},
+// ]
 
 const setSubOption = (option, subOption, condition) => {
     console.log(condition);
@@ -85,6 +86,8 @@ const Preprocessing = () => {
     // let {select : select3,getData: getData3} = useSimpleForm()
     let {input : input3,getData: getData3} = useSimpleForm()
     let {input : input4,getData: getData4} = useSimpleForm()
+    let {input : input5,getData: getData5} = useSimpleForm()
+
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showSubOptionModal} onClose={()=>{
@@ -113,7 +116,7 @@ const Preprocessing = () => {
                 {option === 1 ? <div className='grid grid-cols-2'>
                     {dataset.cols.map((col,i)=><React.Fragment key={i}>
                         <div className='m-3 flex items-center'>{col}</div>
-                        <select {...select1} className='text-gray-500 m-3 px-5 py-2 focus:outline-none rounded-full' name={col+'_Convert'}>
+                        <select {...select1} className='text-gray-500 m-3 px-5 py-2 focus:outline-none rounded-full' name={col}>
                             {Options.map(o=><option key={o.value} value={o.value}>{o.name}</option>)}
                         </select>
                     </React.Fragment>)}
@@ -129,14 +132,21 @@ const Preprocessing = () => {
                 {option === 3 ? <div className='grid grid-cols-2'>
                     {dataset.cols.map((col,i)=><React.Fragment key={i}>
                         <label className='m-3'>{col}</label>
-                        <input {...input3} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Useless character' name={col+'_Useless'}/>
+                        <input {...input3} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Useless character' name={col}/>
                     </React.Fragment>)}
                 </div> : ''}
 
                 {option === 4 ? <div className='grid grid-cols-2'>
                     {dataset.cols.map((col,i)=><React.Fragment key={i}>
                         <label className='m-3'>{col}</label>
-                        <input {...input4} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Specific value' name={col+'_Specific'}/>
+                        <input {...input4} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Specific value' name={col}/>
+                    </React.Fragment>)}
+                </div> : ''}
+
+                {option === 5 ? <div className='grid grid-cols-2'>
+                    {dataset.cols.map((col,i)=><React.Fragment key={i}>
+                        <label className='m-3'>{col}</label>
+                        <input {...input5} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Specific words' name={col}/>
                     </React.Fragment>)}
                 </div> : ''}
 
@@ -167,12 +177,12 @@ const Preprocessing = () => {
                 <div className='w-96'>
                     <DropDown text={optionText} customStyle='h-10 w-96' customUlStyle={'w-96'} items={
                         // , 'Text Data: Check New Features', 'Text Data: Preprocessing'
-                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters from Columns', 'Remove Rows with Specific Values'].map((item, i) => ({
+                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in Columns'].map((item, i) => ({
                             name: item, onClick(e) {
-                                {/*   0                                              1                            2                               3                                4                                  5                             6*/ }
+                                {/*   0                                              1                            2                               3                                4                                       5*/ }
                                 setOption(i)
                                 setOptionText(item)
-                                if(i === 1 ||i === 2 ||i === 3 ||i === 4 || i===5 ||i===6){
+                                if(i===0 || i === 1 ||i === 2 ||i === 3 ||i === 4 || i===5 ||i===6){
                                     setShowSubOptionModal(true)
                                 }
                             }
