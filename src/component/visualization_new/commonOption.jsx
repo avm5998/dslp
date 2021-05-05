@@ -74,10 +74,10 @@ export default function({dataset,result}){
         <Label text='Transformation function:'><InlineTip info={`Transformation type, Logarithm function is: f(x)=log10(x), Exponential function is: f(x)=e^x`}/></Label>
         <DropDown defaultText='Convert type' customStyle='w-60' showOnHover={false} items={['Logarithm','Square root','Exponential','Logit']} onSelect={(e,i)=>result.trans_fn = e}/>
         
-        <Label text='Sort data:'><InlineTip info={`Here you can only sort by one column\nbut you can modify this behavior by modifying the code`}/></Label>
-        <DropDown defaultText='Sort' customStyle='w-60' showOnHover={false} blankOption={'Do not sort'} items={dataset.cols} onSelect={(e,i)=>result.sortColumnIndex = i-1}/>
-        <Label text='Sort direction'></Label>
-        <DropDown defaultText='Select Sort direction' customStyle='w-60' showOnHover={false} items={['Ascending','Descending']} onSelect={(e,i)=>result.sortAscending= 1-i}/>
+        {/* <Label text='Sort data:'><InlineTip info={`Here you can only sort by one column\nbut you can modify this behavior by modifying the code`}/></Label>
+        <DropDown defaultText='Sort' customStyle='w-60' showOnHover={false} blankOption={'Do not sort'} items={dataset.cols} onSelect={(e,i)=>result.sortColumnIndex = i-1}/> */}
+        {/* <Label text='Sort direction'></Label>
+        <DropDown defaultText='Select Sort direction' customStyle='w-60' showOnHover={false} items={['Ascending','Descending']} onSelect={(e,i)=>result.sortAscending= 1-i}/> */}
         <Label text='Legend Position:'/>
         <DropDown defaultText='Select Legend Position' customStyle='w-60' showOnHover={false} items={LegendOptions} onSelect={e=>result.legend = e}/>
         <Label text='Figure Size:'/>

@@ -22,6 +22,11 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <DropDown defaultText='Select X Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.x = e}/>
                 <Label text='Y Axis:'><InlineTip info={`*Required\nThe data on Y Axis`}/></Label>
                 <DropDown defaultText='Select Y Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.y = e}/>
+                <Label text='Transformation column:'><InlineTip info={`Apply transformation function to a column, the code are straight forward and you can modify the code to transform more columns `}/></Label>
+                <DropDown defaultText='Column' customStyle='w-60' showOnHover={false} blankOption={'Do not transform'} items={dataset.cols} onSelect={(e,i)=>result.trans_col = e}/>
+                <Label text='Transformation function:'><InlineTip info={`Transformation type, Logarithm function is: f(x)=log10(x), Exponential function is: f(x)=e^x`}/></Label>
+                <DropDown defaultText='Convert type' customStyle='w-60' showOnHover={false} items={['Logarithm','Square root','Exponential','Logit']} onSelect={(e,i)=>result.trans_fn = e}/>
+        
             </div>
 
             <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{

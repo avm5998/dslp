@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Input, Label, Button, DropDown, Modal, Checkbox } from '../../util/ui'
+import { MultiSelect } from '../../util/ui_components'
 import { InlineTip } from '../common/tip'
 import CommonOption,{setCommonCode,DEFAULT_RESULT} from './commonOption'
 const defaultResult = {...DEFAULT_RESULT,...{bins:10,alpha:1,stacked:true}}
@@ -18,7 +19,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 gridTemplateColumns:'5vw 1fr 5vw 1fr'
             }}>
                 <Label text='Columns:'><InlineTip info={`*Required\n Select numerical columns to see the distributions. \n If you select more than one numerical column, the columns you selected are better to have similar meanings and ranges`}/></Label>
-                <MultiSelect defaultOpen={false} selections={dataset.num_cols} customHeight='h-10' customWidth='w-60' showOnHover={false} onSelect={(e) => {
+                <MultiSelect width={'w-60'}  selections={dataset.num_cols} onSelect={(e) => {
                     result.cols = e
                 }} />
                 <Label text='Stacked:'><InlineTip info={`If you select multiple columns, the results will overlap each other if stacked is false, otherwise, it will not.`}/></Label>

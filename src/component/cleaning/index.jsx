@@ -202,8 +202,7 @@ const Cleaning = () => {
             </div>
 
             <div className='mx-5 w-3/12'>
-                    <MultiSelect customHeight={`h-10`} defaultText={`Applied cleaners`} allowDelete={false} passiveMode={true} selections={dataset.dataCleaners} getDesc={e => e.desc} onSelect={filters => {
-                    }} />
+                    <MultiSelect customHeight={`h-10`} defaultText={`Applied cleaners`} allowDelete={false} passiveMode={true} selections={dataset.dataCleaners} getDesc={e => e.desc}/>
                 </div>
 
             <div className='mx-5 w-3/12'>

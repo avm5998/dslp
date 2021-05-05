@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, Modal, Checkbox, DropDownInput, Input } from '../../util/ui'
-import { MultiSelect } from '../../util/ui_components'
+import { Label, Button, Modal,Checkbox, DropDownInput, Input } from '../../util/ui'
+import { MultiSelect , DropDown } from '../../util/ui_components'
 
 import { useDispatch, useSelector } from 'react-redux';
 import { loadScript, useSimpleForm, useToggleGroup,fetchByJSON,useCachedData } from '../../util/util'
@@ -183,20 +183,20 @@ export default function(){
         </Modal>
 
         <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4'>
-            <div className='w-72 h-full px-1'>
-                <MultiSelect customHeight={'h-10'} customeWidth={'w-72'} ref={ref} defaultOpen={false} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
+            <div className='w-72 px-1'>
+                <MultiSelect ref={ref} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
             </div>
-            <div className='w-72 h-full px-1'>
-                <DropDown ref={ref} defaultText={'Select Graph Type'} showOnHover={false} customStyle={'w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
+            <div className='w-72 px-1'>
+                <DropDown ref={ref} defaultText={'Select Graph Type'} width={'w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
             </div>
-            <div className='w-auto h-full flex justify-center items-center px-1'>
+            <div className='w-auto flex justify-center items-center px-1'>
                 <div className={``}>{activateStatus}</div>
                 <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.'/>
             </div>
-            <div className='w-72 h-full px-1'>
+            <div className='w-72 px-1'>
                 <Button hasPadding={false} disabled={!currentPlot} text="Options" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10  ${!currentPlot ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={e => { if (currentPlot) showOptions(1) }} hoverAnimation={false} />
             </div>
-            <div className='w-72 h-full px-1'>
+            <div className='w-72 px-1'>
                 <Button hasPadding={false} disabled={!code} text="Run" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
                      ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
             </div>

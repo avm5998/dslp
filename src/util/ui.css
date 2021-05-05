@@ -1,86 +1,37 @@
-  /* since nested groupes are not supported we have to use 
-     regular css for the nested dropdowns 
-  */
-  .dropdown li>ul                 { transform: translatex(100%) scale(0) }
-  .dropdown li:hover>ul           { transform: translatex(101%) scale(1) }
-  .dropdown li > button svg       { transform: rotate(-90deg) }
-  .dropdown li:hover > button svg { transform: rotate(-270deg) }
+/******************COMMON STYLES***********************/
+button.outline-none {
+  outline: none !important;
+}
 
-  /* Below styles fake what can be achieved with the tailwind config
-     you need to add the group-hover variant to scale and define your custom
-     min width style.
-  	 See https://codesandbox.io/s/tailwindcss-multilevel-dropdown-y91j7?file=/index.html
-  	 for implementation with config file
-  */
-  .dropdown.group:hover .group-hover\:scale-100 { transform: scale(1) }
-  .dropdown.group:hover .group-hover\:-rotate-180 { transform: rotate(180deg) }
-  .dropdown .scale-0 { transform: scale(0) }
-  .dropdown .min-w-32 { min-width: 8rem }
-  .dropdown .closed {transform: scale(0);}
-  .dropdown .opened {transform: scale(1);}
+.m_transition {
+  transition: transform 0.15s ease-in-out 0s;
+}
 
+.down {
+  transform: rotate(180deg);
+}
 
-  .multiselect .top-100 {top: 100%}
+.up {
+  transform: rotate(0deg);
+}
 
-  .multiselect .bottom-100 {bottom: 100%}
-  .multiselect .max-h-select {
-      max-height: 300px;
-  }
+.m_invisible {
+  transform: scale(0);
+}
+.m_visible {
+  transform: scale(1);
+}
 
-  .multiselect .rotate180{transform: rotate(-180deg) }
+/******************SPECIFIC STYLES***********************/
+.multiselect .m_border {
+  border-bottom: 1px solid #eee;
+}
 
+.multiselect .btn-mw {
+  width: auto;
+  max-width: 75%;
+}
 
-  .dropdown ul{
-     border:1px solid #ddd;
-     color: #276678;
-  }
-
-
-  .dropdown ul li{
-      border-bottom:1px solid #eee;
-      background-color: white;
-   }
-   .dropdown ul li:hover{
-   background-color: #276678;
-   color:#f6f5f5
- }
-  .button-style{
-   background-color: #276678;
-   color:#f6f5f5;
-  }
-
-  .button-style:hover{
-   background-color: #d3e0ea;
-   color:#276678;
-  }
-  
-
-
-  /*****************************************/
-  .multiselect .m_transition{
-   transition: transform .15s ease-in-out 0s;
-  }
-
-  .multiselect .down{
-   transform: rotate(180deg)
-  }
-
-  .multiselect .up{
-   transform: rotate(0deg)
-  }
-  
-  .multiselect button.outline-none{
-     outline:none;
-  }
-
-  .multiselect .m_border {
-   border-bottom:1px solid #eee;
-  }
-
-  .multiselect .btn-mw{
-     width:auto;
-     max-width: 75%;
-  }
-
-  .multiselect .m_invisible {transform: scale(0);}
-  .multiselect .m_visible {transform: scale(1);}
+.dropdown .m_border {
+  border-bottom: 1px solid #eee;
+}
