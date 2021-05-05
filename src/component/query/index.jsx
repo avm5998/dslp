@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
-import { Button, DropDown, MultiSelect, RangeSelector } from '../../util/ui'
+import { RangeSelector } from '../../util/ui'
+import { Button, DropDown, MultiSelect } from '../../util/ui_components'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { actions as DataSetActions } from '../../reducer/dataset'
@@ -92,10 +93,10 @@ const Page = () => {
 
     return (<>
         <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 0rem)'}}>
-            <div className="flex flex-row h-28 w-full items-end justify-start shadow-sm bg-gray-100">
+            <div className="flex flex-row h-auto w-full items-end justify-start shadow-sm bg-gray-100">
 
                 <div className='mx-5 my-4 w-2/12'>
-                    <DropDown customStyle='h-8 w-72' customUlStyle={'w-72'} text={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
+                    <DropDown defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
                         name,
                         onClick(e) {
                             setSearchColumn(name)
@@ -111,25 +112,25 @@ const Page = () => {
                             Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
                         }} />
                         : queryType === QueryType.Categorical ?
-                            <MultiSelect selections={dataset.cate_lists[searchColumn] ? dataset.cate_lists[searchColumn] : []} onSelect={(e) => {
+                            <MultiSelect width={'w-72'} selections={dataset.cate_lists[searchColumn] ? dataset.cate_lists[searchColumn] : []} onSelect={(e) => {
                                 categoricalRef.current = e
                             }} />
                             : ''}
                 </div>
 
                 <div className='mb-4 w-64'>
-                    <Button text="Add filter" customStyle='h-8 w-auto' onClick={addFilter} hoverAnimation={true} />
+                    <Button text="Add filter" onClick={addFilter}/>
                 </div>
 
                 <div className='mx-5 mb-4 w-5/12'>
-                    <MultiSelect allowDelete={true} customHeight='h-8' passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
+                    <MultiSelect allowDelete={true} passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
                         dispatch(DataSetActions.setFilters(filters))
                     }} />
                 </div>
 
             </div>
             <Table PageSize={10} />
-            <Help url={"menu/data_querying"}/>
+            {/* <Help url={"menu/data_querying"}/> */}
         </div>
     </>)
 }
