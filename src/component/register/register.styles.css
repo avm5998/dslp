@@ -122,8 +122,89 @@
     color: black
   }
 
+
   .alert-danger, .alert-success{
     padding: 2px 5px;
     margin-top: 5px;
     font-size: smaller;
+    background-color:#d3e0ea;
+
   }
+
+
+
+  .row {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 5px;
+  }
+/* 1/12 */
+.col-md-1 {
+    width: 8.33%;
+  }
+  
+  /* 2/12 */
+  .col-md-2 {
+    width: 16.66%;
+  }
+  
+  /* 3/12 */
+  .col-md-3 {
+    width: 25%;
+  }
+  
+  /* 4/12 */
+  .col-4 {
+    width: 33.33%
+  }
+  
+  /* 5/12 */
+  .col-5 {
+    width: 41.66%;
+  }
+  
+  /* 6/12 */
+  .col-md-6 {
+    width: 50%;
+  }
+  
+  /* 7/12 */
+  .col-md-7 {
+    width: 58.33%;
+  }
+  
+  /* 8/12 */
+  .col-md-8 {
+    width: 66.66%;
+  }
+  
+  /* 9/12 */
+  .col-md-9 {
+    width: 75%;
+  }
+  
+  /* 10/12 */
+  .col-md-10 {
+    width: 83.33%;
+  }
+  
+  /* 11/12 */
+  .col-md-11 {
+    width: 91.66%;
+  }
+  
+  /* 12/12 */
+  .col-md-12 {
+    width: 100%;
+  }
+
+  .register-button{
+    background-color:#276678;
+    color: #f6f5f5 ;
+
+}
+.register-button:hover{
+    background-color:#d3e0ea  ;
+    color:#276678 
+}

@@ -46,9 +46,9 @@ from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt
 from resources.errors import InternalServerError, SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
     EmailDoesnotExistsError, BadTokenError
-from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
+from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist, ValidationError
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
-    jwt_required, create_refresh_token, get_jwt
+    jwt_required, create_refresh_token, get_jwt, get_jti
 from database.models import User, TokenBlockList
 import bson
 from bson.binary import Binary
@@ -74,7 +74,6 @@ from yellowbrick.datasets import load_credit
 from yellowbrick.features import Rank1D
 # from pandas_profiling import ProfileReport
 from flask_caching import Cache
-from database.models import User
 #forgot password imports
 from threading import Thread
 from flask_mail import Message, Mail
@@ -83,6 +82,10 @@ from datetime import datetime, timedelta, timezone
 from jwt.exceptions import ExpiredSignatureError, DecodeError, \
     InvalidTokenError
 from IPython.display import Image
+
+#Login and signup
+from dateutil import tz
+
 
 matplotlib.use('Agg')
 
@@ -106,9 +109,9 @@ mail = Mail(app)
 app.config['MONGODB_SETTINGS'] = {
     'host': 'mongodb://localhost/data_science_learning_platform_database'
 }
-from resources.routes import initialize_routes
+# from resources.routes import initialize_routes
 
-initialize_routes(api)
+# initialize_routes(api)
 initialize_db(app)
 
 
@@ -122,8 +125,8 @@ mongo_collection = mongo_db["files"]
 user_collection = mongo_db["user"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
-# DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv']
-DEFAULT_FILES = []
+DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv', 'amazon_alexa_text.csv']
+# DEFAULT_FILES = []
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 EditedPrefix = '__EDITED___'
@@ -219,6 +222,100 @@ def check_if_token_revoked(jwt_header, jwt_payload):
 
 
 #APIs
+
+
+
+@app.route("/api/auth/signup", methods=["POST"])
+def register():
+    try:
+        body = request.get_json()
+        user =  User(**body)
+        user_avatar = open('backend/assets/images/avatar.png','rb')
+        user.profile_image.put(user_avatar, filename='avatar.png')
+        user.hash_password()
+        user.save()
+        id = user.id
+        return {'id': str(id), "message":"Registered successfully"}, 200
+    except FieldDoesNotExist:
+        raise SchemaValidationError('Request is missing required fields')
+    except NotUniqueError:
+        raise EmailAlreadyExistsError('Username or email is already taken')
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    try:
+        body = request.get_json()
+        try:
+            user = User.objects.get(username=body.get('username'))
+        except (DoesNotExist):
+            user = User.objects.get(email=body.get('username'))
+        authorized = user.check_password(body.get('password'))
+        if not authorized:
+            raise UnauthorizedError('um')
+        try:
+            imgStr = base64.b64encode(user.profile_image.read()).decode("utf-8").replace("\n", "")
+        except:
+            user_avatar = open('backend/assets/images/avatar.png','rb')
+            # imgStr = base64.b64encode(open('backend/assets/images/avatar.png','rb')).decode("utf-8").replace("\n", "")
+            user.profile_image.put(user_avatar, filename='avatar.png')
+            imgStr = ""
+        if "user_activity" in user:
+            progress = extract_report(user)
+        else:
+            progress = ""
+        expires = timedelta(days=25)
+        expires_refresh = timedelta(days=30)
+        access_token = create_access_token(identity=str(user.id), expires_delta=expires)
+        refresh_token = create_refresh_token(identity=str(user.id), expires_delta=expires_refresh)
+        user.last_logged_in = datetime.now(timezone.utc)
+        if "user_bio" not in user:
+            user.user_bio = ""
+        user.save()
+        to_zone = tz.tzlocal()
+        last_logged_in = user.last_logged_in.astimezone(to_zone)
+        return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
+            'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio)}, 200
+    except UnauthorizedError:
+        raise UnauthorizedError('Invalid password')
+    except DoesNotExist:
+        raise EmailDoesnotExistsError('Invalid username or email')
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
+
+
+def extract_report(user):
+    img = BytesIO()
+    sns.set_style("whitegrid", {'axes.grid' : False})
+    plt.figure(figsize=(12,12))
+    if user.user_activity == {}:
+        return ""
+    table = user.user_activity
+    df = pd.DataFrame(table.items(), columns=["date", "sec"])
+    df['date'] = df['date'].apply(lambda a: datetime.strptime(a, '%Y-%m-%d'))
+    df.sort_values(by=['date'], ignore_index=True, inplace=True)
+    all_days = pd.date_range(df['date'].min(), df['date'].max(), freq='D')
+    new = pd.DataFrame(all_days, columns=['date'])
+    avail = df['date'].values
+    for i in range(len(new)):
+        if new.loc[i,['date']][0] in avail:
+            new.loc[i, ['sec']] = df.loc[np.where(df['date'] == new.loc[i,['date']][0])[0][0], ['sec']][0]
+        else:
+            new.loc[i, ['sec']] = 0
+    z = np.array(new['date'].apply(lambda x: x.date().strftime('%Y-%m-%d')))
+    # line = sns.lineplot(data = df, x = 'date', y = 'sec')
+    # line.set_xticklabels(df.date, rotation=90)
+    line = sns.lineplot(data = new, x = 'date', y = 'sec')
+    line.set_xticklabels(z, rotation=90)
+    plt.suptitle('Your activity', fontsize='25')
+    plt.xlabel('Date', fontsize=20)
+    plt.ylabel('Seconds', fontsize=20)
+    plt.savefig(img, format='png') 
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return plotUrl
+
 
 # Endpoint for revoking the current users access token. Save the JWTs unique
 # identifier (jti) in redis. Also set a Time to Live (TTL)  when storing the JWT
@@ -377,7 +474,10 @@ def describe(filename):
 @jwt_required()
 def get_user_files():
     user_id = get_jwt_identity()
-    user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
+    try:
+        user_files_list = user_collection.find_one({"_id":ObjectId(user_id)}, {"files":1})['files']
+    except:
+        user_files_list = []
     return {'files_list': user_files_list}
 
 def convertNaN(value):
@@ -536,7 +636,12 @@ def _getCache(uid,name,modified = True):
         if df is None:
             details = mongo_collection.find_one({"file_name": name,"user_id":uid})
             if not details:
-                return None
+                if name in DEFAULT_FILES:
+                    details = mongo_collection.find_one({"file_name": name,"user_id":ObjectId(b"awesomeadmin")})
+                    if not details:
+                        return None
+                else:
+                    return None
             df = pd.read_csv(StringIO(details['content'].decode('utf8')))
             _setCache(uid,name,df,modified = False)
 

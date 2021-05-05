@@ -39,7 +39,7 @@ const ProfileSection = ({currentUser}) => {
     };
     return (
       <div className="row mt-5 align-items-top">
-          <div className="col-md-2 text-center mb-5">
+          <div className="col-md-2 mt-16 text-center mb-5">
       
           <div className=" flex justify-center avatar avatar-xl">
 
@@ -52,7 +52,7 @@ const ProfileSection = ({currentUser}) => {
         </label>
             
           </div>
-          <div className="col">
+          <div className="col-md-6 p-8 mt-16">
               <div className="row align-items-center">
                   <div className="col-md-7">
                       <h4 className="mb-1 text-gray-900 text-4xl">{currentUser.name}</h4>
@@ -98,7 +98,7 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                 <Form name="uploadFileForm" method="POST">
                       <ProfileSection currentUser={currentUser}/>
 
-                      <hr className="my-4" />
+                      <hr className="my-16" />
                       <div className="form-row">
                           <div className="form-group my-2">
                               <label>Full name</label>
@@ -109,7 +109,7 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                           <label >Email</label>
                           <input type="email" className="form-control-profile" id="inputEmail4" placeholder={currentUser.email} disabled/>
                       </div>
-                      <hr className="my-4" />  
+                      <hr className="my-16" />  
                       <Button text='Save Changes' customStyle='h-10 my-4 w-64 profile-button' hasPadding={false}/>
                       {message && (
                             <div className="form-group">

@@ -178,7 +178,7 @@ const Register = () => {
               </div>
 
               
-                <button className="w-auto btn btn-lg btn-primary btn-block col-span-2">Sign Up</button>
+                <button className="w-auto register-button col-span-2">Sign Up</button>
               
             </div>
           )}

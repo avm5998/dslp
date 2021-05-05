@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer utilities {
+  .text-limited{
+    white-space:nowrap;
+    text-overflow:ellipsis;
+    overflow:hidden;
+  }
+
   .bordered-light{
     border:2px solid #eee;
     border-radius:0.5rem;
