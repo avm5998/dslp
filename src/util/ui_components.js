@@ -6,7 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { useThrottle } from "./util";
-import "./ui.css";
+import "./ui_component.css";
 import { useImperativeHandle } from "react";
 import cn from "classnames";
 import { faSmileBeam } from "@fortawesome/free-regular-svg-icons";
