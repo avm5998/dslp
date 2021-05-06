@@ -255,7 +255,7 @@ export function dataFrameJSONObjectToReactTableData(jsonObject) {
         let row = {}
         for (let j = 0; j < keys.length; j++) {
             let cur = jsonObject[keys[j]][indices[i]]
-            if (cur) row[j] = cur
+            if (cur!==undefined) row[j] = cur
         }
         data.push(row)
     }

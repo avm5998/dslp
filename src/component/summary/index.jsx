@@ -310,7 +310,7 @@ const Visualization = () => {
       </div>
       {dataset.loaded ?
         <>
-          <Help url={"menu/data_visualization/display_correlations.html"}/>
+          {/* <Help url={"menu/data_visualization/display_correlations.html"}/> */}
           <Variables tabpanelIndex={0} tabpanel={tabpanel} />
           <Interactions tabpanelIndex={1} tabpanel={tabpanel} />
           <Correlations tabpanelIndex={2} tabpanel={tabpanel} />
