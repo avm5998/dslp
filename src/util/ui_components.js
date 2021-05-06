@@ -12,6 +12,10 @@ import cn from "classnames";
 import { faSmileBeam } from "@fortawesome/free-regular-svg-icons";
 import { text } from "@fortawesome/fontawesome-svg-core";
 
+const EMPTY_O = {};
+const EMPTY_FUNCTION = ()=>{};
+const SELF_FUNCTION = e => e;
+
 //handle onblur on the parent element
 //https://gist.github.com/pstoica/4323d3e6e37e8a23dd59
 const handleBlur = (cb) => {
@@ -124,7 +128,8 @@ export function Button({
   text,
   disabledText = text,
   id,
-  onClick = () => {},
+  onClick = EMPTY_FUNCTION,
+  customStyle = EMPTY_O,
 
   //style property
   buttonType = disabled ? "disabled" : "normal", // currently only normal style, other styles can be added into ButtonTypeStyleText
@@ -142,6 +147,8 @@ export function Button({
       }
 
       onClick={onClick}
+
+      style={customStyle}
     >
       {disabled ? disabledText : text}
     </button>
@@ -156,12 +163,13 @@ export const MultiSelect = forwardRef(
       width = "w-full",
       height = "h-10",
       tabIndex = 0,
+      customStyle = EMPTY_O,
       id,
 
       //component properties
       showOnHover = false,
       selections = [],
-      getDesc = (e) => e,
+      getDesc = SELF_FUNCTION,
       onSelect,
 
       //controlled properties
@@ -225,6 +233,8 @@ export const MultiSelect = forwardRef(
             setMenuOpen(1);
           }
         }}
+
+        style={customStyle}
       >
         <button
           id={id}
@@ -351,6 +361,7 @@ export const DropDown = forwardRef(
       tabIndex = 0,
       hideArrow,
       id,
+      customStyle = EMPTY_O,
 
       //component properties
       showOnHover = false,
@@ -358,7 +369,7 @@ export const DropDown = forwardRef(
       defaultText = undefined,
       items = [],
       onSelect,
-      getDesc = (e) => e,
+      getDesc = SELF_FUNCTION,
 
       //controlled properties
       controlledOpen = false,
@@ -374,12 +385,12 @@ export const DropDown = forwardRef(
       //add an additional input option for the user specified value
       additionalInput = false,
       additionalInputPosition = "bottom",
-      additionalInputStyle = {},
+      additionalInputStyle = EMPTY_O,
       additionalInputPlaceholder = "",
 
       //add an additional option for an option which returns an empty string to onSelect by default
       blankOption = undefined, //whether or not to add an empty option which returns '' when clicked
-      blankOptionOnClick = (name = "") => {}, //when onClick is bound for each item, blank option selection
+      blankOptionOnClick = EMPTY_FUNCTION, //when onClick is bound for each item, blank option selection
     },
     ref
   ) => {
@@ -512,6 +523,8 @@ export const DropDown = forwardRef(
             setMenuOpen(1);
           }
         }}
+
+        style={customStyle}
       >
         <button
           id={id}

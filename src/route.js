@@ -48,14 +48,14 @@ const Menu = {
     'Main': [
         { text: 'Upload Data', icon: 'home', to: '/' },
         { text: 'Summary', icon: 'chart-area', to: '/summary' },
-        { text: 'Visualization', icon: 'chart-area', to: '/visualization' },
-        { text: 'Sandbox', icon: 'chart-area', to: '/sandbox' },
+        { text: 'Visualization', icon: 'chart-pie', to: '/visualization' },
+        // { text: 'Sandbox', icon: 'chart-area', to: '/sandbox' },
         { text: 'Query', icon: 'search', to: '/query' },
-        { text: 'Clean', icon: 'search', to: '/clean' },
-        { text: 'Feature Engineering', icon: 'search', to: '/featureEngineering' },
-        { text: 'Feature Selection', icon: 'search', to: '/featureSelection' },
-        { text: 'Preprocessing', icon: 'search', to: '/preprocessing' },
-        { text: 'Analysis', icon: 'sign-in-alt', to: '/analysis' },
+        { text: 'Clean', icon: 'broom', to: '/clean' },
+        { text: 'Feature Engineering', icon: 'cog', to: '/featureEngineering' },
+        { text: 'Feature Selection', icon: 'list', to: '/featureSelection' },
+        { text: 'Preprocessing', icon: 'filter', to: '/preprocessing' },
+        { text: 'Analysis', icon: 'microscope', to: '/analysis' },
     ],
 }
 
@@ -249,7 +249,7 @@ const Routes = (props) => {
                             <Route exact path={['/home', '/']} component={Home} />
                             <Route path='/summary' component={Summary} />
                             <Route path='/visualization' component={Visualization} />
-                            <Route path='/sandbox' component={Sandbox} />
+                            {/* <Route path='/sandbox' component={Sandbox} /> */}
                             <Route path='/query' component={Query} />
                             <Route path='/clean' component={Cleaning} />
                             <Route path='/featureEngineering' component={FeatureEngineering} />

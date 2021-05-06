@@ -136,14 +136,7 @@ export default function(){
 
     const setPlotsByFunctions = useCallback((functions) => {
         if (!functions || functions.length === 0) {
-            let filteredPLOTS = Object.keys(PLOTS).filter(p=>{
-                for(let ff of functions){
-                    for(let cf of  p.function)
-                        if (ff == cf) return 1
-                }
-                return 0
-            })
-            setPlots(Object.keys(filteredPLOTS))
+            setPlots(Object.keys(PLOTS))
             return
         }
 
@@ -184,7 +177,7 @@ export default function(){
 
         <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4'>
             <div className='w-72 px-1'>
-                <MultiSelect ref={ref} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} />
+                <MultiSelect ref={ref} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} customStyle={{fontSize:'medium'}} />
             </div>
             <div className='w-72 px-1'>
                 <DropDown ref={ref} defaultText={'Select Graph Type'} width={'w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
