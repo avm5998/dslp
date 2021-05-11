@@ -13,8 +13,8 @@ import { faSmileBeam } from "@fortawesome/free-regular-svg-icons";
 import { text } from "@fortawesome/fontawesome-svg-core";
 
 const EMPTY_O = {};
-const EMPTY_FUNCTION = ()=>{};
-const SELF_FUNCTION = e => e;
+const EMPTY_FUNCTION = () => {};
+const SELF_FUNCTION = (e) => e;
 
 //handle onblur on the parent element
 //https://gist.github.com/pstoica/4323d3e6e37e8a23dd59
@@ -122,6 +122,64 @@ const ButtonTypeStyleText = {
   },
 };
 
+export function Label({
+  pos = "left",
+  text = "",
+  customStyle = EMPTY_O,
+  children = null,
+}) {
+  return (
+    <div
+      style={customStyle}
+      className={cn(
+        "flex",
+        "items-center",
+        pos === "mid" ? "justify-center" : pos === "right" ? "justify-end" : ""
+      )}
+    >
+      <p>{text}</p>
+      {children}
+    </div>
+  );
+}
+
+export const Input = forwardRef(
+  (
+    {
+      attrs,
+      customStyle = EMPTY_O,
+      width = "w-full",
+      height = "h-10",
+      placeholder = "",
+      onInput = () => {},
+      defaultValue = "",
+    },
+    ref
+  ) => {
+    return (
+      <input
+        ref={ref}
+        {...attrs}
+        style={customStyle}
+        className={cn(
+          "box-border",
+          "py-1",
+          "px-2",
+          "rounded-sm",
+          "focus:outline-none",
+          height,
+          width
+        )}
+        placeholder={placeholder}
+        onInput={(e) => {
+          onInput(e, e.target.value);
+        }}
+        defaultValue={defaultValue}
+      />
+    );
+  }
+);
+
 export function Button({
   //common property
   disabled = false,
@@ -145,9 +203,7 @@ export function Button({
           ? overrideClass
           : cn(style.default.concat(hoverAnimation ? style.hover : []))
       }
-
       onClick={onClick}
-
       style={customStyle}
     >
       {disabled ? disabledText : text}
@@ -164,6 +220,7 @@ export const MultiSelect = forwardRef(
       height = "h-10",
       tabIndex = 0,
       customStyle = EMPTY_O,
+      zIndex = "inherit",
       id,
 
       //component properties
@@ -233,8 +290,7 @@ export const MultiSelect = forwardRef(
             setMenuOpen(1);
           }
         }}
-
-        style={customStyle}
+        style={{ zIndex, ...customStyle }}
       >
         <button
           id={id}
@@ -361,6 +417,7 @@ export const DropDown = forwardRef(
       tabIndex = 0,
       hideArrow,
       id,
+      zIndex = "inherit",
       customStyle = EMPTY_O,
 
       //component properties
@@ -399,7 +456,7 @@ export const DropDown = forwardRef(
     let inputParentRef = useRef(null);
     let inputRef = useRef(null);
     let [menuOpen, setMenuOpen] = useState(0);
-    let [currentText, setCurrentText] = useState(defaultText);
+    let [currentText, setCurrentText] = useState(defaultText || defaultValue);
     let allOptions = [];
 
     useEffect(() => {
@@ -456,7 +513,9 @@ export const DropDown = forwardRef(
       if (defaultValue) {
         for (let item of items) {
           if (item.name == defaultValue) {
-            items.onClick(null, true);
+            if(item.onClick){
+              item.onClick(null, true);
+            }
           }
         }
       }
@@ -523,8 +582,7 @@ export const DropDown = forwardRef(
             setMenuOpen(1);
           }
         }}
-
-        style={customStyle}
+        style={{ zIndex, ...customStyle }}
       >
         <button
           id={id}
@@ -589,6 +647,7 @@ export const DropDown = forwardRef(
                       "w-full",
                       "m_border",
                       "leading-6",
+                      "text-gray-600",
                       enabledOptionIndex !== undefined &&
                         enabledOptionIndex.indexOf(_index) == -1
                         ? showDisabledOption
@@ -605,16 +664,7 @@ export const DropDown = forwardRef(
                       }
 
                       if (res === false) {
-                        //hide dropdown
                         setMenuOpen((s) => !s);
-                        // if (!showOnHover) {
-                        //   setMenuOpen((s) => !s);
-                        // } else {
-                        //   ulRef.current.style.display = "none";
-                        //   setTimeout(() => {
-                        //     ulRef.current.style.display = "";
-                        //   }, 0);
-                        // }
                       }
                     }}
                   >

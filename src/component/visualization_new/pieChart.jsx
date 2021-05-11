@@ -58,10 +58,23 @@ export const config = {
         }
 
         prevSteps.push(`df = df.groupby('${result.cate_col}').agg(${result.num_col}=('${result.num_col}','sum'))`)
-        return `${prevSteps.length?prevSteps.join('\n'):''}
+
+        if(result.engine == 'Pandas'){
+            return `${prevSteps.length?prevSteps.join('\n'):''}
 df.plot.pie(${dfplotArgs.join(',')})
 ${postSteps.length?postSteps.join('\n'):''}
 `
+        }
+        
+        if(result.engine == 'Plotly'){
+            prevSteps.push(`df.reset_index(inplace = True)`)
+            prevSteps.push(`df.rename({'index':'${result.cate_col}'})`)
+            return `${prevSteps.length?prevSteps.join('\n'):''}
+fig = px.pie(df, values='${result.num_col}', names='${result.cate_col}', title='Pie chart')
+fig.show()
+${postSteps.length?postSteps.join('\n'):''}
+`
+        }
 
     },
     getOperation: ({ aggregatedDataset, dataset, options }) => {

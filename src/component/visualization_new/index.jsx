@@ -3,7 +3,7 @@ import { Label, Button, Modal,Checkbox, DropDownInput, Input } from '../../util/
 import { MultiSelect , DropDown } from '../../util/ui_components'
 
 import { useDispatch, useSelector } from 'react-redux';
-import { loadScript, useSimpleForm, useToggleGroup,fetchByJSON,useCachedData } from '../../util/util'
+import { loadScript, useSimpleForm, useToggleGroup,fetchByJSON,useCachedData, toUnicode } from '../../util/util'
 // import {TooltipComponent} from 'echarts/components';
 
 import AreaGraph from './areaGraph'
@@ -66,8 +66,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import plotly.express as px
 
-data_json = StringIO("""${data}""")
+data_json = StringIO(r"""${toUnicode(data)}""")
 df = pd.read_json(data_json)
 
 `
@@ -89,8 +90,9 @@ export default function(){
     
     //Not just rerun the current code
     //It's reinject the data and rerun the current code
-    const runCode = e=>{
-        kernelRef.current.requestExecute({code:initialCode(dfJSON)})
+    const runCode = async (e)=>{
+        let res = await kernelRef.current.requestExecute({code:initialCode(dfJSON)}).done
+        // console.log(res);
         document.querySelector('.thebelab-run-button').click()
     }
 
@@ -129,7 +131,7 @@ export default function(){
                 setDfJSON(g.data)
                 setActivateStatus('Ready')
             }
-            console.log("Status changed:", data.status, data.message);
+            // console.log("Status changed:", data.status, data.message);
         })
 
     },[dataset.filename])
@@ -175,7 +177,7 @@ export default function(){
             }
         </Modal>
 
-        <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4'>
+        <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4' style={{zIndex:10}}>
             <div className='w-72 px-1'>
                 <MultiSelect ref={ref} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} customStyle={{fontSize:'medium'}} />
             </div>

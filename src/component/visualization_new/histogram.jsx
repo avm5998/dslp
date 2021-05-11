@@ -60,27 +60,37 @@ export const config = {
         let prevSteps=[],postSteps = []
         setCommonCode({dataset,result,plotOptions,postSteps,prevSteps})
 
-        if(result.bins){
-            plotOptions.bins = Number(result.bins)
-        }
-
-        if(result.alpha){
-            plotOptions.alpha = Number(result.alpha)
-        }
-
-        if(result.cols.length){
-            prevSteps.push(`df = df[[${result.cols.map(col=>`'${col}'`).join(',')}]]`)
-        }
-
-        let dfplotArgs = []
-        for (let k in plotOptions){
-            dfplotArgs.push(`${k}=${plotOptions[k]}`)
-        }
-
-        return `${prevSteps.length?prevSteps.join('\n'):''}
+        if(result.engine == 'Pandas'){
+            if(result.bins){
+                plotOptions.bins = Number(result.bins)
+            }
+    
+            if(result.alpha){
+                plotOptions.alpha = Number(result.alpha)
+            }
+    
+            if(result.cols.length){
+                prevSteps.push(`df = df[[${result.cols.map(col=>`'${col}'`).join(',')}]]`)
+            }
+    
+            let dfplotArgs = []
+            for (let k in plotOptions){
+                dfplotArgs.push(`${k}=${plotOptions[k]}`)
+            }
+    
+            return `${prevSteps.length?prevSteps.join('\n'):''}
 df.plot.hist(${dfplotArgs.join(',')})
 ${postSteps.length?postSteps.join('\n'):''}
 `
+        }
+
+        if(result.engine == 'Plotly'){
+
+            return `${prevSteps.length?prevSteps.join('\n'):''}
+df.plot.hist(${dfplotArgs.join(',')})
+${postSteps.length?postSteps.join('\n'):''}
+`
+        }
     },
     getOperation: ({aggregatedDataset,dataset,options}) => {
         let hasRes = true, res = {}

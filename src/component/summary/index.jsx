@@ -287,7 +287,7 @@ const Correlations = ({ tabpanelIndex, tabpanel }) => {
 const TabPanels = [
   { name: 'Variables' },
   { name: 'Interactions' },
-  { name: 'Correlations' }
+  // { name: 'Correlations' }
 ]
 
 const Visualization = () => {
@@ -313,7 +313,7 @@ const Visualization = () => {
           {/* <Help url={"menu/data_visualization/display_correlations.html"}/> */}
           <Variables tabpanelIndex={0} tabpanel={tabpanel} />
           <Interactions tabpanelIndex={1} tabpanel={tabpanel} />
-          <Correlations tabpanelIndex={2} tabpanel={tabpanel} />
+          {/* <Correlations tabpanelIndex={2} tabpanel={tabpanel} /> */}
         </> : <NoData />}
     </div>)
 }

@@ -96,7 +96,7 @@ const Page = () => {
             <div className="flex flex-row h-auto w-full items-end justify-start shadow-sm bg-gray-100">
 
                 <div className='mx-5 my-4 w-2/12'>
-                    <DropDown defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
+                    <DropDown width={'w-60'} defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
                         name,
                         onClick(e) {
                             setSearchColumn(name)
