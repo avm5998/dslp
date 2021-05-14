@@ -1067,13 +1067,25 @@ def cond_eng_json():
             ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(x for x in x.split() if x not in stop))
         if 'remove digits' in text_feateng_option:
             ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ''.join([i for i in x if not i.isdigit()]))
-        if 'lemmatization' in text_feateng_option:
+        if 'Word Normalization1: lemmatization' in text_feateng_option:
             lemma = WordNetLemmatizer()
             ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ' '.join(lemma.lemmatize(term, pos="v") for term in x.split()))           
-        if 'stemming' in text_feateng_option:
+        if 'Word Normalization2: stemming' in text_feateng_option:
             ps=PorterStemmer()
             ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ' '.join(ps.stem(term) for term in x.split()))           
-
+        if 'Extract Model1: CountVectorizer' in text_feateng_option:
+            tf_vectorizer = CountVectorizer()
+            tf = tf_vectorizer.fit_transform(ndf[text_feateng_col]).toarray()
+            tf_feat_names = tf_vectorizer.get_feature_names()
+            para_result += "\nVocabulary: \n" + tf_feat_names 
+            para_result += '\nCount Vectorizer After fit_transform: \n' + tf
+        if 'Extract Model2: TfidfVectorizer' in text_feateng_option:
+            tfidf_vectorizer = TfidfVectorizer()
+            tfidf = tfidf_vectorizer.fit_transform(ndf[text_feateng_col]).toarray()
+            tfidf_feat_names = tfidf_vectorizer.get_feature_names()
+            para_result += "\nVocabulary: \n" + tfidf_feat_names
+            para_result += "\nidf vector: \n" + tfidf_vectorizer.idf_
+            para_result += '\nTF-IDF Vectorizer After fit_transform: \n' + tfidf
     _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf) # update num_col and cate_col
     return jsonify(data=ndf.to_json(), cols = cols, num_cols = num_cols, cate_cols = cate_cols, para_result=para_result, plot_url=plotUrl)
@@ -1242,28 +1254,28 @@ def cond_preprocess_json():
 
 # Sophie merged--> need modify 
 def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
-    if isinstance(Y_test, pd.DataFrame):
-        Y_test.reset_index(drop=True, inplace=True)
-        comp_df = pd.concat([Y_test, pd.DataFrame(Y_pred)], axis=1)
-        comp_df.columns = ["Actual(Y_test)", "Prediction(Y_pred)"]
-        comp_df=comp_df.apply(pd.to_numeric, errors='ignore') 
-        print("comp_df", comp_df, comp_df.dtypes)
-        img = BytesIO()
-        plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-        plt.title("Actual vs. Prediction Result")
-        if plotType in ['bar', 'line']:
-            comp_df.plot(kind=plotType)
-        elif plotType == 'scatter':
-            comp_df.plot.scatter(x='Actual(Y_test)', y="Prediction(Y_pred)")
-        elif plotType == 'heatmap':
-            sns.heatmap(comp_df,annot=True,cmap="RdYlGn")
-        plt.savefig(img, format='png') 
-        plt.clf()
-        img.seek(0)
-        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-        img.close()
-    else:
-        plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    # if isinstance(Y_test, pd.DataFrame):
+    Y_test.reset_index(drop=True, inplace=True)
+    comp_df = pd.concat([Y_test, pd.DataFrame(Y_pred)], axis=1)
+    comp_df.columns = ["Actual(Y_test)", "Prediction(Y_pred)"]
+    comp_df=comp_df.apply(pd.to_numeric, errors='ignore') 
+    print("comp_df", comp_df, comp_df.dtypes)
+    img = BytesIO()
+    plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+    plt.title("Actual vs. Prediction Result")
+    if plotType in ['bar', 'line']:
+        comp_df.plot(kind=plotType)
+    elif plotType == 'scatter':
+        comp_df.plot.scatter(x='Actual(Y_test)', y="Prediction(Y_pred)")
+    elif plotType == 'heatmap':
+        sns.heatmap(comp_df,annot=True,cmap="RdYlGn")
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    # else:
+        # plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     return plotUrl
 
 
@@ -1276,7 +1288,7 @@ def cond_Regression_json():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
-    models = {} # to store tested models
+    # models = {} # to store tested models
     print(params)
     analysis_model = params['analysis_model']
     test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
@@ -1284,8 +1296,8 @@ def cond_Regression_json():
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
     finalVar = params['finalVar']#["rent amount", "area"] # test, delete later
     finalY = params['finalY']#"total" # test, delete later
-    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
-    # df = _getCache(user_id, filename)   
+    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    df = _getCache(user_id, filename)   
     # print(df)
     ndf = df.replace(MISSING_VALUES, np.nan)
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
@@ -1294,6 +1306,7 @@ def cond_Regression_json():
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\nChoose Test Size(%): " + str(test_size*100)
     if analysis_model == "Linear Regression":
+        models = {} # to store tested models
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
         param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
         model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
@@ -1308,6 +1321,7 @@ def cond_Regression_json():
         para_result += "\nMetric:  " + metric + "\nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
 
     elif analysis_model == "Decision Tree Regression":
+        models = {} # to store tested models
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
         param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
         param_max_depth = int(params['param_max_depth']) if'param_max_depth' in params else 3
@@ -1461,7 +1475,7 @@ def cond_Classification_json():
     ndf = df.replace(MISSING_VALUES, np.nan)
     print("****&&&&&&test******")
     # isTsv = True if filename.split('.')[-1]=='tsv' else False
-    isTsv = True
+    isTsv = True if 'amazon' in filename else False
     print('isTsv=', isTsv)
     if isTsv:
         text_data_feat_model = params['text_data_feat_model']
@@ -1778,8 +1792,8 @@ def cond_Clustering_json():
     params = request.json
     print('params=', params)
     filename = params['filename']
-    # df = _getCache(user_id, filename)
-    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    df = _getCache(user_id, filename)
+    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
     # finalVar = params['finalVar'] if 'finalVar' in params else ndf.Columns
     # finalVar = [x for x in df.columns if 'finalVar'+x in params]
@@ -1924,8 +1938,8 @@ def cond_associateRule_json():
     params = request.json
     filename = params['filename']
     print(params)
-    # df = _getCache(user_id, filename)
-    df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    df = _getCache(user_id, filename)
+    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
     analysis_model = params['analysis_model']
     metric = params['metric'] if 'metric' in params else 'Classification Report'

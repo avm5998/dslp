@@ -165,7 +165,7 @@ const FeatureEngineering = () => {
                     onSelect={e => {
                         result.text_feateng_col = e
                     }} />
-                    <MultiSelect defaultText={`Select one/multi-operation`} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'lemmatization', 'stemming']}  customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" 
+                    <MultiSelect defaultText={`Select one/multi-operation`} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'Word Normalization1: lemmatization', 'Word Normalization2: stemming', 'Extract Model1: CountVectorizer', 'Extract Model2: TfidfVectorizer']}  customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" 
                         onSelect={e=>result.text_feateng_operation = e} />
 
                     {/* <DropDown defaultText={'Select operation'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={[
@@ -200,8 +200,6 @@ const FeatureEngineering = () => {
                                 cate_cols: json.cate_cols,
                             }))
                             dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
-                        
-                            
                         }
                     }}/>
                 </div>

@@ -116,7 +116,7 @@ const Analysis = () => {
                             }
                         }))} />
                 </div>
-                <Button text={'Option'} customStyle={'h-10 w-65 ml-0'} onClick={()=>{
+                <Button text={'Training Model'} customStyle={'h-10 w-65 ml-0'} onClick={()=>{
                     
                     if(model){
                         setShowSubOptionModal(true)
@@ -126,8 +126,9 @@ const Analysis = () => {
 
                 <Button text={'Predict'} customStyle={`h-10 w-60 ml-10 ${predictVisible?'':'hidden'}`} onClick={()=>{
                     if(model){
+
                         setShowSubOptionModal(true)
-                        setVisibleModalTabs([2])
+                        setVisibleModalTabs([2]);
                     }
                 }}/>
             </div>
