@@ -1,38 +1,37 @@
 /******************COMMON STYLES***********************/
 button.outline-none {
-    outline: none !important;
-  }
-  
-  .m_transition {
-    transition: transform 0.15s ease-in-out 0s;
-  }
-  
-  .down {
-    transform: rotate(180deg);
-  }
-  
-  .up {
-    transform: rotate(0deg);
-  }
-  
-  .m_invisible {
-    transform: scale(0);
-  }
-  .m_visible {
-    transform: scale(1);
-  }
-  
-  /******************SPECIFIC STYLES***********************/
-  .multiselect .m_border {
-    border-bottom: 1px solid #eee;
-  }
-  
-  .multiselect .btn-mw {
-    width: auto;
-    max-width: 75%;
-  }
-  
-  .dropdown .m_border {
-    border-bottom: 1px solid #eee;
-  }
-  
+  outline: none !important;
+}
+
+.m_transition {
+  transition: transform 0.15s ease-in-out 0s;
+}
+
+.down {
+  transform: rotate(180deg);
+}
+
+.up {
+  transform: rotate(0deg);
+}
+
+.m_invisible {
+  transform: scale(0);
+}
+.m_visible {
+  transform: scale(1);
+}
+
+/******************SPECIFIC STYLES***********************/
+.multiselect .m_border {
+  border-bottom: 1px solid #eee;
+}
+
+.multiselect .btn-mw {
+  width: auto;
+  max-width: 75%;
+}
+
+.dropdown .m_border {
+  border-bottom: 1px solid #eee;
+}
