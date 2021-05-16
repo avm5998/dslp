@@ -50,7 +50,7 @@ const Analysis = () => {
     let [model, setModel] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let [visibleModalTabs, setVisibleModalTabs] = useState([0, 1])
-    let [currentPreset, setCurrentPreset] = useState(null)
+    let [currentPresetIndex, setCurrentPresetIndex] = useState(-1)
 
     let dataset = useSelector(state => state.dataset)
     let preset = useSelector(state => state.preset)
@@ -72,8 +72,8 @@ const Analysis = () => {
         result.analysis_model = model
 
         //when option and model changes, set default preset
-        console.log(presetsArr.length ? presetsArr[presetsArr.length-1] : null);
-        setCurrentPreset(presetsArr.length ? presetsArr[presetsArr.length-1] : null)
+        // console.log(presetsArr.length ? presetsArr[presetsArr.length-1] : null);
+        // setCurrentPreset(presetsArr.length ? presetsArr[presetsArr.length-1] : null)
     }, [option, model,preset])
 
     let submit = useCallback(async () => {
@@ -90,9 +90,10 @@ const Analysis = () => {
     }, [result, option, model])
 
     let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model) ? OptionModels[option][model] : e => <div></div>
+    let currentPreset = currentPresetIndex>-1 && currentPresetIndex<presetsArr.length?presetsArr[currentPresetIndex]:null;
 
-    const selectPreset = (presetName,currentResult) => {
-        setCurrentPreset(presetName)
+    const selectPreset = (presetIndex,currentResult) => {
+        setCurrentPresetIndex(presetIndex)
         dispatch(OptionActions.setOption(['analysis', option, model, { ...currentResult }]))
     }
 
@@ -100,10 +101,12 @@ const Analysis = () => {
 
     const addPreset = () => {
         dispatch(PresetActions.addPreset({ userId: user.id, filename: dataset.filename, identifier, result }))
+        setCurrentPresetIndex(presetsArr.length)
     }
 
     const clearPreset = () => {
         dispatch(PresetActions.clearPreset({ userId: user.id, filename: dataset.filename, identifier }))
+        setCurrentPresetIndex(-1)
     }
 
     return (
@@ -118,7 +121,7 @@ const Analysis = () => {
             }} setIsOpen={setShowSubOptionModal}>
                 <div style={{zIndex:1000}} className="float-right flex justify-end items-center relative right-2 top-2 gap-4">
                     <div>
-                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No preset'} defaultValue={currentPreset} onSelect={e => selectPreset(e,presets[e])} />
+                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No preset'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} />
                     </div>
                     <div>
                         <Button width="w-40" text={'Clear preset'} onClick={clearPreset} />

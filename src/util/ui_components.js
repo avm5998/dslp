@@ -127,6 +127,7 @@ export const Input = forwardRef(
 
     useEffect(()=>{
       (ref || localRef).current.value = defaultValue
+      onInput({},defaultValue)
     },[defaultValue])
 
     return (
@@ -242,8 +243,11 @@ export const MultiSelect = forwardRef(
     }, [controlledOpen, openState]);
 
     useEffect(()=>{
-      if(defaultValue.length)
-        setSelected([...defaultValue])
+      if(defaultValue.length){
+        let values = [...defaultValue]
+        setSelected(values)
+        onSelect(values)
+      }
     },[defaultValue])
 
     return (
