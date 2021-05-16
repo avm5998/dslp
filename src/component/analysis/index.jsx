@@ -127,6 +127,7 @@ const Analysis = () => {
                 <Button text={'Predict'} customStyle={`h-10 w-60 ml-10 ${predictVisible?'':'hidden'}`} onClick={()=>{
                     if(model){
 
+
                         setShowSubOptionModal(true)
                         setVisibleModalTabs([2]);
                     }
