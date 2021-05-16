@@ -1,11 +1,13 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo,useCachedData,useSimpleForm } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo, getProp, useCachedData, useSimpleForm } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { actions as OptionActions } from '../../reducer/option'
-import { Checkbox, Modal, Button, MultiSelect, DropDown, Label, Input} from '../../util/ui'
+import { actions as PresetActions } from '../../reducer/preset'
+import { Checkbox, Modal, MultiSelect, Label, Input } from '../../util/ui'
+import { DropDown, Button } from '../../util/ui_components';
 import Table from '../common/table'
 import Tip from '../common/tip'
 import LinearRegressionOptions from './option/regression/linearRegression'
@@ -18,18 +20,18 @@ import RandomForestClassifierOptions from './option/classification/randomforestC
 import SVMClassifierOptions from './option/classification/svmClassifier'
 import NaiveBayesClassifierOptions from './option/classification/bayesClassifier'
 import KMeansOptions from './option/clustering/kmeans'
-import AgglomerativeOptions from  './option/clustering/agglomerative'
+import AgglomerativeOptions from './option/clustering/agglomerative'
 import AprioriOptions from './option/associate_rule/apriori'
 import SARIMAOptions from './option/time_series_analysis/sarima'
 import { construct } from 'core-js/fn/reflect';
 //cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js
 //cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css
 const OptionModels = {
-    regression:{'Linear Regression':LinearRegressionOptions, 'Decision Tree Regression':DecisionTreeRegressionOptions, 'Random Forests Regression':RandomForestsRegressionOptions, 'SVM Regression':SVMRegressionOptions}, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
-    classification:{'Logistic Regression':LogisticRegressionOptions, 'Decision Tree Classifier':DecisionTreeClassifierOptions, 'Random Forests Classifier':RandomForestClassifierOptions, 'SVM Classifier':SVMClassifierOptions, 'Naive Bayes Classifier':NaiveBayesClassifierOptions},
-    clustering:{'K-means': KMeansOptions},//, 'Agglometrative': AgglomerativeOptions},
-    associate_rule: {'Apriori': AprioriOptions},
-    time_series_analysis: {'SARIMA': SARIMAOptions},
+    regression: { 'Linear Regression': LinearRegressionOptions, 'Decision Tree Regression': DecisionTreeRegressionOptions, 'Random Forests Regression': RandomForestsRegressionOptions, 'SVM Regression': SVMRegressionOptions }, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
+    classification: { 'Logistic Regression': LogisticRegressionOptions, 'Decision Tree Classifier': DecisionTreeClassifierOptions, 'Random Forests Classifier': RandomForestClassifierOptions, 'SVM Classifier': SVMClassifierOptions, 'Naive Bayes Classifier': NaiveBayesClassifierOptions },
+    clustering: { 'K-means': KMeansOptions },//, 'Agglometrative': AgglomerativeOptions},
+    associate_rule: { 'Apriori': AprioriOptions },
+    time_series_analysis: { 'SARIMA': SARIMAOptions },
 }
 
 // const Models = {
@@ -41,130 +43,171 @@ const OptionModels = {
 // }
 const Analysis = () => {
     useCachedData()
-    
+
     let [optionText, setOptionText] = useState('Select analytic method')
     let [modelText, setModelText] = useState('Select model')
     let [option, setOption] = useState(-1)
     let [model, setModel] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
-    let [visibleModalTabs, setVisibleModalTabs] = useState([0,1])
+    let [visibleModalTabs, setVisibleModalTabs] = useState([0, 1])
+    let [currentPreset, setCurrentPreset] = useState(null)
 
     let dataset = useSelector(state => state.dataset)
+    let preset = useSelector(state => state.preset)
 
     let [predictVisible, setPredictVisible] = useState(1)
     let dispatch = useDispatch()
 
-    let {getData,result,input} = useSimpleForm({
-        default_key:'default_value'
+    let { getData, result, input } = useSimpleForm({
+        default_key: 'default_value'
     })
 
-    useEffect(()=>{
+    let user = useSelector(state => state.auth).user
+    let identifier = option + '#' + model
+    let presets = getProp(preset, user.id, dataset.filename, identifier) || {}
+    let presetsArr = Object.keys(presets)
+
+    useEffect(() => {
         result.analysis_option = option
         result.analysis_model = model
-    },[option,model])
 
-    let submit = useCallback(async ()=>{
-        dispatch(OptionActions.setOption(['analysis',option,model,{...result}]))
-        let res = await fetchByJSON(`analysis/${option}`, {...result, filename:dataset.filename})   //send request
+        //when option and model changes, set default preset
+        console.log(presetsArr.length ? presetsArr[presetsArr.length-1] : null);
+        setCurrentPreset(presetsArr.length ? presetsArr[presetsArr.length-1] : null)
+    }, [option, model,preset])
+
+    let submit = useCallback(async () => {
+        dispatch(OptionActions.setOption(['analysis', option, model, { ...result }]))
+        let res = await fetchByJSON(`analysis/${option}`, { ...result, filename: dataset.filename })   //send request
         let json = await res.json()     // receive request
-     
+
         // json.cond.replace(/&/g, ",  ")
         $('#display_query').text(json.cond)
         $('#display_results').html(json.para_result)
-        document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
+        document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
         setShowSubOptionModal(false)
-        console.log(json)   // print
-    },[result,option,model])
+        // console.log(json)   // print
+    }, [result, option, model])
 
-    let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model)?OptionModels[option][model]:e=><div></div>
+    let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model) ? OptionModels[option][model] : e => <div></div>
+
+    const selectPreset = (presetName,currentResult) => {
+        setCurrentPreset(presetName)
+        dispatch(OptionActions.setOption(['analysis', option, model, { ...currentResult }]))
+    }
+
+    const updatePreset = () => dispatch(PresetActions.updatePreset({ userId: user.id, filename: dataset.filename, identifier, presetName:currentPreset,result }))
+
+    const addPreset = () => {
+        dispatch(PresetActions.addPreset({ userId: user.id, filename: dataset.filename, identifier, result }))
+    }
+
+    const clearPreset = () => {
+        dispatch(PresetActions.clearPreset({ userId: user.id, filename: dataset.filename, identifier }))
+    }
 
     return (
-    <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
-        <Modal fixedModalPosition={{
-            left:'20vw',
-            top:'10vh',
-            width:'70vw'
-        }} zIndex={11} isOpen={showSubOptionModal} onClose={()=>{
-            // let data = getData()
-            // console.log(data)
+        <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
+            <Modal fixedModalPosition={{
+                left: '20vw',
+                top: '10vh',
+                width: '70vw'
+            }} zIndex={11} isOpen={showSubOptionModal} onClose={() => {
+                // let data = getData()
+                // console.log(data)
             }} setIsOpen={setShowSubOptionModal}>
-            <OptionView visibleTabs={visibleModalTabs} dataset={dataset} result={result} submit={submit}/>
-        </Modal>
-
-
-        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12/12 w-full flex justify-start'>
-                <div className='w-72'>
-                    <DropDown text={optionText} customStyle='h-10 w-72' customUlStyle={'w-72 h-10'} items={
-                        Object.keys(OptionModels).map((item, i) => ({
-                            name: item, onClick(e) {
-                                {/*   0                           1                            2                               3                 4    */ }
-                                setOption(item)
-                                setOptionText(item)
-                                setPredictVisible(item!='clustering' && item!='associate_rule' && item!='time_series_analysis')
-                            }
-                        }))} />
+                <div style={{zIndex:1000}} className="float-right flex justify-end items-center relative right-2 top-2 gap-4">
+                    <div>
+                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No preset'} defaultValue={currentPreset} onSelect={e => selectPreset(e,presets[e])} />
+                    </div>
+                    <div>
+                        <Button width="w-40" text={'Clear preset'} onClick={clearPreset} />
+                    </div>
+                    <div>
+                        <Button width="w-40" text={'Update preset'} onClick={updatePreset} />
+                    </div>
+                    <div>
+                        <Button width="w-40" text={'Add preset'} onClick={addPreset} />
+                    </div>
                 </div>
-                <div className='w-72 mx-5'>
-                    <DropDown defaultText='Select analytic method' customStyle='h-10 w-72' customUlStyle={'w-72 h-10'} items={
-                        (OptionModels.hasOwnProperty(option)?Object.keys(OptionModels[option]):[]).map((item, i) => ({
-                            name: item, onClick(e) {
-                                setModel(item)
-                                setModelText(item)
-                                setShowSubOptionModal(true)
-                                setVisibleModalTabs([0,1])
-                            }
-                        }))} />
+                <OptionView visibleTabs={visibleModalTabs} dataset={dataset} result={result} submit={submit} />
+            </Modal>
+
+
+            <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+                <div className='mx-5 w-12/12 w-full flex justify-start'>
+                    <div className='w-72'>
+                        <DropDown text={optionText} width='w-72' items={
+                            Object.keys(OptionModels).map((item, i) => ({
+                                name: item, onClick(e) {
+                                    {/*   0                           1                            2                               3                 4    */ }
+                                    setOption(item)
+                                    setOptionText(item)
+                                    setPredictVisible(item != 'clustering' && item != 'associate_rule' && item != 'time_series_analysis')
+                                    return false
+                                }
+                            }))} />
+                    </div>
+                    <div className='w-72 mx-5'>
+                        <DropDown defaultText='Select analytic method' width='w-72' items={
+                            (OptionModels.hasOwnProperty(option) ? Object.keys(OptionModels[option]) : []).map((item, i) => ({
+                                name: item, onClick(e) {
+                                    setModel(item)
+                                    setModelText(item)
+                                    setShowSubOptionModal(true)
+                                    setVisibleModalTabs([0, 1])
+                                    return false
+                                }
+                            }))} />
+                    </div>
+                    <Button text={'Training Model'} width='w-65' onClick={() => {
+
+                        if (model) {
+                            setShowSubOptionModal(true)
+                            setVisibleModalTabs([0, 1])
+                        }
+                    }} />
+
+                    <Button text={'Predict'} width='w-60' customStyleText={`ml-5 ${predictVisible ? '' : 'hidden'}`} onClick={() => {
+                        if (model) {
+
+                            setShowSubOptionModal(true)
+                            setVisibleModalTabs([2]);
+                        }
+                    }} />
                 </div>
-                <Button text={'Training Model'} customStyle={'h-10 w-65 ml-0'} onClick={()=>{
-                    
-                    if(model){
-                        setShowSubOptionModal(true)
-                        setVisibleModalTabs([0,1])
-                    }
-                }}/>
-
-                <Button text={'Predict'} customStyle={`h-10 w-60 ml-10 ${predictVisible?'':'hidden'}`} onClick={()=>{
-                    if(model){
-
-
-                        setShowSubOptionModal(true)
-                        setVisibleModalTabs([2]);
-                    }
-                }}/>
             </div>
-        </div>
 
 
-     
 
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-                <Label text="Model Conditions:" className='w-300'>
-                <div id = "display_query" style={{ whiteSpace: 'pre-wrap' }} ></div>
-                </Label>
+
+            <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+                <div className='mx-5 w-12 w-full justify-start'>
+                    <Label text="Model Conditions:" className='w-300'>
+                        <div id="display_query" style={{ whiteSpace: 'pre-wrap' }} ></div>
+                    </Label>
+                </div>
             </div>
-        </div>
 
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-            <Label text="Model Results:">
-                <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} ></div>
-            </Label>
+            <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+                <div className='mx-5 w-12 w-full justify-start'>
+                    <Label text="Model Results:">
+                        <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} ></div>
+                    </Label>
+                </div>
             </div>
-        </div>
 
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-            <Label text="Model Plot:">
-                <img id="img" src="" />
-            </Label>
+            <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+                <div className='mx-5 w-12 w-full justify-start'>
+                    <Label text="Model Plot:">
+                        <img id="img" src="" />
+                    </Label>
+                </div>
             </div>
-        </div>
-        
-        {/* <Table PageSize={10}/> */}
 
-    </div>
+            {/* <Table PageSize={10}/> */}
+
+        </div>
     )
 }
 

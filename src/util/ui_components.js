@@ -4,10 +4,10 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useImperativeHandle,
 } from "react";
 import { useThrottle } from "./util";
 import "./ui_component.css";
-import { useImperativeHandle } from "react";
 import cn from "classnames";
 import { faSmileBeam } from "@fortawesome/free-regular-svg-icons";
 import { text } from "@fortawesome/fontawesome-svg-core";
@@ -73,40 +73,6 @@ const ArrowSVG = ({ directionDown = true }) => (
   </svg>
 );
 
-const findOpenStateAncestor = (e) => {
-  while (e) {
-    if (
-      e.getAttribute("data-component-ancestor") ||
-      e === document.querySelector("html")
-    ) {
-      return e;
-    }
-
-    e = e.parentElement;
-  }
-
-  return null;
-};
-
-//registering the component itself to the closest common ancestor
-//setter: state update function
-//ref: any reference pointing to any element inside that component
-const registerOpenStateSetter = (setter, ref) => {
-  let ancestor = findOpenStateAncestor(ref.current);
-  ancestor._componentOpenStateSetters ||= [];
-  ancestor._componentOpenStateSetters.push(setter);
-};
-
-//once this component opens, find the ancestor and close other registered components
-const closeOtherComponents = (setter, ref) => {
-  let ancestor = findOpenStateAncestor(ref.current);
-  ancestor._componentOpenStateSetters.forEach((_setter) => {
-    if (_setter !== setter) {
-      _setter(false);
-    }
-  });
-};
-
 const ButtonTypeStyleText = {
   disabled: {
     default: "cursor-default text-gray-400 border-gray-300",
@@ -130,7 +96,7 @@ export function Label({
 }) {
   return (
     <div
-      style={customStyle}
+      style={{...(customStyle instanceof Object?customStyle:{})}}
       className={cn(
         "flex",
         "items-center",
@@ -156,11 +122,18 @@ export const Input = forwardRef(
     },
     ref
   ) => {
+
+    let localRef = useRef()
+
+    useEffect(()=>{
+      (ref || localRef).current.value = defaultValue
+    },[defaultValue])
+
     return (
       <input
-        ref={ref}
+        ref={ref || localRef}
         {...attrs}
-        style={customStyle}
+        style={{...(customStyle instanceof Object ? customStyle : {})}}
         className={cn(
           "box-border",
           "py-1",
@@ -186,8 +159,10 @@ export function Button({
   text,
   disabledText = text,
   id,
+  width='w-full',
   onClick = EMPTY_FUNCTION,
   customStyle = EMPTY_O,
+  customStyleText='',
 
   //style property
   buttonType = disabled ? "disabled" : "normal", // currently only normal style, other styles can be added into ButtonTypeStyleText
@@ -201,7 +176,7 @@ export function Button({
       className={
         overrideClass
           ? overrideClass
-          : cn(style.default.concat(hoverAnimation ? style.hover : []))
+          : cn(customStyleText,width,style.default.concat(hoverAnimation ? style.hover : []))
       }
       onClick={onClick}
       style={customStyle}
@@ -233,6 +208,7 @@ export const MultiSelect = forwardRef(
       passiveMode = false, //when passive mode is set to true,
       allowDelete = !passiveMode, //do not allow deleting element in passive mode by default
       defaultText = "",
+      defaultValue = [], 
       controlledOpen = false,
       openState = false,
     },
@@ -253,16 +229,6 @@ export const MultiSelect = forwardRef(
     }));
 
     useEffect(() => {
-      registerOpenStateSetter(setMenuOpen, buttonRef);
-    }, []);
-
-    useEffect(() => {
-      if (menuOpen) {
-        closeOtherComponents(setMenuOpen, buttonRef);
-      }
-    }, [menuOpen]);
-
-    useEffect(() => {
       if (passiveMode) {
         setMenuOpen(false);
         setSelected([...selections]);
@@ -274,6 +240,11 @@ export const MultiSelect = forwardRef(
         setMenuOpen(openState);
       }
     }, [controlledOpen, openState]);
+
+    useEffect(()=>{
+      if(defaultValue.length)
+        setSelected([...defaultValue])
+    },[defaultValue])
 
     return (
       <div
@@ -456,18 +427,8 @@ export const DropDown = forwardRef(
     let inputParentRef = useRef(null);
     let inputRef = useRef(null);
     let [menuOpen, setMenuOpen] = useState(0);
-    let [currentText, setCurrentText] = useState(defaultText || defaultValue);
+    let [currentText, setCurrentText] = useState(defaultValue || defaultText);
     let allOptions = [];
-
-    useEffect(() => {
-      registerOpenStateSetter(setMenuOpen, buttonRef);
-    }, []);
-
-    useEffect(() => {
-      if (menuOpen) {
-        closeOtherComponents(setMenuOpen, buttonRef);
-      }
-    }, [menuOpen]);
 
     useImperativeHandle(ref, () => ({
       hide: () => {
@@ -509,17 +470,15 @@ export const DropDown = forwardRef(
     allOptions = allOptions.concat(items);
 
     //set default value
-    useEffect(() => {
-      if (defaultValue) {
-        for (let item of items) {
-          if (item.name == defaultValue) {
-            if(item.onClick){
-              item.onClick(null, true);
-            }
-          }
-        }
+    useEffect(()=>{
+      let filtered = items.filter(item=>item.name === defaultValue)
+      if(filtered.length){
+        filtered[0].onClick()
+        setCurrentText(defaultValue)
+      }else{
+        setCurrentText(defaultText)
       }
-    }, []);
+    },[defaultValue])
 
     let hasControl = text === undefined; //give control to DropDown component itself
 
@@ -582,7 +541,7 @@ export const DropDown = forwardRef(
             setMenuOpen(1);
           }
         }}
-        style={{ zIndex, ...customStyle }}
+        style={{ zIndex, ...(customStyle instanceof Object ? customStyle : {}) }}
       >
         <button
           id={id}
@@ -663,7 +622,7 @@ export const DropDown = forwardRef(
                         setCurrentText(item.name);
                       }
 
-                      if (res === false) {
+                      if (!res) {
                         setMenuOpen((s) => !s);
                       }
                     }}

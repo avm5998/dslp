@@ -1,5 +1,6 @@
 import { actions as DataSetActions } from '../reducer/dataset'
 import { actions as OptionActions } from '../reducer/option'
+import { actions as PresetActions } from '../reducer/preset'
 import { useDispatch, useSelector } from 'react-redux'
 import ifetch from 'isomorphic-fetch';
 import {Redirect} from 'react-router-dom';
@@ -8,6 +9,19 @@ import { config } from '../config/client'
 import authHeader, {authHeaderRefresh} from '../services/auth-header';
 import { logout } from '../actions/auth';
 import { createBrowserHistory } from 'history';
+
+export function getProp(object,...props){
+    let cur = object
+    for(let i = 0;i<props.length;i++){
+        if(cur && cur.hasOwnProperty(props[i])){
+            cur = cur[props[i]]
+        }else{
+            if(!cur) return cur
+            return undefined
+        }
+    }
+    return cur
+}
 
 export function toUnicode(str) {
 	return str.split('').map(function (value, index, array) {
@@ -338,10 +352,11 @@ function getInitialForm(fields) {
  * use this function to get data from server when page rereshes
  */
 export function useCachedData(){
-    let info = null, optionInfo = null
+    let info = null, optionInfo = null, presetInfo = null
     try{//Strange BUG!
         info = JSON.parse(localStorage.getItem('info'))
         optionInfo = JSON.parse(localStorage.getItem('optionInfo')) || []
+        presetInfo = JSON.parse(localStorage.getItem('presetInfo')) || {}
     }catch(e){
 
     }
@@ -349,11 +364,16 @@ export function useCachedData(){
     let dispatch = useDispatch()
     let dataset = useSelector(state=>state.dataset)
     let option = useSelector(state=>state.option)
+    let preset = useSelector(state=>state.preset)
 
-    //initialize option from local storage
+    //initialize from local storage
     useEffect(()=>{
-        if(option.default && optionInfo){
+        if(option && option.default && optionInfo){
             dispatch(OptionActions.setOption(optionInfo))
+        }
+
+        if(preset && presetInfo){
+            dispatch(PresetActions.loadPreset(presetInfo))
         }
     },[])
 
@@ -392,10 +412,13 @@ export function useCachedData(){
     },[])
 }
 
+export function cachePresetInfo(data){
+    localStorage.setItem('presetInfo',JSON.stringify(data))
+}
+
 export function cacheOptionInfo(data){
     let obj = JSON.parse(JSON.stringify({...data}))
     let res = []
-    console.log(obj);
     for(let module in obj)
         for(let method in obj[module])
             for (let model in obj[module][method])
