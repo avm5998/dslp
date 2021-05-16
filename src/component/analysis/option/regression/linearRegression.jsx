@@ -29,7 +29,8 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect zIndex={30} defaultValue={option.finalVar} width='w-64' defaultText='select one/multi-column' selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                <MultiSelect zIndex={30} defaultValue={option.finalVar} width='w-64' defaultText='select one/multi-column' selections={dataset.cols} 
+                    onSelect={e=>result.finalVar = e}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
                 <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'}  width='w-64' items={dataset.cols} 
@@ -39,19 +40,19 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }/>
 
                 <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model."/></Label>
-                <Input defaultValue={option.test_size} onInput={(e,v) => {
+                <Input zIndex={28} defaultValue={option.test_size} onInput={(e,v) => {
                     result.test_size = v 
                 }} width={`w-64`} attrs={{ list: 'test_size_lr_list' }} />
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset."/></Label>
-                <DropDown zIndex={28} defaultValue={option.pre_obs_plotType} defaultText={'line'}  width='w-64' items={['bar', 'scatter', 'line', 'heatmap']} 
+                <DropDown defaultValue={option.pre_obs_plotType} defaultText={'line'}  width='w-64' items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
                     } 
                 }/>
 
                 <Label text='Metrics of Model:'><InlineTip info="Assess model performance. "/></Label>
-                <DropDown zIndex={27} defaultValue={option.metric} defaultText={'neg_mean_squared_error'} width='w-64'  items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
+                <DropDown defaultValue={option.metric} defaultText={'neg_mean_squared_error'} width='w-64'  items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {
                         result.metric = name
                     }
@@ -62,12 +63,12 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown zIndex={26} defaultValue={option.param_fit_intercept_lr} defaultText={'True'}  width='w-64' items={['True', 'False']}
+                <DropDown zIndex={27} defaultValue={option.param_fit_intercept_lr} defaultText={'True'}  width='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_fit_intercept_lr = name
                 }} />
                 <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown zIndex={25} defaultValue={option.param_normalize_lr} defaultText={'False'}  width='w-64' items={['True', 'False']}
+                <DropDown zIndex={26} defaultValue={option.param_normalize_lr} defaultText={'False'}  width='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_normalize_lr = name  
                 }} />
@@ -76,7 +77,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
-                    <Checkbox label={col} name='suboption_checked' item={col}/>
+                    <Label>{col}</Label>
                         <Input onInput={(e,v) => {
                             result['Linear Regression'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 

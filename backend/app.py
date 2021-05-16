@@ -1092,94 +1092,92 @@ def cond_eng_json():
 
     
 @app.route('/feature_selection', methods=['POST'])
-@cross_origin('*')
+@cross_origin()
 @jwt_required()
 def cond_select_json():
     params = request.json
     filename = params['filename']
-    user_id = get_jwt_identity()
+    user_id = get_jwt_identity()    
     df = _getCache(user_id,filename)
-    print('params=====', params)
-    msg = ''
-    success = True
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    print('params***!!=====', params)
 
     DEFAULT_PLOT_SIZE = (5,5)
-    DEFAULT_PLOT_TYPE = 'bar'
-    Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information Classification','Principal Component Analysis'])}
-
+    Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information','Principal Component Analysis'])}
+    PlotType_library = {i:e for i,e in enumerate(['bar', 'scatter', 'line', 'heatmap'])}
     plotSize = tuple(map(int,params['plotsize'].split(','))) if params['plotsize'] else DEFAULT_PLOT_SIZE
-    plotType = params['plottype'] or 'bar'
-    K = int(params['selectkbest']) if params['selectkbest'] else 0
+    plotType = PlotType_library[params['plottype']] if params['plottype'] else 'bar'
     Y = params['targety']
-    tech = Techniques[int(params['technique'])] if params['technique'] else ''
+    tech = Techniques[int(params['technique'])] if 'technique' in params else 'Correlation Matrix'
     X = params['variablesx']
-    df.replace(missing_values, np.nan) 
-
+    K = int(params['selectkbest']) if params['selectkbest'] else len(X)
     if Y:
-        df = pd.concat([df[X], df[Y]], axis=1)
+        ndf = pd.concat([ndf[X], ndf[Y]], axis=1)
     else:
-        df = df[X]
-
-        # for i in data.columns:
-        #     if data[i].dtypes == object:
-        #         label = LabelEncoder()
-        #         data[i] = label.fit_transform(data[i].astype(str))
-    X = df[X]
-    Y = df[Y]
+        ndf = ndf[X]
+    ndf = ndf.apply(pd.to_numeric,errors='ignore') # convert data type
+    X = ndf[X]
+    Y = ndf[Y]
     img = BytesIO()
-    if tech in ["Correlation Matrix", 'PCA']:
+    if tech in ["Correlation Matrix", 'Principal Component Analysis']:
         if tech == "Correlation Matrix":
-            featureResult = df.corr(method ='pearson')  # get correlations of each features in dataset
+            featureResult = ndf.corr(method ='pearson')  # get correlations of each features in dataset
             featureResult = pd.DataFrame(data=featureResult)
-        elif tech == "PCA":
-                scaled_data = StandardScaler().fit_transform(data)
-                pca = PCA(n_components=num_comp)
-                pca_res = pca.fit_transform(scaled_data) 
-                col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
-                pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
-                featureResult = pd.concat([pca_df, Y], axis=1)
+            title = tech
+            x_label, y_label = 'Features', 'Correlation'
+        elif tech == "Principal Component Analysis":
+            num_comp = int(params['specific_inputVal_pca']) if 'specific_inputVal_pca' in params and params['specific_inputVal_pca'] else 2
+            scaled_data = StandardScaler().fit_transform(ndf)
+            pca = PCA(n_components=num_comp)
+            pca_res = pca.fit_transform(scaled_data) 
+            col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
+            pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
+            featureResult = pd.concat([pca_df, Y], axis=1)
+            title = 'Principle Component Analysis'
+            x_label, y_label = 'Features', 'PC'
         plt.rcParams["figure.figsize"] = plotSize
-
-        if plotType == "Bar":
+        if plotType == 'bar':
             featureResult.plot.bar()
-        elif plotType == "Scatter Plot":
-            sns.pairplot(featureResult) # plt.scatter(pca_res[:,0], pca_res[:,1])
-        elif plotType == "Line Graph":
+        elif plotType == 'scatter':
+            sns.pairplot(featureResult) 
+        elif plotType == 'line':
             featureResult.plot.line()
-        elif plotType == "Heatmap":
-            sns.heatmap(featureResult,annot=True,cmap="RdYlGn") # cmap='RdGy'
+        elif plotType == 'heatmap':
+            sns.heatmap(featureResult,annot=True,cmap="RdYlGn")
     else:
-        if tech == "VarianceThreshold":
+        if tech == "Removing Features with Low Variance":
+            thresh = float(params['specific_inputVal_lowVar']) if 'specific_inputVal_lowVar' in params and params['specific_inputVal_lowVar'] else 0.3
             fs = VarianceThreshold(threshold=thresh)
-            fs.fit(df)
-            featureResult = pd.DataFrame({"Features":df.columns ,"Boolean Result":fs.get_support()})
+            fs.fit(X)
+            featureResult = pd.DataFrame({"Features":X.columns ,"Boolean Result":fs.get_support()})
             x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
             featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
         else:
-            if tech == "Pearson":
+            if tech == "Regression1: Pearson’s Correlation Coefficient":
                 fs = SelectKBest(score_func=f_regression, k=K)
             elif tech == "Classification1: ANOVA":
                 fs = SelectKBest(score_func=f_classif, k=K)
-            elif tech == "Chi2":
+            elif tech == "Classification2: Chi-Squared":
                 fs = SelectKBest(score_func=chi2, k=K)
-            elif tech == "Mutual_classification":
+            elif tech == "Classification3: Mutual Information":
                 fs = SelectKBest(score_func=mutual_info_classif, k=K)
             fit = fs.fit(X, Y.values.ravel())
             featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
             featureResult=featureResult.nlargest(K,'Score')  #print k best features
-            x_label, y_label, title = 'Features', 'Score', 'Feature Score'
-            fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
-        plt.rcParams["figure.figsize"] = plotSize
-        fig = featureResult.plot(x=x_label, y=y_label, kind=plotType, rot=0)
-        plt.title(title)
+            x_label, y_label, title = 'Features', 'Score', tech+'\nFeature Score'
+        featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
     plt.rcParams["figure.figsize"] = plotSize
-    # encode plot
-    plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+    plt.savefig(img, format='png', bbox_inches="tight") 
     plt.clf()
     img.seek(0)
     plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
     img.close()
-    return jsonify(base64=plotUrl) #feature_Result=featureResult.to_json(orient="values"),
+    para_result = featureResult.to_html()
+    return jsonify(plot_url=plotUrl, para_result=para_result)
 
 
 @app.route('/preprocessing', methods=['POST'])
@@ -1294,11 +1292,9 @@ def cond_Regression_json():
     test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
     metric = params['metric'] if 'metric' in params else 'neg_mean_squared_error'
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
-    finalVar = params['finalVar']#["rent amount", "area"] # test, delete later
-    finalY = params['finalY']#"total" # test, delete later
-    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    finalVar = params['finalVar'] #if 'finalVar' in params['finalVar'] else 
+    finalY = params['finalY'] 
     df = _getCache(user_id, filename)   
-    # print(df)
     ndf = df.replace(MISSING_VALUES, np.nan)
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
@@ -1306,11 +1302,10 @@ def cond_Regression_json():
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\nChoose Test Size(%): " + str(test_size*100)
     if analysis_model == "Linear Regression":
-        models = {} # to store tested models
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
         param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
         model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
-        models[analysis_model] = model
+        # models[analysis_model] = model
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -1321,7 +1316,6 @@ def cond_Regression_json():
         para_result += "\nMetric:  " + metric + "\nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
 
     elif analysis_model == "Decision Tree Regression":
-        models = {} # to store tested models
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
         param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
         param_max_depth = int(params['param_max_depth']) if'param_max_depth' in params else 3
@@ -1330,7 +1324,7 @@ def cond_Regression_json():
         param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
         model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        models[analysis_model] = model
+        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -1377,7 +1371,7 @@ def cond_Regression_json():
         param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
         param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
         model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        models[analysis_model] = model
+        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
@@ -1408,7 +1402,7 @@ def cond_Regression_json():
         find_gamma  = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
         param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
         model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
-        models[analysis_model] = model
+        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -1437,13 +1431,13 @@ def cond_Regression_json():
     if pred_var in params and params[pred_var]:  
         predic_var, input_val = [], []
         for i in df.columns:
-            col_temp = analysis_model+i
+            col_temp = analysis_model + i
             if col_temp in params and params[col_temp]:
                 predic_var.append(i)
                 input_val.append(params[col_temp])
         Class_input_val = [input_val]
         input_val = np.array(Class_input_val, dtype='float64')
-        model = models[analysis_model] # pick the best model    
+        # model = models[analysis_model] # pick the best model    
         result = model.predict(input_val)
         cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
         para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
@@ -1950,26 +1944,20 @@ def cond_associateRule_json():
     params_lift_min_thresh = float(params['params_lift_min_thresh']) if ('params_lift_min_thresh' in params) and (params['params_lift_min_thresh']) else 1.0
     params_confidence_min_thresh = float(params['params_confidence_min_thresh']) if ('params_confidence_min_thresh' in params) and (params['params_confidence_min_thresh']) else 0.5
     params_antecedent_len = int(params['params_antecedent_len']) if ('params_antecedent_len' in params) and (params['params_antecedent_len']) else 1
-    print(params_support_min_thresh, params_lift_min_thresh, params_confidence_min_thresh)
-    # params_min_support = float(params['params_min_support']) if ('params_min_support' in params) and (params['params_min_support']) else 0.5
-    # params_metric = params['params_metric'] if 'params_metric' in params else 'confidence'
-    # params_min_threshold = float(params['params_min_threshold']) if ('params_min_threshold' in params) and (params['params_min_threshold'])  else 0.8
     params_use_colnames = bool(params['params_use_colnames']) if 'params_use_colnames' in params else True
     params_max_len = int(params['params_max_len']) if 'params_max_len' in params else None
     param_specific_item = params['param_specific_item'] if 'param_specific_item' in params else None
     metrics_apriori = params['metrics_apriori'] if 'metrics_apriori' in params else '5.Association Rules: list all items'
     # cond += "\nSupport Itemsets:\nSet Parameters: min_support=" + str(params_support_min_thresh) + ", use_colnames=" + str(params_use_colnames) + ", max_len=" + str(params_max_len)
     cond += "\n\nAssociation Rules:\nSet Parameters: support_min_threshold=" + str(params_support_min_thresh) + ", lift_min_threshold=" + str(params_lift_min_thresh) + ", confidence_min_threshold=" + str(params_confidence_min_thresh)
-    # print('metrics_apriori====', metrics_apriori)
     ndf['Quantity']= 1
-    # print("ndf = ", ndf.head(10))
     basket_data = ndf.groupby([transid, transitem])['Quantity'].sum().unstack().fillna(0)
-    def encode_units(x):
-        if x <= 0:
+    def transform_transaction(val):
+        if val <= 0:
             return 0
-        if x >= 1:
+        if val >= 1:
             return 1
-    basket_sets = basket_data.applymap(encode_units)
+    basket_sets = basket_data.applymap(transform_transaction)
     print('basket_sets=', basket_sets)
     frequent_itemsets = apriori(basket_sets, min_support=params_support_min_thresh, use_colnames=params_use_colnames)
     print(frequent_itemsets)

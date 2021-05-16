@@ -17,27 +17,6 @@ const Options = [
     {name:'Category',value:'category'},
 ]
 
-// const TextDataCheckFeatOptions = [
-//     {name:'Select Operation',value:''},
-//     {name:'Words Count',value:'Words Count'},
-//     {name:'Characture Count',value:'Characture Count'},
-//     {name:'Average Word Length',value:'Average Word Length'},
-//     {name:'Stopwords Count',value:'Stopwords Count'},
-//     {name:'Numerics Count',value:'Numerics Count'},
-//     {name:'Upper Count',value:'Upper Count'},
-// ]
-// const TextDataPreprocessOptions =[
-//     {name:'Select Operation',value:''},
-//     {name:'Convert to Lower Case',value:'Convert to Lower Case'},
-//     {name:'Expand Contractions',value:'Expand Contractions'},
-//     {name:'Remove Punctuation',value:'Remove Punctuation'},
-//     {name:'Remove Stopwords',value:'Remove Stopwords'},
-//     {name:'Remove Digits',value:'Remove Digits'},
-//     {name:'Remove URL',value:'Remove URL'},
-//     {name:'Remove Specific Words',value:'Remove Specific Words'},//7
-//     {name:'Lemmatization',value:'Lemmatization'},
-//     {name:'Stemming',value:'Stemming'},
-// ]
 
 const setSubOption = (option, subOption, condition) => {
     console.log(condition);
