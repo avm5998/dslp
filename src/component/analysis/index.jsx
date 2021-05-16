@@ -181,7 +181,7 @@ const Analysis = () => {
 
 
 
-            <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+            <div className=" w-full">
                 <div className='mx-5 w-12 w-full justify-start'>
                     <Label text="Model Conditions:" className='w-300'>
                         <div id="display_query" style={{ whiteSpace: 'pre-wrap' }} ></div>

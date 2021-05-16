@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
-import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../../../util/ui'
+import { Label, Button, Modal, Checkbox } from '../../../../util/ui'
+import { Input, DropDown, MultiSelect } from '../../../../util/ui_components'
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
@@ -33,10 +34,10 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                <MultiSelect zIndex={30} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
-                <DropDown defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
+                <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
                     onSelect={e => {
                         result.finalY = e
                     } 
@@ -60,14 +61,14 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }/>
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset. Note: Set 'Visualize Tree=No Plot'; Default:line"/></Label>
-                <DropDown defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
+                <DropDown zIndex={28} defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
                     } 
                 }/>
 
                 <Label text='Metrics of Model:'><InlineTip info="Assess model performance.  Default: neg_mean_squared_error"/></Label>
-                <DropDown defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
+                <DropDown zIndex={27} defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {
                         result.metric = name
                     }
@@ -85,26 +86,26 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }}>
 
                 <Label customStyle={``} text='Set Parameters: criterion'><InlineTip info="Default: mse"/></Label>
-                <DropDown defaultText={'mse'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['mse','friedman_mse','mae', 'poisson']}
+                <DropDown zIndex={26} defaultText={'mse'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['mse','friedman_mse','mae', 'poisson']}
                     onSelect={name => {
                         result.param_criterion = name  
                 }} />
                 <Label customStyle={``} text='Set Parameters: splitter'><InlineTip info="Default: best"/></Label>
-                <DropDown defaultText={'best'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['best','random']}
+                <DropDown zIndex={25} defaultText={'best'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['best','random']}
                     onSelect={name => {
                         result.param_splitter = name  
                 }} />
                 <Label customStyle={``} text='Set Parameters: max_features'><InlineTip info="Default: None"/></Label>
-                <DropDown defaultText={'None'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','sqrt', 'log2']}
+                <DropDown zIndex={24} defaultText={'None'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','sqrt', 'log2']}
                     onSelect={name => {
                         result.param_max_features = name 
                 }} />
                 <Label customStyle={``} text='Set Parameters: max_leaf_nodes'><InlineTip info="int or None"/></Label>
-                <Input defaultValue={'None'} onInput={(e,v) => {
+                <Input zIndex={23} defaultValue={'None'} onInput={(e,v) => {
                     result.param_max_leaf_nodes = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_leaf_nodes_dtr_list' }} />
                 <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="int or None"/></Label>
-                <Input defaultValue={'None'} onInput={(e,v) => {
+                <Input zIndex={22} defaultValue={'None'} onInput={(e,v) => {
                     result.param_random_state = v 
                 }} customStyle={`w-64`} attrs={{ list: 'random_state_dtr_list' }} />
 

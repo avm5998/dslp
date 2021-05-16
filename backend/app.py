@@ -1292,11 +1292,9 @@ def cond_Regression_json():
     test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
     metric = params['metric'] if 'metric' in params else 'neg_mean_squared_error'
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
-    finalVar = params['finalVar']#["rent amount", "area"] # test, delete later
-    finalY = params['finalY']#"total" # test, delete later
-    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
+    finalVar = params['finalVar'] #if 'finalVar' in params['finalVar'] else 
+    finalY = params['finalY'] 
     df = _getCache(user_id, filename)   
-    # print(df)
     ndf = df.replace(MISSING_VALUES, np.nan)
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
@@ -1304,11 +1302,10 @@ def cond_Regression_json():
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\nChoose Test Size(%): " + str(test_size*100)
     if analysis_model == "Linear Regression":
-        models = {} # to store tested models
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
         param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
         model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
-        models[analysis_model] = model
+        # models[analysis_model] = model
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -1319,7 +1316,6 @@ def cond_Regression_json():
         para_result += "\nMetric:  " + metric + "\nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
 
     elif analysis_model == "Decision Tree Regression":
-        models = {} # to store tested models
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
         param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
         param_max_depth = int(params['param_max_depth']) if'param_max_depth' in params else 3
@@ -1328,7 +1324,7 @@ def cond_Regression_json():
         param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
         model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        models[analysis_model] = model
+        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -1375,7 +1371,7 @@ def cond_Regression_json():
         param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
         param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
         model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        models[analysis_model] = model
+        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
@@ -1406,7 +1402,7 @@ def cond_Regression_json():
         find_gamma  = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
         param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
         model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
-        models[analysis_model] = model
+        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -1435,13 +1431,13 @@ def cond_Regression_json():
     if pred_var in params and params[pred_var]:  
         predic_var, input_val = [], []
         for i in df.columns:
-            col_temp = analysis_model+i
+            col_temp = analysis_model + i
             if col_temp in params and params[col_temp]:
                 predic_var.append(i)
                 input_val.append(params[col_temp])
         Class_input_val = [input_val]
         input_val = np.array(Class_input_val, dtype='float64')
-        model = models[analysis_model] # pick the best model    
+        # model = models[analysis_model] # pick the best model    
         result = model.predict(input_val)
         cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
         para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
