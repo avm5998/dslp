@@ -13,7 +13,8 @@ class User(db.Document):
     profile_image = db.ImageField(thumbnail_size=(40, 40, False))
     last_logged_in = db.DateTimeField(default=datetime.now(timezone.utc), nullable=False)
     user_activity = db.DictField()
-    user_bio = db.StringField()         
+    user_bio = db.StringField()
+    roles =  db.ListField()        
     def hash_password(self):
         self.password = generate_password_hash(self.password).decode('utf8')
     
@@ -24,3 +25,8 @@ class User(db.Document):
 class TokenBlockList(db.Document):
     jti = db.StringField(nullable=False)
     created_at = db.DateTimeField(nullable=False)
+
+
+# class Role(db.Document):
+#     # id = db.Column(db.Integer(), primary_key=True)
+#     name = db.Column(db.String(50), unique=True)

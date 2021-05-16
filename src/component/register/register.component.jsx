@@ -70,6 +70,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [successful, setSuccessful] = useState(false);
+  const [selectedOption, setSelectedOption] = useState('Student');
 
   const { message } = useSelector(state => state.message);
   const dispatch = useDispatch();
@@ -93,6 +94,11 @@ const Register = () => {
     setPassword(password);
   };
 
+  const onChangeRole = (e) => {
+    const role = e.target.value;
+    setSelectedOption(role);
+  }
+
   const handleRegister = (e) => {
     e.preventDefault();
 
@@ -101,7 +107,7 @@ const Register = () => {
     form.current.validateAll();
 
     if (checkBtn.current.context._errors.length === 0) {
-      dispatch(register(fullname, username, email, password))
+      dispatch(register(fullname, username, email, password, selectedOption))
         .then(() => {
           setSuccessful(true);
         })
@@ -115,7 +121,7 @@ const Register = () => {
     <div className="form-signin flex flex-col justifyy-center">
 
         { !successful && 
-          <h1 class="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
+          <h1 className="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
                 Do not have an account?
                 <br />Please register
           </h1>}
@@ -175,8 +181,30 @@ const Register = () => {
                   onChange={onChangePassword}
                   validations={[required, vpassword]}
                 />
+                
               </div>
+              <div className="flex flex-row justify-between col-span-2  py-4">
+                    <Input
+                    type="radio"
+                    value="Student"
+                    name="role"
+                    id="Student"
+                    onChange={onChangeRole}
+                    checked={selectedOption === "Student"}
+                  />
+                  <label htmlFor="Student">Student</label>
 
+                  <Input
+                    type="radio"
+                    value="Instructor"
+                    name="role"
+                    id="Instructor"
+                    onChange={onChangeRole}
+                    checked={selectedOption === "Instructor"}
+                  />
+                  <label htmlFor="Instructor">Instructor</label>
+                  
+                </div>
               
                 <button className="w-auto register-button col-span-2">Sign Up</button>
               

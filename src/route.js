@@ -111,18 +111,18 @@ const Routes = (props) => {
         <Router history={history} >
         <div>
             
-            {!currentUser && <section class="navigation">
-                <div class="nav-container">
-                    <div class="brand">
+            {!currentUser && <section className="navigation">
+                <div className="nav-container">
+                    <div className="brand">
                     <Link to={"/"}>
                         LOGO
                     </Link>
                     </div>
                     <nav>
-                        <div class="nav-mobile"><a id="nav-toggle" href=""><span></span></a></div>
+                        <div className="nav-mobile"><a id="nav-toggle" href=""><span></span></a></div>
             
                     
-                        <ul class="nav-list">
+                        <ul className="nav-list">
                                     <li>
                                         <Link to={"/login"} >
                                             Login
@@ -145,10 +145,10 @@ const Routes = (props) => {
                 <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased'>
                         
         {/* {     !currentUser &&
-            <div class="login-page">
-                <div class="overlay"></div>
-                <div class="login-container">
-                    <img class="login-img" src="src\assets\images\image4.jpg" alt="image1" />
+            <div className="login-page">
+                <div className="overlay"></div>
+                <div className="login-container">
+                    <img className="login-img" src="src\assets\images\image4.jpg" alt="image1" />
                 </div>
 
             </div>
@@ -182,7 +182,7 @@ const Routes = (props) => {
                                         </span>
                                     </div>
                                     <div className={toggle? "profile-dropdown":"hidden invisible"} >
-                                        <ul class="dropdown-items">
+                                        <ul className="dropdown-items">
                                             <li>
                                             <a href="" className="w-full">Signed in as {currentUser.username}</a>
                                             {/* <div className=''></div> */}
@@ -263,8 +263,6 @@ const Routes = (props) => {
                     </div>
                 </div>
             </div>
-            
-
         </div>
     </Router>
     )

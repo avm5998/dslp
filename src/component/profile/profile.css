@@ -168,3 +168,12 @@ label{
     background-color:#d3e0ea;
 
   }
+
+  #chart-1{
+    width: 80%;
+  }
+
+  .button-active{
+    background-color:#d3e0ea  ;
+    color: #276678;
+  }

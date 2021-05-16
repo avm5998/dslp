@@ -22,6 +22,12 @@ class UnauthorizedError(Exception):
         self.status = status
         self.payload = payload
 
+class UnauthorizedRole(Exception):
+    def __init__(self, message, status=401, payload=None):
+        self.message = message
+        self.status = status
+        self.payload = payload
+
 class EmailDoesnotExistsError(Exception):
     def __init__(self, message, status=400, payload=None):
         self.message = message

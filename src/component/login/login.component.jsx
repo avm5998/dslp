@@ -28,7 +28,7 @@ const Login = (props) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [selectedOption, setSelectedOption] = useState('Student');
   const { isLoggedIn } = useSelector(state => state.auth);
   const { message } = useSelector(state => state.message);
 
@@ -44,6 +44,10 @@ const Login = (props) => {
     setPassword(password);
   };
 
+  const onChangeRole = (e) => {
+    const role = e.target.value;
+    setSelectedOption(role);
+  }
   const handleLogin = (e) => {
     e.preventDefault();
 
@@ -52,7 +56,7 @@ const Login = (props) => {
     form.current.validateAll();
 
     if (checkBtn.current.context._errors.length === 0) {
-      dispatch(login(username, password))
+      dispatch(login(username, password, selectedOption))
         .then(() => {
           props.history.push("/home");
           window.location.reload();
@@ -79,7 +83,7 @@ const Login = (props) => {
           className="profile-img-card"
         />
         
-        <h1 class="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
+        <h1 className="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
                 Sign in with username and password
         </h1>
         <Form onSubmit={handleLogin} ref={form}>
@@ -108,7 +112,29 @@ const Login = (props) => {
               />
             </div>
 
-            
+            <div className="flex flex-row justify-between col-span-2  py-4">
+                    <Input
+                    type="radio"
+                    value="Student"
+                    name="role"
+                    id="Student"
+                    onChange={onChangeRole}
+                    checked={selectedOption === "Student"}
+                  />
+                  <label htmlFor="Student">Student</label>
+
+                  <Input
+                    type="radio"
+                    value="Instructor"
+                    name="role"
+                    id="Instructor"
+                    onChange={onChangeRole}
+                    checked={selectedOption === "Instructor"}
+                  />
+                  <label htmlFor="Instructor">Instructor</label>
+                  
+                </div>
+
               <button className="w-auto login-button col-span-2" disabled={loading}>
                 {loading && (
                   <span className="spinner-border spinner-border-sm"></span>

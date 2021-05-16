@@ -18,8 +18,8 @@ import axios from "axios";
 const API_URL = "http://localhost:9000/api/auth/";
 import AuthService from "../services/auth.service";
 import authHeader from "../services/auth-header";
-export const register = (fullname, username, email, password) => (dispatch) => {
-  return AuthService.register(fullname, username, email, password).then(
+export const register = (fullname, username, email, password, role) => (dispatch) => {
+  return AuthService.register(fullname, username, email, password, role).then(
     (response) => {
       dispatch({
         type: REGISTER_SUCCESS,
@@ -54,8 +54,8 @@ export const register = (fullname, username, email, password) => (dispatch) => {
   );
 };
 
-export const login = (username, password) => (dispatch) => {
-  return AuthService.login(username, password).then(
+export const login = (username, password, role) => (dispatch) => {
+  return AuthService.login(username, password, role).then(
     (data) => {
       dispatch({
         type: LOGIN_SUCCESS,

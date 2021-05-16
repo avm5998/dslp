@@ -67,7 +67,7 @@ const ForgotPassword = (props) => {
 
       <div className="card card-container">
 
-        <h1 class="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
+        <h1 className="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
                 Reset password
         </h1>
         <Form onSubmit={handleSubmit} ref={form}>
@@ -132,7 +132,7 @@ export default connect(null, { reset_password })(ForgotPassword);
 
 //       <div className="card card-container">
 
-//         <h1 class="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
+//         <h1 className="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
 //                 Reset password
 //         </h1>
 //             <form onSubmit={e => onSubmit(e)}>

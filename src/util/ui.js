@@ -125,13 +125,13 @@ export function Label({ pos = 'left', text = '', customStyle = '', children = ''
 
 export function Button({
     id, text, onClick = () => { }, disabled = false, disabledText = text, 
-    hoverAnimation = true, customStyle = '', overrideClass = '', hasPadding = true
+    hoverAnimation = true, customStyle = '', overrideClass = '',isRounded = true, hasPadding = true,
 }) {
     return <button id={id} onClick={onClick} disabled={disabled} className={
         overrideClass ? overrideClass : `
     ${disabled ? 'cursor-default text-gray-400 border-gray-300' :
                 `${hoverAnimation ? 'hover:border-transparent border-blue-500 border-1 button-style' : 'bg-transparent border-blue-400 border-1 button-style'} cursor-pointer`} 
-    rounded font-semibold ${hasPadding?'px-4':''} focus:outline-none ${customStyle}`}>
+    font-semibold ${hasPadding?'px-4':''} ${isRounded?'rounded':''}  focus:outline-none ${customStyle}`}>
         {disabled ? disabledText : text}
     </button>
 }
