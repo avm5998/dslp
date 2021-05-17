@@ -127,7 +127,7 @@ export const Input = forwardRef(
 
     useEffect(()=>{
       (ref || localRef).current.value = defaultValue
-      onInput({},defaultValue)
+      onInput({target:{value:defaultValue}},defaultValue)
     },[defaultValue])
 
     return (
