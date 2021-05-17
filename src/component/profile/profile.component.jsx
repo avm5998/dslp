@@ -10,6 +10,8 @@ import Input from "react-validation/build/input";
 import { reset_password_confirm } from '../../actions/auth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {change_profile_pic} from '../../actions/profile';
+import { LineChart, PieChart } from 'react-chartkick'
+import 'chartkick/chart.js'
     
 const ProfileSection = ({currentUser}) => {
     const { avatar } = currentUser;
@@ -126,8 +128,10 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
 const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const { message } = useSelector(state => state.message);
   const { progress, last_logged } = currentUser;
-  const [progressImg, setProgressImg] = useState(progress)
+  const [progressData, setProgressData] = useState(progress)
   const parentRef = useRef();
+  const [option, setOption] = useState('days');
+  
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
 
@@ -142,7 +146,22 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                         </h1>
 
                       </div>
-                      <img className={progress!=""?`w-50 h-96`:"hidden"} src={'data:image/png;base64,' + progressImg} alt="" />
+                      <div className="p-4 mr-16">
+                        <div className="flex justify-end my-4">
+                          <Button text='days' customStyle={` ${option==='days'? 'button-active':''} h-10 my-4 w-16 rounded-l`} hasPadding={false} isRounded={false} onClick={(e) => 
+                          {e.preventDefault()
+                          setOption(e.target.innerText)}}/>
+                          <Button text='weeks' customStyle={` ${option==='weeks'? 'button-active':''} h-10 my-4 w-16`} hasPadding={false} isRounded={false} onClick={(e) => 
+                          {e.preventDefault()
+                          setOption(e.target.innerText)}}/>
+                          <Button text='months' customStyle={` ${option==='months'? 'button-active':''} h-10 my-4 w-16 rounded-r`} hasPadding={false} isRounded={false} onClick={(e) => 
+                          {e.preventDefault()
+                          setOption(e.target.innerText)}}/>
+                        </div>
+                        {/* <img className={progress!=""?`w-50 h-96`:"hidden"} src={'data:image/png;base64,' + progressImg} alt="" /> */}
+                        <LineChart xtitle={option} ytitle="Hours" data={progressData[option]} />
+                      </div>
+
                   </Form>
   </div>
 }

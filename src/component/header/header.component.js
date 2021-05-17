@@ -17,23 +17,23 @@ const Header = (props) => {
     }, [ props.user ])
     return (
         
-            <section class="navigation">
-                <div class="nav-container">
-                    <div class="brand">
+            <section className="navigation">
+                <div className="nav-container">
+                    <div className="brand">
                     <a href="">Logo</a>
                     </div>
                     <nav>
-                        <div class="nav-mobile"><a id="nav-toggle" href=""><span></span></a></div>
+                        <div className="nav-mobile"><a id="nav-toggle" href=""><span></span></a></div>
                     
 
                         {
                             currentUser?(
-                                <ul class="nav-list">
+                                <ul className="nav-list">
                                     <li>
                                         <a href="">        
                                             <img src="src\assets\images\vivek_profile.jpg" className='profile-img'/>
                                         </a>
-                                        <ul class="nav-dropdown">
+                                        <ul className="nav-dropdown">
                                             <li>
                                             <a href="">Signed in as {currentUser.id}</a>
                                             <div className='dropdown-divider'></div>
@@ -55,7 +55,7 @@ const Header = (props) => {
                                     </li>
                                 </ul>) :
                                 (
-                                <ul class="nav-list">
+                                <ul className="nav-list">
                                     <li>
                                         <Link to={"/login"} className="nav-link">
                                             Login

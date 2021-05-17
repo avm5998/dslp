@@ -46,7 +46,7 @@ from database.db import initialize_db
 from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt
 from resources.errors import InternalServerError, SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
-    EmailDoesnotExistsError, BadTokenError
+    EmailDoesnotExistsError, BadTokenError, UnauthorizedRole
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist, ValidationError
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
     jwt_required, create_refresh_token, get_jwt, get_jti
@@ -183,6 +183,11 @@ def email_does_not_exists(e):
 def unauthorized_user(e):
     return {"status":e.status, "message":e.message}, 401
 
+@app.errorhandler(UnauthorizedRole)
+def unauthorized_role(e):
+    return {"status":e.status, "message":e.message}, 401
+   
+
 @app.errorhandler(BadTokenError)
 def bad_token(e):
     return {"status":e.status, "message":e.message}, 403
@@ -230,13 +235,23 @@ def check_if_token_revoked(jwt_header, jwt_payload):
 def register():
     try:
         body = request.get_json()
-        user =  User(**body)
-        user_avatar = open('backend/assets/images/avatar.png','rb')
-        user.profile_image.put(user_avatar, filename='avatar.png')
-        user.hash_password()
-        user.save()
-        id = user.id
-        return {'id': str(id), "message":"Registered successfully"}, 200
+        try:
+            user_db = User.objects.get(email=body.get('email'))
+            role = body['roles']
+            if role[0] in user_db['roles']:
+                raise NotUniqueError
+            else:
+                user_db['roles'].extend(role)  
+                user_db.save()   
+                return {'id': str(user_db.id), "message":"Registered successfully"}, 200
+        except DoesNotExist:
+            user =  User(**body)
+            user_avatar = open('backend/assets/images/avatar.png','rb')
+            user.profile_image.put(user_avatar, filename='avatar.png')
+            user.hash_password()   
+            user.save()
+            id = user.id
+            return {'id': str(id), "message":"Registered successfully"}, 200
     except FieldDoesNotExist:
         raise SchemaValidationError('Request is missing required fields')
     except NotUniqueError:
@@ -248,6 +263,7 @@ def register():
 def login():
     try:
         body = request.get_json()
+        role = body.get('roles')
         try:
             user = User.objects.get(username=body.get('username'))
         except (DoesNotExist):
@@ -265,7 +281,12 @@ def login():
         if "user_activity" in user:
             progress = extract_report(user)
         else:
-            progress = ""
+            progress = {}
+        if not user["roles"]:
+            user.roles = [role]
+        else:
+            if body.get('roles') not in user['roles']:
+                raise UnauthorizedRole('User with '+role+' does not exist')
         expires = timedelta(days=25)
         expires_refresh = timedelta(days=30)
         access_token = create_access_token(identity=str(user.id), expires_delta=expires)
@@ -277,7 +298,9 @@ def login():
         to_zone = tz.tzlocal()
         last_logged_in = user.last_logged_in.astimezone(to_zone)
         return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
-            'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio)}, 200
+            'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio), "role":role}, 200
+    except UnauthorizedRole:
+        raise UnauthorizedRole('User with '+role+' permission not allowed')
     except UnauthorizedError:
         raise UnauthorizedError('Invalid password')
     except DoesNotExist:
@@ -287,13 +310,10 @@ def login():
 
 
 def extract_report(user):
-    img = BytesIO()
-    sns.set_style("whitegrid", {'axes.grid' : False})
-    plt.figure(figsize=(12,12))
-    if user.user_activity == {}:
-        return ""
-    table = user.user_activity
-    df = pd.DataFrame(table.items(), columns=["date", "sec"])
+    # img = BytesIO()
+    # sns.set_style("whitegrid", {'axes.grid' : False})
+    # plt.figure(figsize=(12,12))
+    df = pd.DataFrame(user.user_activity.items(), columns=["date", "hrs"])
     df['date'] = df['date'].apply(lambda a: datetime.strptime(a, '%Y-%m-%d'))
     df.sort_values(by=['date'], ignore_index=True, inplace=True)
     all_days = pd.date_range(df['date'].min(), df['date'].max(), freq='D')
@@ -301,21 +321,33 @@ def extract_report(user):
     avail = df['date'].values
     for i in range(len(new)):
         if new.loc[i,['date']][0] in avail:
-            new.loc[i, ['sec']] = df.loc[np.where(df['date'] == new.loc[i,['date']][0])[0][0], ['sec']][0]
+            new.loc[i, ['hrs']] = df.loc[np.where(df['date'] == new.loc[i,['date']][0])[0][0], ['hrs']][0]
         else:
-            new.loc[i, ['sec']] = 0
-    z = np.array(new['date'].apply(lambda x: x.date().strftime('%Y-%m-%d')))
+            new.loc[i, ['hrs']] = 0
+
+    new['hrs'] = new['hrs'] / 3600
+    new['hrs'] = new['hrs'].round(2)
+    weeks = new.groupby(new.date.dt.strftime('%W')).hrs.sum()
+    months = new.groupby(new.date.dt.strftime('%m')).hrs.sum()
+    # # z = np.array(new['date'].apply(lambda x: x.date().strftime('%Y-%m-%d')))
+    new['date'] = new['date'].apply(lambda x: x.date().strftime('%Y-%m-%d'))
+    days = new.set_index('date')['hrs'].to_dict()
+    weeks = weeks.to_dict()
+    months = months.to_dict()
+
+    progress = {"days":days, "weeks":weeks, "months":months}
+    return progress
     # line = sns.lineplot(data = df, x = 'date', y = 'sec')
     # line.set_xticklabels(df.date, rotation=90)
-    line = sns.lineplot(data = new, x = 'date', y = 'sec')
-    line.set_xticklabels(z, rotation=90)
-    plt.suptitle('Your activity', fontsize='25')
-    plt.xlabel('Date', fontsize=20)
-    plt.ylabel('Seconds', fontsize=20)
-    plt.savefig(img, format='png') 
-    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-    img.close()
-    return plotUrl
+    # line = sns.lineplot(data = new, x = 'date', y = 'sec')
+    # line.set_xticklabels(z, rotation=90)
+    # plt.suptitle('Your activity', fontsize='25')
+    # plt.xlabel('Date', fontsize=20)
+    # plt.ylabel('Seconds', fontsize=20)
+    # plt.savefig(img, format='png') 
+    # plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    # img.close()
+    # return plotUrl
 
 
 # Endpoint for revoking the current users access token. Save the JWTs unique

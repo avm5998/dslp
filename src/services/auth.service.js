@@ -5,20 +5,22 @@ import authHeader from "./auth-header";
 
 const API_URL = config.endpoint + "api/auth/";
 
-const register = (fullname, username, email, password) => {
+const register = (fullname, username, email, password, role) => {
   return axios.post(API_URL + "signup", {
     fullname,
     username,
     email,
     password,
+    roles : [role]
   });
 };
 
-const login = async (username, password) => {
+const login = async (username, password, roles) => {
   const response = await axios
     .post(API_URL + "login", {
       username,
       password,
+      roles
     });
   if (response.data.accessToken && response.data.refreshToken) {
     localStorage.setItem("user", JSON.stringify(response.data));
