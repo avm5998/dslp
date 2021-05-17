@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
-import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../../../util/ui'
+import { Label, Button, Modal, Checkbox } from '../../../../util/ui'
+import { Input, DropDown, MultiSelect } from '../../../../util/ui_components'
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
@@ -26,34 +27,34 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             }}>
                    {/* how to make it hidden  */}
                 <Label customStyle={``} text='Select Extract Model:' ><InlineTip info="Select one extraction model for text data"/></Label>
-                <DropDown defaultText={'Select model'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['CountVectorizer', 'TfidfVectorizer']} 
+                <DropDown zIndex={30} defaultValue={option.text_data_feat_model} defaultText={'Select model'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['CountVectorizer', 'TfidfVectorizer']} 
                         onSelect={e => {
                             result.text_data_feat_model = e
                         }}/>
 
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                <MultiSelect zIndex={29} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
-                <DropDown defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
+                <DropDown zIndex={28} defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
                     onSelect={e => {
                         result.finalY = e
                     } 
                 }/>
-                <Label text="Choose Test Size(%)" />
-                <Input defaultValue={30} onInput={(e,v) => {
+                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default(%): 30"/></Label>
+                <Input defaultValue={option.test_size} placeholder='30' onInput={(e,v) => {
                     result.test_size = v
                 }} customStyle={`w-64 `} attrs={{ list: 'test_size_bayes_list' }} />
 
 
-                <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info=""/></Label>
+                <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in testing dataset.  Default: line"/></Label>
                 <DropDown defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
                     } 
                 }/>
 
-                <Label text='Metrics of Model:' />
+                <Label text='Metrics of Model:'><InlineTip info="Assess model performance. Default: Classification Report"/></Label>
                 <DropDown defaultText={'Classification Report'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['Classification Report', 'Confusion Matrix', 'ROC Curve']}
                     onSelect={name => {
                         result.metric = name
@@ -63,11 +64,11 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
             </div>
-            <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '5vw 1fr 5vw 1fr'
+            <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
+                gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
-                    <Checkbox label={col} name='suboption_checked' item={col}/>
+                     <Label>{col}</Label>
                         <Input onInput={(e,v) => {
                             result['Naive Bayes Classifier'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 

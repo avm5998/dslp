@@ -27,6 +27,7 @@ from yellowbrick.cluster import KElbowVisualizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics import confusion_matrix, roc_curve, mean_squared_error, r2_score, classification_report, plot_roc_curve, silhouette_score
 from sklearn.decomposition import PCA
+import scikitplot as skplt
 from scipy import stats
 from mlxtend.frequent_patterns import apriori, association_rules 
 import nltk
@@ -1286,27 +1287,23 @@ def cond_Regression_json():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
-    # models = {} # to store tested models
     print(params)
     analysis_model = params['analysis_model']
-    test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
+    test_size = 0.3 if params['test_size']=='None' or (not params['test_size'].strip()) else float(params['test_size'])/100
     metric = params['metric'] if 'metric' in params else 'neg_mean_squared_error'
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
-    finalVar = params['finalVar'] #if 'finalVar' in params['finalVar'] else 
+    finalVar = params['finalVar']  
     finalY = params['finalY'] 
     df = _getCache(user_id, filename)   
     ndf = df.replace(MISSING_VALUES, np.nan)
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
-    # print(X_train)
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\nChoose Test Size(%): " + str(test_size*100)
     if analysis_model == "Linear Regression":
         param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
         param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
         model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
-        # models[analysis_model] = model
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
@@ -1318,15 +1315,14 @@ def cond_Regression_json():
     elif analysis_model == "Decision Tree Regression":
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
         param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
-        param_max_depth = int(params['param_max_depth']) if'param_max_depth' in params else 3
+        # param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else 3
+        param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
         param_max_features = params['param_max_features'] if 'param_max_features' in params else None
-        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
-        param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
+        param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
+        param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
         model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
         cond += "\nModel: Decision Tree Regression \nSet Parameters: criterion=" + str(param_criterion) + ", splitter=" + str(param_splitter) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes="+ str(param_max_leaf_nodes)+ ", random_state=" + str(param_random_state) 
@@ -1362,18 +1358,16 @@ def cond_Regression_json():
                 plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
 
     elif analysis_model == 'Random Forests Regression':
-        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else None
-        param_n_estimators = int(params['param_n_estimators']) if 'param_n_estimators' in params else 100
+        param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
+        param_n_estimators = 100 if (not params['param_n_estimators'].strip())  else int(params['param_n_estimators'])
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else 3
         find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
         param_max_features = params['param_max_features'] if 'param_max_features' in params else 'auto'
-        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
-        param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
+        param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
+        param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
         model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
@@ -1395,16 +1389,15 @@ def cond_Regression_json():
                 Y_true, Y_pred = Y_test, reg_rfr.predict(X_test)
                 para_result = 'The best hyper-parameters for Random Forests are: ' + str(reg_rfr.best_params_)
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    
     elif analysis_model == 'SVM Regression':
-        param_C = int(params['param_C']) if 'param_C' in params else 1.0
-        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 0.01
-        find_C = [int(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
+        param_C = 1.0 if params['param_C']=='None' or (not params['param_C'].strip()) else float(params['param_C'])
+        param_gamma = 0.01 if params['param_gamma']=='None' or (not params['param_gamma'].strip()) else float(params['param_gamma'])
+        find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
         find_gamma  = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
         param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
         model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
-        # models[analysis_model] = model
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
         cond += "\nModel: SVM Regressor \nSet Parameters:   kernel=" + str(param_kernel) + ", gamma=" + str(param_gamma) + ", C=" + str(param_C)
@@ -1437,7 +1430,6 @@ def cond_Regression_json():
                 input_val.append(params[col_temp])
         Class_input_val = [input_val]
         input_val = np.array(Class_input_val, dtype='float64')
-        # model = models[analysis_model] # pick the best model    
         result = model.predict(input_val)
         cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
         para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
@@ -1456,16 +1448,14 @@ def cond_Classification_json():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
-    models = {} # to store tested models
     print(params)
     analysis_model = params['analysis_model']
-    test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
+    test_size = 0.3 if params['test_size']=='None' or (not params['test_size'].strip()) else float(params['test_size'])/100
     metric = params['metric'] if 'metric' in params else 'Classification Report'
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
-    finalVar = params['finalVar']#["Sex", "Age", "Embarked"] # test, delete later
-    finalY = params['finalY']#"Survived" # test, delete later
+    finalVar = params['finalVar']
+    finalY = params['finalY']
     df = _getCache(user_id, filename)
-    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
     print("****&&&&&&test******")
     # isTsv = True if filename.split('.')[-1]=='tsv' else False
@@ -1479,28 +1469,21 @@ def cond_Classification_json():
             scaler = TfidfVectorizer()
         X = scaler.fit_transform(ndf[finalVar[0]]).toarray()
         Y = ndf[finalY].values
-        print("X=",X)
-        print('Y=',Y)
+        # print("X=",X)
+        # print('Y=',Y)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = test_size, random_state = 0)
     else:
         kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
 
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
-    # print('predic****=', params['Sex'])
     cond += "\nChoose Test Size(%): " + str(test_size*100)
     if analysis_model == "Logistic Regression":
-        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        # metric = params['metric'] if 'metric' in params else 'Classification Report'
-        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
         find_solver = [x for x in params['find_solver'].split(',') if params['find_solver']] if 'find_solver' in params else None
         find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
         param_solver = params['param_solver'] if 'param_solver' in params else 'lbfgs'
-        param_C = float(params['param_C']) if 'param_C' in params else 1.0
+        param_C = 1.0 if params['param_C']=='None' or (not params['param_C'].strip()) else float(params['param_C'])
         model = LogisticRegression(solver=param_solver, C=param_C)
-        models[analysis_model] = model
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1522,7 +1505,6 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1543,18 +1525,11 @@ def cond_Classification_json():
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     elif analysis_model == "Decision Tree Classifier":
-        # test_size = float(params['test_size'])/100 if 'test_size' in params and params['test_size'] else 0.3
-        # metric = params['metric'] if 'metric' in params else 'Classification Report'
-        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
-        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else 4
+        param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
-        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
-
+        param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
         model = DecisionTreeClassifier(criterion=param_criterion, max_depth=param_max_depth, max_leaf_nodes=param_max_leaf_nodes) 
-        models[analysis_model] = model
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1576,7 +1551,6 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel: Decision Tree Classifier \nSet Parameters:  max_depth=" + str(param_max_depth) + ", criterion=" + str(param_criterion)  + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1585,10 +1559,10 @@ def cond_Classification_json():
             cond = "\nFind Parameter for Decision Tree Classifier: " + str(tuned_para)
             MSE = ['mean_squared_error(Y_test, Y_pred']
             for value in MSE:
-                model = GridSearchCV(DecisionTreeClassifier(), tuned_para, cv=4)
-                model.fit(X_train, Y_train)
-                Y_true, Y_pred = Y_test, model.predict(X_test)
-                para_result += 'The best hyper-parameters for Decision Tree Classifier are: ' + str(model.best_params_)
+                grid_model = GridSearchCV(DecisionTreeClassifier(), tuned_para, cv=4)
+                grid_model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, grid_model.predict(X_test)
+                para_result = 'The best hyper-parameters for Decision Tree Classifier are: ' + str(grid_model.best_params_)
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
         if 'visual_tree' in params:
             visual_type = params['visual_tree']
@@ -1609,20 +1583,13 @@ def cond_Classification_json():
                 plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
 
     elif analysis_model == 'Random Forests Classifier':
-        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        # metric = params['metric'] if 'metric' in params else 'Classification Report'
-        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
-
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
         find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
-        param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else 4
-        param_n_estimators = int(params['param_n_estimators']) if 'param_n_estimators' in params else 100
+        param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
+        param_n_estimators = 100 if (not params['param_n_estimators'].strip())  else int(params['param_n_estimators'])
         param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
-        param_max_leaf_nodes = int(params['param_max_leaf_nodes']) if 'param_max_leaf_nodes' in params else None
+        param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
         model = RandomForestClassifier(max_depth=param_max_depth, n_estimators=param_n_estimators, criterion=param_criterion, max_leaf_nodes=param_max_leaf_nodes)
-        models[analysis_model] = model
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1644,7 +1611,6 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1658,26 +1624,19 @@ def cond_Classification_json():
             cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
             MSE = ['mean_squared_error(Y_test, Y_pred']
             for value in MSE:
-                model = GridSearchCV(RandomForestClassifier(), tuned_para, cv=4)
-                model.fit(X_train, Y_train)
-                Y_true, Y_pred = Y_test, model.predict(X_test)
-                para_result += "The best hyper-parameters for " + analysis_model + " are: " + str(model.best_params_)
+                grid_model = GridSearchCV(RandomForestClassifier(), tuned_para, cv=4)
+                grid_model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, grid_model.predict(X_test)
+                para_result = "The best hyper-parameters for " + analysis_model + " are: " + str(grid_model.best_params_)
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     elif analysis_model == 'SVM Classifier':
-        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        # metric = params['metric'] if 'metric' in params else 'Classification Report'
-        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
-
         find_C = [float(x) for x in params['find_C'].split(',') if params['find_C']] if 'find_C' in params else None
         find_gamma = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
-        param_C = float(params['param_C']) if 'param_C' in params else 1.0
-        param_gamma = float(params['param_gamma']) if 'param_gamma' in params else 0.01
+        param_C = 1.0 if params['param_C']=='None' or (not params['param_C'].strip()) else float(params['param_C'])
+        param_gamma = 0.01 if params['param_gamma']=='None' or (not params['param_gamma'].strip()) else float(params['param_gamma'])
         param_kernel = params['param_kernel'] if 'param_kernel' in params else 'rbf'
         model = SVC(C=param_C, gamma=param_gamma, kernel=param_kernel)
-        models[analysis_model] = model
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        # X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1699,7 +1658,6 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel:" + analysis_model + "\nSet Parameters:  gamma=" + str(param_gamma) + ", C=" + str(param_C) + ", kernel=" + str(param_kernel)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1713,23 +1671,21 @@ def cond_Classification_json():
             cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
             MSE = ['mean_squared_error(Y_test, Y_pred']
             for value in MSE:
-                model = GridSearchCV(SVC(), tuned_para, cv=4)
-                model.fit(X_train, Y_train)
-                Y_true, Y_pred = Y_test, model.predict(X_test)
-                para_result += "The best hyper-parameters for " + analysis_model + " are: " + str(model.best_params_)
+                grid_model = GridSearchCV(SVC(), tuned_para, cv=4)
+                grid_model.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, grid_model.predict(X_test)
+                para_result = "The best hyper-parameters for " + analysis_model + " are: " + str(grid_model.best_params_)
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
 
     elif analysis_model == 'Naive Bayes Classifier':
-        # test_size = float(params['test_size'])/100 if 'test_size' in params else 0.3
-        # metric = params['metric'] if 'metric' in params else 'Classification Report'
-        # plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
         model = GaussianNB()
-        models[analysis_model] = model
-        # kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-        if not isTsv:
+        if isTsv:
             X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
             Y = df[finalY].values
             X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+        else:
+            X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
+
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
@@ -1751,7 +1707,6 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
-        # cond += "\n\nChoose Test Size: " + str(test_size)
         cond += "\nModel:" + analysis_model 
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1767,7 +1722,6 @@ def cond_Classification_json():
             input_val = scaler.transform(input_val).toarray()
         else:
             input_val = np.array([input_val], dtype='float64')
-        model = models[analysis_model] # pick the best model    
         result = model.predict(input_val)
         cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
         para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
@@ -1787,18 +1741,17 @@ def cond_Clustering_json():
     print('params=', params)
     filename = params['filename']
     df = _getCache(user_id, filename)
-    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
     # finalVar = params['finalVar'] if 'finalVar' in params else ndf.Columns
     # finalVar = [x for x in df.columns if 'finalVar'+x in params]
     finalVar = params['variablesx']
     print('finalVar=', finalVar)
     analysis_model = params['analysis_model']
-    param_n_clusters = int(params['param_n_clusters']) if 'param_n_clusters' in params and params['param_n_clusters'] else 8
+    param_n_clusters = 3 if params['param_n_clusters']=='None' or (not params['param_n_clusters'].strip()) else  int(params['param_n_clusters'])
     clustering_plot = params['clustering_plot'] if 'clustering_plot' in params else 'all attributes: 2D plot'
     metric = params['metric'] if 'metric' in params else None
     param_init = params['param_init'] if 'param_init' in params else 'k-means++'
-    param_random_state = int(params['param_random_state']) if 'param_random_state' in params else None
+    param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else int(params['param_random_state'])
     param_algorithm = params['param_algorithm'] if 'param_algorithm' in params else 'auto'
     find_n_clusters = params['find_n_clusters'] if 'find_n_clusters' in params else None
     find_n_clusters_pca = params['find_n_clusters_pca'] if 'find_n_clusters_pca' in params else None
@@ -1917,9 +1870,9 @@ def cond_Clustering_json():
     img.seek(0)
     plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
     img.close()
-    # para_result += labeledData.to_html(classes='table table-striped" id = "temp_table', index=False, border=0)
+    para_result += labeledData.to_html()
 
-    return jsonify(data=labeledData.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
 @app.route('/analysis/associate_rule', methods=['POST']) # regression
@@ -1933,25 +1886,23 @@ def cond_associateRule_json():
     filename = params['filename']
     print(params)
     df = _getCache(user_id, filename)
-    # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
     analysis_model = params['analysis_model']
     metric = params['metric'] if 'metric' in params else 'Classification Report'
     transid = params['trans_id']
     transitem = params['trans_item']
-    
-    params_support_min_thresh = float(params['params_support_min_thresh']) if ('params_support_min_thresh' in params) and (params['params_support_min_thresh']) else 0.1
-    params_lift_min_thresh = float(params['params_lift_min_thresh']) if ('params_lift_min_thresh' in params) and (params['params_lift_min_thresh']) else 1.0
-    params_confidence_min_thresh = float(params['params_confidence_min_thresh']) if ('params_confidence_min_thresh' in params) and (params['params_confidence_min_thresh']) else 0.5
-    params_antecedent_len = int(params['params_antecedent_len']) if ('params_antecedent_len' in params) and (params['params_antecedent_len']) else 1
+    params_support_min_thresh = 0.1 if params['params_support_min_thresh']=='None' or (not params['params_support_min_thresh'].strip()) else float(params['params_support_min_thresh'])
+    params_lift_min_thresh = 1.0 if params['params_lift_min_thresh']=='None' or (not params['params_lift_min_thresh'].strip()) else float(params['params_lift_min_thresh'])
+    params_confidence_min_thresh = 0.5 if params['params_confidence_min_thresh']=='None' or (not params['params_confidence_min_thresh'].strip()) else float(params['params_confidence_min_thresh'])
+    params_antecedent_len = 1 if params['params_antecedent_len']=='None' or (not params['params_antecedent_len'].strip()) else int(params['params_antecedent_len'])
     params_use_colnames = bool(params['params_use_colnames']) if 'params_use_colnames' in params else True
-    params_max_len = int(params['params_max_len']) if 'params_max_len' in params else None
+    params_max_len = None if params['params_max_len']=='None' or (not params['params_max_len'].strip()) else int(params['params_max_len'])
     param_specific_item = params['param_specific_item'] if 'param_specific_item' in params else None
     metrics_apriori = params['metrics_apriori'] if 'metrics_apriori' in params else '5.Association Rules: list all items'
-    # cond += "\nSupport Itemsets:\nSet Parameters: min_support=" + str(params_support_min_thresh) + ", use_colnames=" + str(params_use_colnames) + ", max_len=" + str(params_max_len)
     cond += "\n\nAssociation Rules:\nSet Parameters: support_min_threshold=" + str(params_support_min_thresh) + ", lift_min_threshold=" + str(params_lift_min_thresh) + ", confidence_min_threshold=" + str(params_confidence_min_thresh)
     ndf['Quantity']= 1
     basket_data = ndf.groupby([transid, transitem])['Quantity'].sum().unstack().fillna(0)
+
     def transform_transaction(val):
         if val <= 0:
             return 0

@@ -121,16 +121,16 @@ const Analysis = () => {
             }} setIsOpen={setShowSubOptionModal}>
                 <div style={{zIndex:1000}} className="float-right flex justify-end items-center relative right-2 top-2 gap-4">
                     <div>
-                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No preset'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} />
+                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No model'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} />
                     </div>
                     <div>
-                        <Button width="w-40" text={'Clear preset'} onClick={clearPreset} />
+                        <Button width="w-40" text={'Clear models'} onClick={clearPreset} />
                     </div>
                     <div>
-                        <Button width="w-40" text={'Update preset'} onClick={updatePreset} />
+                        <Button width="w-40" text={'Update model'} onClick={updatePreset} />
                     </div>
                     <div>
-                        <Button width="w-40" text={'Add preset'} onClick={addPreset} />
+                        <Button width="w-40" text={'Add model'} onClick={addPreset} />
                     </div>
                 </div>
                 <OptionView visibleTabs={visibleModalTabs} dataset={dataset} result={result} submit={submit} />

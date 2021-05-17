@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
-import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../../../util/ui'
+import { Label, Button, Modal, Checkbox } from '../../../../util/ui'
+import { Input, DropDown, MultiSelect } from '../../../../util/ui_components'
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
@@ -35,27 +36,27 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                <MultiSelect zIndex={30} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
-                <DropDown defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
+                <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
                     onSelect={e => {
                         result.finalY = e
                     } 
                 }/>
 
-                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model."/></Label>
-                <Input defaultValue={30} onInput={(e,v) => {
+                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default(%): 30"/></Label>
+                <Input defaultValue={option.test_size} placeholder='30' onInput={(e,v) => {
                     result.test_size = v 
                 }} customStyle={`w-64`} attrs={{ list: 'test_size_list' }} />
 
-                <Label text='Set parameters: max_depth'><InlineTip info="Default: None"/></Label>
-                <Input defaultValue={3} onInput={(e,v) => {
+                <Label text='Set parameters: max_depth'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Input defaultValue={option.param_max_depth} placeholder='None' onInput={(e,v) => {
                     result.param_max_depth = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_depth_rfr_list' }} />
 
-                <Label text='Set parameters: n_estimators'><InlineTip info=" "/></Label>
-                <Input defaultValue={'None'} onInput={(e,v) => {
+                <Label text='Set parameters: n_estimators'><InlineTip info="Integer. Default: 100 "/></Label>
+                <Input defaultValue={option.param_n_estimators} placeholder='100' onInput={(e,v) => {
                     result.param_n_estimators = v 
                 }} customStyle={`w-64`} attrs={{ list: 'n_estimators_rfr_list' }} />
 
@@ -74,12 +75,12 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     }
                 } />
 
-                <Label text='Find the Best Hyper-Parameters: max_depth'><InlineTip info="Input the result in 'set parameter:max_depth'"/></Label>
-                <Input onInput={(e,v) => {
+                <Label text='Find the Best Hyper-Parameters: max_depth'><InlineTip info="Clear 'Predict Options'. Input the result in 'set parameter: max_depth'"/></Label>
+                <Input placeholder='Input a list of integers' onInput={(e,v) => {
                     result.find_max_depth = v 
                 }} customStyle={`w-64`} attrs={{ list: 'find_max_depth_rfr_list' }} />
-                 <Label text='Find the Best Hyper-Parameters: n_estimators'><InlineTip info="Input the result in 'set parameter:n_estimators'"/></Label>
-                <Input onInput={(e,v) => {
+                 <Label text='Find the Best Hyper-Parameters: n_estimators'><InlineTip info="Clear 'Predict Options'. Input the result in 'set parameter: n_estimators'"/></Label>
+                <Input placeholder='Input a list of integers' onInput={(e,v) => {
                     result.find_n_estimators = v 
                 }} customStyle={`w-64`} attrs={{ list: 'find_n_estimators_rfr_list' }} />
             </div>
@@ -87,32 +88,33 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
 
-                <Label customStyle={``} text='Set Parameters: criterion'><InlineTip info=" "/></Label>
-                <DropDown defaultText={'mse'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['mse', 'mae']}
+                <Label customStyle={``} text='Set Parameters: criterion'><InlineTip info="Default: mse"/></Label>
+                <DropDown zIndex={28} defaultValue={option.param_criterion} defaultText={'mse'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['mse', 'mae']}
                     onSelect={name => {
                         result.param_criterion = name  
                 }} />
-                <Label customStyle={``} text='Set Parameters: max_features'><InlineTip info=""/></Label>
-                <DropDown defaultText={'auto'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','sqrt', 'log2']}
+                <Label customStyle={``} text='Set Parameters: max_features'><InlineTip info="Default: auto"/></Label>
+                <DropDown zIndex={27} defaultValue={option.param_max_features} defaultText={'auto'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','sqrt', 'log2']}
                     onSelect={name => {
                         result.param_max_features = name  
                 }} />
-                <Label customStyle={``} text='Set Parameters: max_leaf_nodes'><InlineTip info="int or None "/></Label>
-                <Input defaultValue={'None'} onInput={(e,v) => {
+                <Label customStyle={``} text='Set Parameters: max_leaf_nodes'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Input defaultValue={option.param_max_leaf_nodes} placeholder='None' onInput={(e,v) => {
                     result.param_max_leaf_nodes = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_leaf_nodes_rfr_list' }} />
-                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="int or None"/></Label>
-                <Input defaultValue={'None'} onInput={(e,v) => {
+                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Input defaultValue={option.param_random_state} placeholder='None' onInput={(e,v) => {
                     result.param_random_state = v 
                 }} customStyle={`w-64`} attrs={{ list: 'random_state_rfr_list' }} />
 
 
             </div>
-            <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '5vw 1fr 5vw 1fr'
+            
+            <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
+                gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
-                    <Checkbox label={col} name='suboption_checked' item={col}/>
+                    <Label>{col}</Label>
                         <Input onInput={(e,v) => {
                             result['Random Forests Regression'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 

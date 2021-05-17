@@ -7,8 +7,6 @@ import { InlineTip } from '../../../common/tip'
 const DataLists = {
     test_size_lr_list: [30, 20, 10],
     C_logr_list: [0.1, 0.2, 0.3],
-    find_solver_logr_list: ['newton-cg,lbfgs,liblinear,sag,saga'],
-    find_C_logr_list: ['100,10,1.0,0.1,0.01'],
 }
 
 export default function ({ dataset, result, submit, visibleTabs }) {
@@ -39,8 +37,8 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     } 
                 }/>
 
-                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model."/></Label>
-                <Input zIndex={28} defaultValue={option.test_size} onInput={(e,v) => {
+                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default(%): 30"/></Label>
+                <Input defaultValue={option.test_size}  placeholder='30' onInput={(e,v) => {
                     result.test_size = v 
                 }} width={`w-64`} attrs={{ list: 'test_size_lr_list' }} />
 
@@ -63,17 +61,17 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown zIndex={27} defaultValue={option.param_fit_intercept_lr} defaultText={'True'}  width='w-64' items={['True', 'False']}
+                <DropDown zIndex={28} defaultValue={option.param_fit_intercept_lr} defaultText={'True'}  width='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_fit_intercept_lr = name
                 }} />
                 <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown zIndex={26} defaultValue={option.param_normalize_lr} defaultText={'False'}  width='w-64' items={['True', 'False']}
+                <DropDown zIndex={27} defaultValue={option.param_normalize_lr} defaultText={'False'}  width='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_normalize_lr = name  
                 }} />
             </div>
-            <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
+            <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
