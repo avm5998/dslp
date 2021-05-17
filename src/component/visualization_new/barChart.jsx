@@ -14,7 +14,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <div className={`ml-4 hidden ${activeTab == 1 ? 'border-b-2 font-bold cursor-default' : 'cursor-pointer'}`} onClick={e => setActiveTab(1)}>Advanced Options</div>
                 <div className={`ml-4 ${activeTab == 2 ? 'border-b-2 font-bold cursor-default' : 'cursor-pointer'}`} onClick={e => setActiveTab(2)}>Common Options</div>
             </div>
-            <div className={`grid grid-cols-1 gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`}>
+            <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`}>
                 <Label text='X Axis:'><InlineTip info={`*Required\nThe data on X Axis`} /></Label>
                 <DropDown defaultText='Select X Axis' customStyle='w-96' customUlStyle='w-96' showOnHover={false} items={dataset.cols} onSelect={e => result.x = e} />
                 <Label text='Y Axis:'><InlineTip info={`*Required\nThe data on Y Axis`} /></Label>
@@ -56,11 +56,20 @@ export const config = {
             dfplotArgs.push(`${k}=${plotOptions[k]}`)
         }
 
-        return `${prevSteps.length ? prevSteps.join('\n') : ''}
+        if(result.engine == 'Pandas'){
+            return `${prevSteps.length ? prevSteps.join('\n') : ''}
 df.plot.bar(${dfplotArgs.join(',')})
 ${postSteps.length ? postSteps.join('\n') : ''}
 `
-    },
+}else if(result.engine == 'Plotly'){
+    postSteps.push(`fig.show()`)
+            return `${prevSteps.length ? prevSteps.join('\n') : ''}
+fig = px.bar(df, x='${result.x}', y='${result.y}')
+${postSteps.length ? postSteps.join('\n') : ''}
+`
+        }
+    }
+    ,
     getOperation: ({ aggregatedDataset, dataset, options }) => {
         let res = {}, hasRes = true
         if (options.x && options.y) {

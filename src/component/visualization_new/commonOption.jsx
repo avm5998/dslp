@@ -49,6 +49,10 @@ export const setCommonCode = ({ dataset, result, plotOptions, postSteps, prevSte
             plotOptions.figsize = `(${result.figureSize})`
         }
 
+        if (result.figureTitle) {
+            plotOptions.title = `(${result.figureTitle})`
+        }
+
         if (result.xlabel) {
             postSteps.push(`plt.xlabel("${result.xlabel}")`)
         }
@@ -97,15 +101,17 @@ function getVisibilityStyle (engine){
     return styleObj
 }
 
-export default function ({ dataset, result }) {
+export default function ({ dataset, result, options = { engine:['Pandas', 'Plotly'] } }) {
     let [visibility, setVisibility] = useState(getVisibilityStyle(DEFAULT_RESULT.engine))
 
     return (<>
         <Label text='Plot Engine:'><InlineTip info={`Python library used in plotting`} /></Label>
-        <DropDown defaultValue={DEFAULT_RESULT.engine} width='w-60' items={['Pandas', 'Plotly']} onSelect={(e, i) => {
+        <DropDown defaultValue={DEFAULT_RESULT.engine} width='w-60' items={options.engine} onSelect={(e, i) => {
             setVisibility(getVisibilityStyle(e))
             result.engine = e
         }} />
+        <Label text='Figure Title:' />
+        <Input placeholder="Please input the figure title" onInput={(e,v) => result.figureTitle = v} />
         <Label text='Drop NA Rows:'><InlineTip info={`Drop row with empty data`} /></Label>
         <Checkbox label='Drop NA Rows' onChange={e => result.dropna_row = e.target.checked} />
         <Label text='Drop NA Columns:'><InlineTip info={`Drop column with empty data`} /></Label>

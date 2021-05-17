@@ -53,7 +53,9 @@ export const config = {
         }
         let prevSteps = [], postSteps = []
         setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
-        return `${prevSteps.length ? prevSteps.join('\n') : ''}
+
+if(result.engine == 'Pandas'){
+    return `${prevSteps.length ? prevSteps.join('\n') : ''}
 cate = '${result.cate}'
 val = '${result.val}'
 ndf = df.groupby([cate]).agg(values=(val, '${result.agg}'))
@@ -68,6 +70,14 @@ plt.fill(angles,values,alpha=.3)
 plt.xticks(angles[:-1],categories)
 ${postSteps.length ? postSteps.join('\n') : ''}
 `
+}else if(result.engine == 'Plotly'){
+    return `
+ndf = df.groupby(['${result.cate}']).agg(${result.val}=('${result.val}', '${result.agg}'))
+ndf['${result.cate}'] = ndf.index
+fig = px.line_polar(ndf, r='${result.val}', theta='${result.cate}', line_close=True)
+fig.show()
+`
+}
     },
 
     getOperation: ({ aggregatedDataset, dataset, options }) => {
