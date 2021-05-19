@@ -80,7 +80,7 @@ export default function ({ dataset, result, submit }) {
                 <Label customStyle={`${showOptions_Apriori?'':'hidden'}`} text='Input Specific Item'/>
                 <Input customStyle={`w-64 ${showOptions_Apriori?'':'hidden'}`}  
                 onInput={e=>{
-                    // result.param_specific_item = e.target.value
+                    result.param_specific_item = e.target.value
                 }}/>
                
 
