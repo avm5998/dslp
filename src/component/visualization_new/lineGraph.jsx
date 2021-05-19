@@ -65,12 +65,20 @@ export const config = {
         for (let k in plotOptions){
             dfplotArgs.push(`${k}=${plotOptions[k]}`)
         }
-
+if(result.engine == 'Pandas'){
         return `${prevSteps.length?prevSteps.join('\n'):''}
 df.plot(${dfplotArgs.join(',')})
 ${postSteps.length?postSteps.join('\n'):''}
+    `
+}else if(result.engine == 'Plotly'){
+        return`${prevSteps.length?prevSteps.join('\n'):''}
+fig = px.line(df, ${dfplotArgs.join(',')})
+${postSteps.length?postSteps.join('\n'):''}
+fig.show()
 `
-},
+}
+}
+,
     getOperation: ({aggregatedDataset,dataset,options}) => {
         let hasRes = true, res = {}
         if(options.x && options.y){

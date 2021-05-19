@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Label, Modal, Checkbox } from '../../util/ui'
+import {DropDown,MultiSelect,Button} from  '../../util/ui_components'
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 import { InlineTip } from '../common/tip'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
@@ -16,11 +17,11 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
             </div>
             <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`}>
                 <Label text='Group By:'><InlineTip info={`Group By`} /></Label>
-                <DropDown defaultText='Select Group By' customStyle='w-96' blankOption={'Do not group data'} showOnHover={false} items={dataset.cate_cols} onSelect={e => result.group_by = e} />
+                <DropDown defaultText='Select Group By' width='w-96' items={dataset.cate_cols} onSelect={e => result.group_by = e} />
                 <Label text='X Axis:'><InlineTip info={`X Axis`} /></Label>
-                <DropDown defaultText='Select X Axis' customStyle='w-96' showOnHover={false} items={dataset.num_cols} onSelect={e => result.x = e} />
+                <DropDown defaultText='Select X Axis' width='w-96' items={dataset.num_cols} onSelect={e => result.x = e} />
                 <Label text='Y Axis:'><InlineTip info={`Y Axis`} /></Label>
-                <DropDown defaultText='Select Y Axis' customStyle='w-96' showOnHover={false} items={dataset.num_cols} onSelect={e => result.y = e} />
+                <DropDown defaultText='Select Y Axis' width='w-96' items={dataset.num_cols} onSelect={e => result.y = e} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
                 gridTemplateColumns:'5vw 1fr 10vw 1fr'
@@ -35,7 +36,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <Button onClick={e=>{
                     showOptions(0)
                     setCode(config.getCode({...defaultResult,...result}, dataset))
-                }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`}/>
+                }} width={`w-48 justify-self-end`} text={`Confirm`}/>
             </div>
         </div>
 
@@ -46,10 +47,18 @@ export const config = {
     name: 'Area Graph',
     function: ['Patterns', 'Data over time'],
     getCode: (result, dataset) => {
-        if (result.group_by)
-            return `df.groupby(['${result.x}','${result.group_by}'])['${result.y}'].sum().unstack().plot.area()`
-        else
-            return `df.groupby(['${result.x}'])['${result.y}'].sum().plot.area()`
+        let plotOptions = {}
+        let prevSteps = [], postSteps = []
+        setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
+        if(result.engine == 'Pandas'){
+            if (result.group_by)
+                return `df.groupby(['${result.x}','${result.group_by}'])['${result.y}'].sum().unstack().plot.area()`
+            else
+                return `df.groupby(['${result.x}'])['${result.y}'].sum().plot.area()`
+        }else if(result.engine == 'Plotly'){
+            return `fig = px.area(df, x="${result.x}", y="${result.y}", color="${result.group_by}",line_group="${result.group_by}")
+fig.show()`
+        }
     },
     getOperation: ({ aggregatedDataset, dataset, options }) => {
         let hasRes = true
