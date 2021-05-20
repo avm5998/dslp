@@ -58,11 +58,17 @@ export const config = {
         for (let k in plotOptions) {
             dfplotArgs.push(`${k}=${plotOptions[k]}`)
         }
-
-        return `${prevSteps.length ? prevSteps.join('\n') : ''}
+if(result.engine == 'Pandas'){
+    return `${prevSteps.length ? prevSteps.join('\n') : ''}
 df.plot.scatter(${dfplotArgs.join(',')})
 ${postSteps.length ? postSteps.join('\n') : ''}
 `
+}else if(result.engine == 'Plotly'){
+    return `${prevSteps.length ? prevSteps.join('\n') : ''}
+fig = px.scatter(df,x='${result.x}', y='${result.y}')
+fig.show()
+`
+}
     },
     getOperation: ({ aggregatedDataset, dataset, options }) => {
         let hasRes = true, res = {}

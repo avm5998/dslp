@@ -109,6 +109,11 @@ const Analysis = () => {
         setCurrentPresetIndex(-1)
     }
 
+    const deletePreset = (presetName)=>{
+        dispatch(PresetActions.deletePreset({ userId: user.id, filename: dataset.filename, identifier, presetName }))
+        if(currentPresetIndex >= presetsArr.length) setCurrentPresetIndex(presetsArr.length - 1)
+    }
+
     return (
         <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
             <Modal fixedModalPosition={{
@@ -121,16 +126,18 @@ const Analysis = () => {
             }} setIsOpen={setShowSubOptionModal}>
                 <div style={{zIndex:1000}} className="float-right flex justify-end items-center relative right-2 top-2 gap-4">
                     <div>
-                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No preset'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} />
+                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No presets'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} deletable={true} onDelete={(e)=>{
+                            deletePreset(e)
+                        }} />
                     </div>
                     <div>
-                        <Button width="w-40" text={'Clear preset'} onClick={clearPreset} />
+                        <Button width="w-40" text={'Clear models'} onClick={clearPreset} />
                     </div>
                     <div>
-                        <Button width="w-40" text={'Update preset'} onClick={updatePreset} />
+                        <Button width="w-40" text={'Update model'} onClick={updatePreset} />
                     </div>
                     <div>
-                        <Button width="w-40" text={'Add preset'} onClick={addPreset} />
+                        <Button width="w-40" text={'Add model'} onClick={addPreset} />
                     </div>
                 </div>
                 <OptionView visibleTabs={visibleModalTabs} dataset={dataset} result={result} submit={submit} />

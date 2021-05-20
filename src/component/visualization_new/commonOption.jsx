@@ -49,6 +49,10 @@ export const setCommonCode = ({ dataset, result, plotOptions, postSteps, prevSte
             plotOptions.figsize = `(${result.figureSize})`
         }
 
+        if (result.figureTitle) {
+            plotOptions.title = `(${result.figureTitle})`
+        }
+
         if (result.xlabel) {
             postSteps.push(`plt.xlabel("${result.xlabel}")`)
         }
@@ -97,15 +101,17 @@ function getVisibilityStyle (engine){
     return styleObj
 }
 
-export default function ({ dataset, result }) {
+export default function ({ dataset, result, options = { engine:['Pandas', 'Plotly'] } }) {
     let [visibility, setVisibility] = useState(getVisibilityStyle(DEFAULT_RESULT.engine))
 
     return (<>
         <Label text='Plot Engine:'><InlineTip info={`Python library used in plotting`} /></Label>
-        <DropDown defaultValue={DEFAULT_RESULT.engine} width='w-60' items={['Pandas', 'Plotly']} onSelect={(e, i) => {
+        <DropDown defaultValue={DEFAULT_RESULT.engine} width='w-60' items={options.engine} onSelect={(e, i) => {
             setVisibility(getVisibilityStyle(e))
             result.engine = e
         }} />
+        <Label text='Figure Title:' />
+        <Input placeholder="Please input the figure title" onInput={(e,v) => result.figureTitle = v} />
         <Label text='Drop NA Rows:'><InlineTip info={`Drop row with empty data`} /></Label>
         <Checkbox label='Drop NA Rows' onChange={e => result.dropna_row = e.target.checked} />
         <Label text='Drop NA Columns:'><InlineTip info={`Drop column with empty data`} /></Label>
@@ -122,17 +128,17 @@ export default function ({ dataset, result }) {
         <Label {...visibility.legendPosition} text='Legend Position:' />
         <DropDown {...visibility.legendPosition} defaultText='Select Legend Position' width='w-60' items={LegendOptions} onSelect={e => result.legend = e} />
         <Label {...visibility.figureSize} text='Figure Size:' />
-        <Input {...visibility.figureSize} attrs={{ list: "common_options_figure_size_data" }} placeholder="Please input the figure size" onInput={e => result.figureSize = e.target.value} />
+        <Input {...visibility.figureSize} attrs={{ list: "common_options_figure_size_data" }} placeholder="Please input the figure size" onInput={(e,v) => result.figureSize = v} />
         <datalist id="common_options_figure_size_data"><option value="5,5" /><option value="10,10" /><option value="15,15" /><option value="20,20" /></datalist>
         <Label {...visibility.xLabel} text='X label:'><InlineTip info={`The label on X Axis`} /></Label>
-        <Input {...visibility.xLabel} width={'w-60'} placeholder='X label' onInput={e => result.xlabel = e.target.value} />
+        <Input {...visibility.xLabel} width={'w-60'} placeholder='X label' onInput={(e,v) => result.xlabel = v} />
         <Label {...visibility.yLabel} text='Y label:'><InlineTip info={`The label on Y Axis`} /></Label>
-        <Input {...visibility.yLabel} width={'w-60'} placeholder='Y label' onInput={e => result.ylabel = e.target.value} />
+        <Input {...visibility.yLabel} width={'w-60'} placeholder='Y label' onInput={(e,v) => result.ylabel = v} />
         <Label text='Filter column'><InlineTip info={`Filter of some specific data, specified by a column name and a condition`} /></Label>
         <DropDown defaultText='Select X Axis' width='w-60' items={dataset.cols} onSelect={e => result.filter_col = e} blankOption={'No column'} />
         <Label text='Filter operator'></Label>
         <DropDown defaultText='Select operator' width='w-60' items={['=', '<', '>']} onSelect={e => result.filter_operator = e} />
         <Label text='Filter value'></Label>
-        <Input placeholder="Please input filter value" onInput={e => result.filter_value = e.target.value} />
+        <Input placeholder="Please input filter value" onInput={(e,v) => result.filter_value = v} />
     </>)
 }

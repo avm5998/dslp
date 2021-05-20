@@ -30,7 +30,7 @@ const handleBlur = (cb) => {
   };
 };
 
-const XSVG = () => (
+const XSVG = ({customStyleText = 'ml-2'}) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="100%"
@@ -41,7 +41,7 @@ const XSVG = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className={cn("cursor-pointer", "rounded-full", "w-4", "h-4", "ml-2")}
+    className={cn("cursor-pointer", "rounded-full", "w-4", "h-4", customStyleText)}
   >
     <line x1="18" y1="6" x2="6" y2="18"></line>
     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -127,7 +127,7 @@ export const Input = forwardRef(
 
     useEffect(()=>{
       (ref || localRef).current.value = defaultValue
-      onInput({},defaultValue)
+      onInput({target:{value:defaultValue}},defaultValue)
     },[defaultValue])
 
     return (
@@ -402,6 +402,8 @@ export const DropDown = forwardRef(
       items = [],
       onSelect,
       getDesc = SELF_FUNCTION,
+      deletable = false,
+      onDelete = EMPTY_FUNCTION,
 
       //controlled properties
       controlledOpen = false,
@@ -603,7 +605,7 @@ export const DropDown = forwardRef(
                     key={item.name}
                     className={cn(
                       "flex",
-                      "justify-start",
+                      "justify-between",
                       "items-center",
                       "box-border",
                       "px-2",
@@ -632,6 +634,10 @@ export const DropDown = forwardRef(
                     }}
                   >
                     {getDesc(item.name)}
+                    {deletable?<div className={cn('w-auto','h-auto','rounded-full','hover:bg-white','hover:text-gray-700')} onClick={(e)=>{
+                      e.stopPropagation()
+                      onDelete(item.name)
+                    }}><XSVG customStyleText=''/></div>:null}
                   </div>
                 );
               })}

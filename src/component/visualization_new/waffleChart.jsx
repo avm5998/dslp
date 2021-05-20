@@ -45,7 +45,9 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
-                <CommonOption dataset={dataset} result={result} />
+                <CommonOption dataset={dataset} result={result} options={{
+                    engine:['Pandas'],
+                }}/>
             </div>
             <div className='flex justify-end'>
                 <Button onClick={e => {

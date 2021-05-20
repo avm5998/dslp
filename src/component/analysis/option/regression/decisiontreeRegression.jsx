@@ -43,13 +43,13 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     } 
                 }/>
 
-                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model."/></Label>
-                <Input defaultValue={30} onInput={(e,v) => {
+                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default(%): 30"/></Label>
+                <Input defaultValue={option.test_size} placeholder='30' onInput={(e,v) => {
                     result.test_size = v 
                 }} customStyle={`w-64`} attrs={{ list: 'test_size_list' }} />
 
-                <Label text='Set parameters: max_depth'><InlineTip info="Default: None"/></Label>
-                <Input defaultValue={3} onInput={(e,v) => {
+                <Label text='Set parameters: max_depth'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Input defaultValue={option.param_max_depth} placeholder='None' onInput={(e,v) => {
                     result.param_max_depth = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_depth_dtr_list' }} />
 
@@ -61,21 +61,21 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }/>
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset. Note: Set 'Visualize Tree=No Plot'; Default:line"/></Label>
-                <DropDown zIndex={28} defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
+                <DropDown defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
                     } 
                 }/>
 
-                <Label text='Metrics of Model:'><InlineTip info="Assess model performance.  Default: neg_mean_squared_error"/></Label>
-                <DropDown zIndex={27} defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
+                <Label text='Metrics of Model:'><InlineTip info="Assess model performance. Default: neg_mean_squared_error"/></Label>
+                <DropDown defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {
                         result.metric = name
                     }
                 } />
 
-                <Label text='Find the Best Hyper-Parameters: max_depth'><InlineTip info="Input the result in 'set parameter:max_depth'"/></Label>
-                <Input onInput={(e,v) => {
+                <Label text='Find the Best Hyper-Parameters: max_depth'><InlineTip info="Clear 'Predict Options'. Input the result in 'set parameter:max_depth'"/></Label>
+                <Input placeholder='Input a list of integers' onInput={(e,v) => {
                     result.find_max_depth = v 
                 }} customStyle={`w-64`} attrs={{ list: 'find_max_depth_dtr_list' }} />
 
@@ -86,35 +86,35 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }}>
 
                 <Label customStyle={``} text='Set Parameters: criterion'><InlineTip info="Default: mse"/></Label>
-                <DropDown zIndex={26} defaultText={'mse'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['mse','friedman_mse','mae', 'poisson']}
+                <DropDown zIndex={28} defaultValue={option.param_criterion} defaultText={'mse'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['mse','friedman_mse','mae', 'poisson']}
                     onSelect={name => {
                         result.param_criterion = name  
                 }} />
                 <Label customStyle={``} text='Set Parameters: splitter'><InlineTip info="Default: best"/></Label>
-                <DropDown zIndex={25} defaultText={'best'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['best','random']}
+                <DropDown zIndex={27} defaultValue={option.param_splitter} defaultText={'best'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['best','random']}
                     onSelect={name => {
                         result.param_splitter = name  
                 }} />
                 <Label customStyle={``} text='Set Parameters: max_features'><InlineTip info="Default: None"/></Label>
-                <DropDown zIndex={24} defaultText={'None'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','sqrt', 'log2']}
+                <DropDown zIndex={26} defaultValue={option.param_max_features} defaultText={'None'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','sqrt', 'log2']}
                     onSelect={name => {
                         result.param_max_features = name 
                 }} />
-                <Label customStyle={``} text='Set Parameters: max_leaf_nodes'><InlineTip info="int or None"/></Label>
-                <Input zIndex={23} defaultValue={'None'} onInput={(e,v) => {
+                <Label customStyle={``} text='Set Parameters: max_leaf_nodes'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Input defaultValue={option.param_max_leaf_nodes} placeholder='None' onInput={(e,v) => {
                     result.param_max_leaf_nodes = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_leaf_nodes_dtr_list' }} />
-                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="int or None"/></Label>
-                <Input zIndex={22} defaultValue={'None'} onInput={(e,v) => {
+                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Input defaultValue={option.param_random_state} placeholder='None' onInput={(e,v) => {
                     result.param_random_state = v 
                 }} customStyle={`w-64`} attrs={{ list: 'random_state_dtr_list' }} />
 
             </div>
-            <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '5vw 1fr 5vw 1fr'
+            <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
+                gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
-                    <Checkbox label={col} name='suboption_checked' item={col}/>
+                    <Label>{col}</Label>
                         <Input onInput={(e,v) => {
                             result['Decision Tree Regression'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
-import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../../../util/ui'
+import { Label, Button, Modal, Checkbox } from '../../../../util/ui'
+import { Input, DropDown, MultiSelect } from '../../../../util/ui_components'
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
@@ -31,32 +32,32 @@ export default function ({ dataset, result, submit,visibleTabs }) {
                 }}>
 
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                <MultiSelect zIndex={30} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
-                <DropDown defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
+                <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
                     onSelect={e => {
                         result.finalY = e
                     } 
                 }/>
                 
-                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model."/></Label>
-                <Input defaultValue={30} onInput={(e,v) => {
+                <Label text="Choose Test Size(%)"><InlineTip info="Use part of dataset to train the model. Default(%): 30"/></Label>
+                <Input defaultValue={option.test_size} placeholder='30' onInput={(e,v) => {
                     result.test_size = v 
                 }} customStyle={`w-64`} attrs={{ list: 'test_size_svr_list' }} />
 
-                <Label text='Set parameters: C'><InlineTip info=" "/></Label>
-                <Input defaultValue={1.0} onInput={(e,v) => {
+                <Label text='Set parameters: C'><InlineTip info="Float. Default: 1.0 "/></Label>
+                <Input defaultValue={option.param_C} placeholder='1.0' onInput={(e,v) => {
                     result.param_C = v 
                 }} customStyle={`w-64`} attrs={{ list: 'C_svm_list' }} />
 
-                <Label text='Set parameters: gamma'><InlineTip info="Default: 0.01"/></Label>
-                <Input defaultValue={0.01} onInput={(e,v) => {
+                <Label text='Set parameters: gamma'><InlineTip info="Float. Default: 0.01"/></Label>
+                <Input defaultValue={option.param_gamma} placeholder='0.01' onInput={(e,v) => {
                     result.param_gamma = v 
                 }} customStyle={`w-64`} attrs={{ list: 'gamma_svm_list' }} />
 
 
-                <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset.  Default: line"/></Label>
+                <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in testing dataset.  Default: line"/></Label>
                 <DropDown defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
@@ -70,12 +71,12 @@ export default function ({ dataset, result, submit,visibleTabs }) {
                     }
                 } />
 
-                <Label text='Find the Best Hyper-Parameters: C'><InlineTip info="Input the result in 'set parameter:C'"/></Label>
-                <Input onInput={(e,v) => {
+                <Label text='Find the Best Hyper-Parameters: C'><InlineTip info="Clear 'Predict Options'. Input the result in 'set parameter:C'"/></Label>
+                <Input placeholder='Input a list of float numbers' onInput={(e,v) => {
                     result.find_C = v 
                 }} customStyle={`w-64`} attrs={{ list: 'find_C_svm_list' }} />
-                 <Label text='Find the Best Hyper-Parameters: gamma'><InlineTip info="Input the result in 'set parameter:gamma'"/></Label>
-                <Input onInput={(e,v) => {
+                 <Label text='Find the Best Hyper-Parameters: gamma'><InlineTip info="Clear 'Predict Options'. Input the result in 'set parameter:gamma'"/></Label>
+                <Input placeholder='Input a list of float numbers' onInput={(e,v) => {
                     result.find_gamma = v 
                 }} customStyle={`w-64`} attrs={{ list: 'find_gamma_svm_list' }} />
             </div>
@@ -84,17 +85,17 @@ export default function ({ dataset, result, submit,visibleTabs }) {
                 }}>
 
                 <Label customStyle={``} text='Set Parameters: kernel'><InlineTip info="Default: rbf"/></Label>
-                <DropDown defaultText={'rbf'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']}
+                <DropDown zIndex={28} defaultValue={option.param_kernel} defaultText={'rbf'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']}
                     onSelect={name => {
                         result.param_kernel = name  
                 }} />
                 
             </div>
-            <div className={`grid grid-cols-4 gap-4 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
-                gridTemplateColumns: '5vw 1fr 5vw 1fr'
+            <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
+                gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 {(result.finalVar || []).map((col,i)=><React.Fragment key={i}>
-                    <Checkbox label={col} name='suboption_checked' item={col}/>
+                    <Label>{col}</Label>
                         <Input onInput={(e,v) => {
                             result['SVM Regression'+ col] = v 
                 }}className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Input value'/> 

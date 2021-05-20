@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { useSelector } from 'react-redux'
-import { Input, Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../../../util/ui'
+import { Label, Button, Modal, Checkbox } from '../../../../util/ui'
+import { Input, DropDown, MultiSelect } from '../../../../util/ui_components'
 import { InlineTip } from '../../../common/tip'
 
 const DataLists = {
@@ -10,7 +11,7 @@ const DataLists = {
 
 export default function ({ dataset, result, submit }) {
     let [activeTab, setActiveTab] = useState(0)
-    // let option = useSelector(state=>state.option).analysis.clustering['K-means'] || {}
+    let option = useSelector(state=>state.option).analysis.clustering['K-means'] || {}
 
 
     return (
@@ -23,12 +24,12 @@ export default function ({ dataset, result, submit }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Select Variables X' ><InlineTip info="Select the columns to cluster, and each column should be numerical."/></Label>
-                <MultiSelect customHeight={'h-10'} customWidth={'w-64'} defaultText='Select Variables X' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.variablesx = e}/>
+                <Label customStyle={``} text='Select Variable Columns' ><InlineTip info="Select the columns to cluster, and each column should be numerical."/></Label>
+                <MultiSelect zIndex={30} defaultValue={option.variablesx} customHeight={'h-10'} customWidth={'w-64'} defaultText='Select One/Multi Columns' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.variablesx = e}/>
 
             
-                <Label text='Set parameters: n_clusters'><InlineTip info="Default: 8"/></Label>
-                <Input onInput={(e,v) => {
+                <Label text='Set parameters: n_clusters'><InlineTip info="Integer. Default: 3"/></Label>
+                <Input defaultValue={option.param_n_clusters} placeholder='3' onInput={(e,v) => {
                     result.param_n_clusters = v 
                 }} customStyle={`w-64`} attrs={{ list: 'n_clusters_kmeans_list' }} />
 
@@ -46,10 +47,7 @@ export default function ({ dataset, result, submit }) {
                     onSelect={name => {
                         result.metric = name
                     }
-                }/>
-
-                {/* <Checkbox label='Find the Best Hyper-Parameters for selected attributes: n_clusters'/> */}
-                
+                }/>                
 
                 <Label text='Find the Best Hyper-Parameters for selected attributes: n_clusters'><InlineTip info="Input the result in 'set parameter: n_clusters'"/></Label>
                 <DropDown defaultText={'Select method'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['elbow method', 'None']}
@@ -69,18 +67,18 @@ export default function ({ dataset, result, submit }) {
                 }}>
 
                 <Label customStyle={``} text='Set Parameters: init'><InlineTip info="Default: k-means++"/></Label>
-                <DropDown defaultText={'Select init'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['k-means++','random','centroids']}
+                <DropDown zIndex={29} defaultValue={option.param_init} defaultText={'Select init'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['k-means++','random','centroids']}
                     onSelect={name => {
                         result.param_init = name  
                 }} />
                
-                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="Default: None"/></Label>
-                <Input onInput={(e,v) => {
+                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Input defaultValue={option.param_random_state} placeholder='None' onInput={(e,v) => {
                     result.param_random_state = v 
                 }} customStyle={`w-64`} attrs={{ list: 'random_state_kmeans_list' }} />
 
                 <Label customStyle={``} text='Set Parameters: algorithm'><InlineTip info="Default: auto"/></Label>
-                <DropDown defaultText={'Select algorithm'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','full','elkan']}
+                <DropDown zIndex={28} defaultValue={option.param_algorithm} defaultText={'Select algorithm'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','full','elkan']}
                     onSelect={name => {
                         result.param_algorithm = name  
                 }} />

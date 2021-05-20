@@ -15,8 +15,6 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <div className={`ml-4 ${activeTab == 2 ? 'border-b-2 font-bold cursor-default' : 'cursor-pointer'}`} onClick={e => setActiveTab(2)}>Common Options</div>
             </div>
             <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`}>
-                <Label text='Group data:'><InlineTip info={`Group data`} /></Label>
-                <DropDown defaultText='Select Group By' customStyle='w-96' blankOption={'Do not group data'} showOnHover={false} items={dataset.cate_cols} onSelect={e => result.group_by = e} />
                 <Label text='*X Axis:'><InlineTip info={`X Axis`} /></Label>
                 <DropDown defaultText='Select X Axis' customStyle='w-96' showOnHover={false} items={dataset.num_cols} onSelect={e => result.x = e} />
                 <Label text='*Y Axis:'><InlineTip info={`Y Axis`} /></Label>
@@ -53,10 +51,16 @@ export const config = {
         setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
 
         let mid = ''
-        if (result.group_by)
-            mid = `df.groupby(['${result.x}','${result.group_by}'])['${result.y}'].sum().unstack().plot.box()`
-        else
+        if(result.engine == 'Plotly'){
+            if(!result.x && result.y){
+                mid = `fig = px.box(df, y="${result.y}")`
+            }else if(result.x && result.y){
+                mid = `fig = px.box(df, x="${result.x}", y="${result.y}")`
+            }
+            postSteps.push(`fig.show()`)
+        }else if(result.engine == 'Pandas'){
             mid = `df.groupby(['${result.x}'])['${result.y}'].sum().plot.box()`
+        }
 
         return `${prevSteps.length ? prevSteps.join('\n') : ''}
 ${mid}
