@@ -278,7 +278,10 @@ def login():
             user.profile_image.put(user_avatar, filename='avatar.png')
             imgStr = ""
         if "user_activity" in user:
-            progress = extract_report(user)
+            if user.user_activity != {}:
+                progress = extract_report(user)
+            else:
+                progress = {}
         else:
             progress = {}
         if not user["roles"]:
