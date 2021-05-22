@@ -1,0 +1,11 @@
+Dear, admin
+
+A new user {{ username }} is trying to register as Instructor
+
+Email: {{email}}
+
+Kindly verify and grant access to that user
+
+Sincerely
+
+Awesome Datamining Support Team

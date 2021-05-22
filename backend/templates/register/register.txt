@@ -1,0 +1,9 @@
+Dear, {{role}}
+
+You have been successfully registered.
+
+Kindly click the link to login {{url}}
+
+Sincerely,
+
+Awesome Datamining Support Team

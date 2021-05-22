@@ -27,8 +27,18 @@ class UnauthorizedRole(Exception):
         self.message = message
         self.status = status
         self.payload = payload
+class AlreadyRequested(Exception):
+    def __init__(self, message, status=401, payload=None):
+        self.message = message
+        self.status = status
+        self.payload = payload
 
 class EmailDoesnotExistsError(Exception):
+    def __init__(self, message, status=400, payload=None):
+        self.message = message
+        self.status = status
+        self.payload = payload
+class UserDoesNotExistsError(Exception):
     def __init__(self, message, status=400, payload=None):
         self.message = message
         self.status = status

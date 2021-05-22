@@ -46,7 +46,7 @@ from database.db import initialize_db
 from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt
 from resources.errors import InternalServerError, SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
-    EmailDoesnotExistsError, BadTokenError, UnauthorizedRole
+    EmailDoesnotExistsError, BadTokenError, UnauthorizedRole, AlreadyRequested, UserDoesNotExistsError
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist, ValidationError
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
     jwt_required, create_refresh_token, get_jwt, get_jti
@@ -124,6 +124,7 @@ mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 mongo_db = mongo_client["data_science_learning_platform_database"]
 mongo_collection = mongo_db["files"]
 user_collection = mongo_db["user"]
+pending_requests_collection = mongo_db["pending_requests"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv', 'amazon_alexa_text.csv']
@@ -179,6 +180,10 @@ def schema_validation_error(e):
 def email_does_not_exists(e):
     return {"status":e.status, "message":e.message}, 400
 
+@app.errorhandler(UserDoesNotExistsError)
+def user_does_not_exists(e):
+    return {"status":e.status, "message":e.message}, 400
+
 @app.errorhandler(UnauthorizedError)
 def unauthorized_user(e):
     return {"status":e.status, "message":e.message}, 401
@@ -186,7 +191,10 @@ def unauthorized_user(e):
 @app.errorhandler(UnauthorizedRole)
 def unauthorized_role(e):
     return {"status":e.status, "message":e.message}, 401
-   
+
+@app.errorhandler(AlreadyRequested)
+def already_requested(e):
+    return {"status":e.status, "message":e.message}, 401   
 
 @app.errorhandler(BadTokenError)
 def bad_token(e):
@@ -214,6 +222,12 @@ def send_email(subject, sender, recipients, text_body, html_body):
     Thread(target=send_async_email, args=(app, msg)).start()
 
 
+def instructorRegister(user):
+    user_db = pending_requests_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
+    if user_db:
+        raise AlreadyRequested('Already requested with same username/email and role' )
+    else:
+        pending_requests_collection.insert_one(user.to_mongo())
 
 # Block expired tokens
 # Callback function to check if a JWT exists in the db blocklist
@@ -228,30 +242,104 @@ def check_if_token_revoked(jwt_header, jwt_payload):
 
 
 #APIs
+@app.route("/api/auth/grant_intructor_access", methods=["POST"])
+@cross_origin(origin="*")
+@jwt_required()
+def grant_intructor_access():
+    url =  str(request.url_root)+'login'
+    user_id = get_jwt_identity()
+    is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
+    try:
+        if not is_admin_username or is_admin_username != 'admin':
+            raise UnauthorizedError('err') 
+        body = request.get_json()
+        email = body['email']
+        user_db = pending_requests_collection.find_one({"email": email})
+        if not user_db:
+            raise UserDoesNotExistsError("Couldn't find the user")
+        else:
+            try:
+                user = User.objects.get(email=email)
+                user['roles'].extend(['Instructor'])
+            except (DoesNotExist):
+                del user_db['_id']
+                user = User(**user_db)
+                user_avatar = open('backend/assets/images/avatar.png','rb')
+                user.profile_image.put(user_avatar, filename='avatar.png')
+            # try:
 
+            # user_data = User(**user_db)
+            # user = User.objects.get(username=body.get('username'))
+            user.save()
+            pending_requests_collection.remove({"email":email})
+            send_email('[Awesome data mining] New Instructor Login request',
+                        sender='awesomedatamining@gmail.com',
+                        recipients=[email],
+                        text_body=render_template('register/register.txt',
+                                                        role=user['roles'][0], url=url),
+                        html_body=render_template('register/register.html',
+                                                        role=user['roles'][0], url=url))
+        return {'id': str(user.id), "message":"Successfully registered the user"}, 200
+    except UnauthorizedError:
+        raise UnauthorizedError('Invalid role to grant instructor access')
+    except UserDoesNotExistsError:
+        raise UserDoesNotExistsError("Couldn't find the user")
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
 
 
 @app.route("/api/auth/signup", methods=["POST"])
 def register():
     try:
         body = request.get_json()
+        role = body['roles']
         try:
             user_db = User.objects.get(email=body.get('email'))
-            role = body['roles']
-            if role[0] in user_db['roles']:
+            if user_db['username'] != body['username']:
                 raise NotUniqueError
+            authorized = user_db.check_password(body.get('password'))
+            if not authorized:
+                raise UnauthorizedRole('um')
+            
+            if role[0] in user_db['roles'] or role[0] != 'Instructor':
+                raise UnauthorizedRole('um')
             else:
-                user_db['roles'].extend(role)  
-                user_db.save()   
-                return {'id': str(user_db.id), "message":"Registered successfully"}, 200
+                # user_db['roles'].extend(role)
+                instructorRegister(user_db)
+                send_email('[Awesome data mining] New Instructor Login request',
+                    sender='awesomedatamining@gmail.com',
+                    recipients=['datasciencelearningplatform1@gmail.com'],
+                    text_body=render_template('instructor_Access/instructor.txt',
+                                                    username=user_db['username'], email=user_db['email']),
+                    html_body=render_template('instructor_Access/instructor.html',
+                                                    username=user_db['username'], email=user_db['email']))
+                # user_db.save()
+                
+                
+                return {'id': str(user_db.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
         except DoesNotExist:
             user =  User(**body)
-            user_avatar = open('backend/assets/images/avatar.png','rb')
-            user.profile_image.put(user_avatar, filename='avatar.png')
+            user_db = user_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
+            if user_db:
+                raise NotUniqueError
             user.hash_password()   
-            user.save()
+            # user.save()
             id = user.id
+            if role[0] == 'Instructor':
+                instructorRegister(user)
+                send_email('[Awesome data mining] New Instructor Login request',
+                        sender='awesomedatamining@gmail.com',
+                        recipients=['datasciencelearningplatform1@gmail.com'],
+                        text_body=render_template('instructor_Access/instructor.txt',
+                                                        username=user['username'], email=user['email']),
+                        html_body=render_template('instructor_Access/instructor.html',
+                                                        username=user['username'], email=user['email']))
+                return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
             return {'id': str(id), "message":"Registered successfully"}, 200
+    except AlreadyRequested:
+        raise AlreadyRequested('Already requested with same username, email and role' )
+    except UnauthorizedRole:
+        raise UnauthorizedRole('User with given role already exists. Note:If creating same account with new role make sure your password matches')
     except FieldDoesNotExist:
         raise SchemaValidationError('Request is missing required fields')
     except NotUniqueError:
@@ -290,6 +378,7 @@ def login():
         else:
             if body.get('roles') not in user['roles']:
                 raise UnauthorizedRole('User with '+role+' does not exist')
+        
         expires = timedelta(days=25)
         expires_refresh = timedelta(days=30)
         access_token = create_access_token(identity=str(user.id), expires_delta=expires)
@@ -300,6 +389,8 @@ def login():
         user.save()
         to_zone = tz.tzlocal()
         last_logged_in = user.last_logged_in.astimezone(to_zone)
+        if user.username == 'admin':
+            role = "admin"
         return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
             'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio), "role":role}, 200
     except UnauthorizedRole:
