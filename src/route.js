@@ -28,6 +28,7 @@ import Register from './component/register/register.component'
 import Profile from './component/profile/profile.component'
 import ForgotPassword from './component/forgot_password/forgot_password.component'
 import ResetPasswordConfirm from './component/reset_password/reset_password.component'
+import PendingRequests from './component/pending-requests/pending-requests.component'
 
 import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
@@ -56,6 +57,7 @@ const Menu = {
         { text: 'Feature Selection', icon: 'list', to: '/featureSelection' },
         { text: 'Preprocessing', icon: 'filter', to: '/preprocessing' },
         { text: 'Analysis', icon: 'microscope', to: '/analysis' },
+
     ],
 }
 
@@ -67,6 +69,13 @@ const Routes = (props) => {
     let dataset = useSelector(state => state.dataset)
     let [menuData, setMenuData] = useState(Menu)
     let [toggle, setToggle] = useState(false)
+    
+    if(currentUser && currentUser.role === 'admin'){
+        const found = Menu['Main'].some(el => el.text === "Requests");
+        if(!found){
+            Menu['Main'].push({ text: 'Requests', icon: 'home', to: '/requests' })
+        }       
+    }
     // if(userEnv === 'default'){
     //     useEffect(() => {    
     //         dispatch(login("dummy_user", "dummy@123"))
@@ -138,9 +147,7 @@ const Routes = (props) => {
                  </nav>
                 </div>
                     
-            </section>} 
-
-            
+            </section>}     
             <div>
                 <div className='min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased'>
                         
@@ -215,6 +222,7 @@ const Routes = (props) => {
                                             </li> */}
 
                                             {Menu[menu].map(item =>
+                                                
                                                 <li key={item.text}>
                                                     <Link to={item.to} className="relative flex flex-row items-center h-11 focus:outline-none border-l-4 border-transparent hover-border pr-6">
                                                         <span className="inline-flex justify-center items-center ml-4">
@@ -239,7 +247,7 @@ const Routes = (props) => {
                 }
 
                     <div    
-                    className={currentUser? 'w-10/12 absolute right-0 h-screen content overflow-auto': "flex h-screen flex-col justify-center" }
+                    className={currentUser? 'w-10/12 absolute right-0 h-screen content overflow-auto bg-gray-100': "flex h-screen flex-col justify-center" }
                     >
                         {/* <div className='block w-full h-16'>&nbsp;</div> */}
                         <Switch>
@@ -258,6 +266,7 @@ const Routes = (props) => {
                             <Route path='/analysis' component={Analysis} />
                             <Route exact path='/forgot' component={ForgotPassword} />
                             <Route exact path='/reset/:token' component={ResetPasswordConfirm} />
+                            <Route path='/requests' component={PendingRequests} />
                             
                         </Switch>
                     </div>

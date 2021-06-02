@@ -242,11 +242,32 @@ def check_if_token_revoked(jwt_header, jwt_payload):
 
 
 #APIs
+@app.route("/pending_requests", methods=["GET"])
+@cross_origin(origin="*")
+@jwt_required()
+def pending_requests():
+    user_id = get_jwt_identity()
+    is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
+    try:
+        if not is_admin_username or is_admin_username != 'admin':
+            raise UnauthorizedError('err') 
+        # reqs = pending_requests_collection.find({})
+        data = []
+        for count, req in enumerate(pending_requests_collection.find()):
+            entry = {'id':count, 'fullname':req['fullname'], 'email':req['email']}
+            data.append(entry)
+        return jsonify(pending_requests=data), 200
+    except UnauthorizedError:
+        raise UnauthorizedError('Invalid role to access pending requests')
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
+
+
 @app.route("/api/auth/grant_intructor_access", methods=["POST"])
 @cross_origin(origin="*")
 @jwt_required()
 def grant_intructor_access():
-    url =  str(request.url_root)+'login'
+    url =  str(request.origin)+'/login'
     user_id = get_jwt_identity()
     is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
     try:
@@ -279,7 +300,7 @@ def grant_intructor_access():
                                                         role=user['roles'][0], url=url),
                         html_body=render_template('register/register.html',
                                                         role=user['roles'][0], url=url))
-        return {'id': str(user.id), "message":"Successfully registered the user"}, 200
+        return jsonify(success=True), 200
     except UnauthorizedError:
         raise UnauthorizedError('Invalid role to grant instructor access')
     except UserDoesNotExistsError:
