@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { elementIsVisibleInViewport } from '../../util/util';
 import './profile.css'
 import Form from "react-validation/build/form";
-import { Button } from '../../util/ui'
+import { Button, DropDown } from '../../util/ui'
 import CheckButton from "react-validation/build/button";
 import Input from "react-validation/build/input";
 import { reset_password_confirm } from '../../actions/auth';
@@ -12,6 +12,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {change_profile_pic} from '../../actions/profile';
 import { LineChart, PieChart } from 'react-chartkick'
 import 'chartkick/chart.js'
+import authHeader from '../../services/auth-header';
+import axios from "axios";
     
 const ProfileSection = ({currentUser}) => {
     const { avatar } = currentUser;
@@ -92,10 +94,48 @@ const ProfileSection = ({currentUser}) => {
 const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const { message } = useSelector(state => state.message);
   const parentRef = useRef();
+  const [instructors_list, setInstructorsList] = useState([])
+  let [selectInstructor, setInstructor] = useState('Select your instructor')
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
-
+    // await updateInstructorDropdown();
   }, [tabpanel])
+  // useEffect(async () => {
+  //   await updateInstructorDropdown();
+  //   // console.log(data.files_list);
+
+  // }, []);
+  async function updateInstructorDropdown() {
+    console.log('instructor fetch')
+    let response = [];
+    try{
+      response = axios.get("localhost:9000/instructors")
+    }
+    catch(err){
+      console.log(err)
+    }
+    console.log(response)
+    // let data = await response.json();
+    // if (data.instructors_list) {
+    //   setInstructorsList([...data.instructors_list])
+    // }
+  }
+  async function selectInstructorOption(email) {
+    let res = await fetch('/set_instructor', {
+      method: 'PATCH',
+      body:{"email":email},
+      headers: authHeader()
+    })
+    let json = await res.json()
+
+    if (json.success) {
+      console.log('inside success')
+    }
+    // await updateFilesDropdown();
+    setInstructor(email)
+  }
+
+
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form name="uploadFileForm" method="POST">
                       <ProfileSection currentUser={currentUser}/>
@@ -111,7 +151,10 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                           <label >Email</label>
                           <input type="email" className="form-control-profile" id="inputEmail4" placeholder={currentUser.email} disabled/>
                       </div>
-                      <hr className="my-16" />  
+                      <hr className="my-16" /> 
+
+                      <hr className="my-16" /> 
+
                       <Button text='Save Changes' customStyle='h-10 my-4 w-64 profile-button' hasPadding={false}/>
                       {message && (
                             <div className="form-group">
@@ -122,6 +165,18 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                             </div>
                         )}
                   </Form>
+                  <div >
+                          <label> Your Instructor </label>
+                          <DropDown className="" disabled={!!instructors_list.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructors_list.map(email => ({
+                            email,
+                            onClick(e) {
+                              e.preventDefault();
+                              // setInstructor(email);
+                              selectInstructorOption(email);
+                            }
+                          }))} />
+                  
+                      </div>
   </div>
 }
 

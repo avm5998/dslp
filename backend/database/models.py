@@ -14,7 +14,9 @@ class User(db.Document):
     last_logged_in = db.DateTimeField(default=datetime.now(timezone.utc), nullable=False)
     user_activity = db.DictField()
     user_bio = db.StringField()
-    roles =  db.ListField()        
+    roles =  db.ListField()   
+    report_to = db.EmailField()  
+    students = db.ListField()
     def hash_password(self):
         self.password = generate_password_hash(self.password).decode('utf8')
     

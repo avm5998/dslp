@@ -407,13 +407,15 @@ def login():
         user.last_logged_in = datetime.now(timezone.utc)
         if "user_bio" not in user:
             user.user_bio = ""
+        if "report_to" not in user:
+            user.report_to = ""
         user.save()
         to_zone = tz.tzlocal()
         last_logged_in = user.last_logged_in.astimezone(to_zone)
         if user.username == 'admin':
             role = "admin"
         return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
-            'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio), "role":role}, 200
+            'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio), "report_to":str(user.report_to), "role":role}, 200
     except UnauthorizedRole:
         raise UnauthorizedRole('User with '+role+' permission not allowed')
     except UnauthorizedError:
@@ -627,6 +629,38 @@ def get_user_files():
     except:
         user_files_list = []
     return {'files_list': user_files_list}
+
+
+@app.route('/instructors',methods=['GET'])
+@cross_origin(origin="*")
+def get_instructors():
+    instructor_list = []
+    # instructor_list = user_collection.find({"$and":[{"roles":"Instructor"}, {"username":{"$ne":"admin"}}]}))
+    for instructor in user_collection.find({"$and":[{"roles":"Instructor"}, {"username":{"$ne":"admin"}}]}):
+        instructor_list.append(instructor['email'])
+    return jsonify(instructor_list= instructor_list)
+
+
+@app.route('/set_instructor',methods=['PATCH'])
+@cross_origin(origin="*")
+@jwt_required()
+def report_instructor():
+    user_id = get_jwt_identity()
+    ins_email = request.args.get('email')
+    update_instructor(user_id, ins_email)
+    return jsonify(success=True)
+
+
+def update_instructor(user_id, new_instructor_email):
+    user = user_collection.find_one({"_id":ObjectId(user_id)}, {"report_to":1})['report_to']
+    old_instructor_email = user['report_to']
+    old_instructor_students = user_collection.find_one({"email":old_instructor_email}, {"students":1})['students']
+    old_instructor_students.remove(ObjectId(user_id))
+    new_instructor_students = user_collection.find_one({"email":new_instructor_email}, {"students":1})['students']
+    new_instructor_students.add(ObjectId(user_id))
+    user_collection.update_one({"email":old_instructor_email}, {'$set':{'students':old_instructor_students}})
+    user_collection.update_one({"email":new_instructor_email}, {'$set':{'students':new_instructor_students}})
+
 
 def convertNaN(value):
     return None if math.isnan(value) else value
