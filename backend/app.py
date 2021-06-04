@@ -356,7 +356,9 @@ def register():
                         html_body=render_template('instructor_Access/instructor.html',
                                                         username=user['username'], email=user['email']))
                 return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
-            else:
+            else:          
+                user_avatar = open('backend/assets/images/avatar.png','rb')
+                user.profile_image.put(user_avatar, filename='avatar.png')
                 user.save()
             return {'id': str(id), "message":"Registered successfully"}, 200
     except AlreadyRequested:
@@ -410,7 +412,7 @@ def login():
         if "user_bio" not in user:
             user.user_bio = ""
         if "report_to" not in user:
-            user.report_to = None
+            user.report_to = ""
         user.save()
         to_zone = tz.tzlocal()
         last_logged_in = user.last_logged_in.astimezone(to_zone)
@@ -635,12 +637,14 @@ def get_user_files():
 
 @app.route('/instructors',methods=['GET'])
 @cross_origin(origin="*")
+@jwt_required()
 def get_instructors():
+    user_id = get_jwt_identity()
     instructor_list = []
     # instructor_list = user_collection.find({"$and":[{"roles":"Instructor"}, {"username":{"$ne":"admin"}}]}))
     for instructor in user_collection.find({"$and":[{"roles":"Instructor"}, {"username":{"$ne":"admin"}}]}):
         instructor_list.append(instructor['email'])
-    return jsonify(instructor_list= instructor_list)
+    return {"instructor_list": instructor_list}
 
 
 @app.route('/set_instructor',methods=['PATCH'])
@@ -648,20 +652,36 @@ def get_instructors():
 @jwt_required()
 def report_instructor():
     user_id = get_jwt_identity()
-    ins_email = request.args.get('email')
+    ins_email = json.loads(request.data)['email']
     update_instructor(user_id, ins_email)
     return jsonify(success=True)
 
 
 def update_instructor(user_id, new_instructor_email):
-    user = user_collection.find_one({"_id":ObjectId(user_id)}, {"report_to":1})['report_to']
-    old_instructor_email = user['report_to']
-    old_instructor_students = user_collection.find_one({"email":old_instructor_email}, {"students":1})['students']
-    old_instructor_students.remove(ObjectId(user_id))
-    new_instructor_students = user_collection.find_one({"email":new_instructor_email}, {"students":1})['students']
-    new_instructor_students.add(ObjectId(user_id))
-    user_collection.update_one({"email":old_instructor_email}, {'$set':{'students':old_instructor_students}})
+    old_instructor_email = None
+    try:
+        old_instructor_email = user_collection.find_one({"_id":ObjectId(user_id)}, {"report_to":1})['report_to']
+    except KeyError:
+        print('No report field')
+
+    if old_instructor_email:
+        old_instructor_students = user_collection.find_one({"email":old_instructor_email}, {"students":1})['students']
+        if old_instructor_students:
+            try:
+                old_instructor_students.remove(ObjectId(user_id))
+            except ValueError:
+                print('Student not in old instructors list')
+        else:
+            old_instructor_students = []
+        user_collection.update_one({"email":old_instructor_email}, {'$set':{'students':old_instructor_students}})
+    new_instructor_students = []
+    try:
+        new_instructor_students = user_collection.find_one({"email":new_instructor_email}, {"students":1})['students'] 
+    except KeyError:
+        print('NO Students')  
+    new_instructor_students.append(ObjectId(user_id))             
     user_collection.update_one({"email":new_instructor_email}, {'$set':{'students':new_instructor_students}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {'$set':{'report_to':new_instructor_email}})
 
 
 def convertNaN(value):

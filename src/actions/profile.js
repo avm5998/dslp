@@ -2,6 +2,8 @@
 import {
 CHANGE_PROFILE_PIC_SUCCESS,
 CHANGE_PROFILE_PIC_FAILURE, 
+CHANGE_INSTRUCTOR_SUCCESS,
+CHANGE_INSTRUCTOR_FAILURE,
 SET_MESSAGE
   } from "./types";
 
@@ -36,6 +38,25 @@ SET_MESSAGE
               payload: message,
             });
       
+            return Promise.reject();
+          }
+        );
+  };
+
+  export const change_instructor = (email) => (dispatch) => {
+    return ProfileService.change_instructor(email).then(
+        (response) => {
+            dispatch({
+              type: CHANGE_INSTRUCTOR_SUCCESS,
+              payload:{email}
+            });
+            return Promise.resolve();
+          },
+          (error) => {
+            const message = error.message;  
+            dispatch({
+              type: CHANGE_INSTRUCTOR_FAILURE,
+            });
             return Promise.reject();
           }
         );

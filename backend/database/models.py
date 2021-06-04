@@ -15,7 +15,7 @@ class User(db.Document):
     user_activity = db.DictField()
     user_bio = db.StringField()
     roles =  db.ListField()   
-    report_to = db.EmailField()  
+    report_to = db.StringField(default="")  
     students = db.ListField()
     def hash_password(self):
         self.password = generate_password_hash(self.password).decode('utf8')

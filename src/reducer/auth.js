@@ -10,7 +10,9 @@ import {
   PASSWORD_RESET_CONFIRM_SUCCESS,
   PASSWORD_RESET_CONFIRM_FAIL,
   CHANGE_PROFILE_PIC_SUCCESS,
-  CHANGE_PROFILE_PIC_FAILURE
+  CHANGE_PROFILE_PIC_FAILURE,
+  CHANGE_INSTRUCTOR_SUCCESS,
+  CHANGE_INSTRUCTOR_FAILURE,
 } from "../actions/types";
 
 let user = JSON.parse(localStorage.getItem("user"));
@@ -58,6 +60,7 @@ export default function (state = initialState, action) {
     case PASSWORD_RESET_CONFIRM_SUCCESS:
     case CHANGE_PROFILE_PIC_FAILURE:
     case LOGOUT_FAIL:
+    case CHANGE_INSTRUCTOR_FAILURE:
         return {
             ...state
         };
@@ -69,6 +72,14 @@ export default function (state = initialState, action) {
           avatar : payload.base64
         }
       }
+    case CHANGE_INSTRUCTOR_SUCCESS:
+        return {
+          ...state,
+          user:{
+            ...state.user,
+            report_to : payload.email
+          }
+        }
     default:
       return state;
   }

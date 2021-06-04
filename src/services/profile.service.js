@@ -24,6 +24,29 @@ const change_profile_pic = async (data) => {
     return json;
   };
 
+  const change_instructor = async (email)  => {
+    let res = await fetch(config.endpoint+'/set_instructor', {
+      method: 'PATCH',
+      body:JSON.stringify({"email":email}),
+      headers: authHeader()
+    })
+    let json = await res.json()
+
+    if (json.success) {
+      // console.log('inside success')
+      let user = JSON.parse(localStorage.getItem("user"));
+      user.report_to = email;
+      // console.log(user.avatar);
+      localStorage.setItem("user", JSON.stringify(user));
+      return true;
+    }
+    return false;
+  }
+  // const getInstructorsList = async () => {
+  //   return await fetch(config.endpoint + 'instructors')
+  //     .then(data => data.json())
+  // }
   export default {
-    change_profile_pic
+    change_profile_pic,
+    change_instructor
   };

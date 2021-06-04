@@ -9,25 +9,47 @@ import CheckButton from "react-validation/build/button";
 import Input from "react-validation/build/input";
 import { reset_password_confirm } from '../../actions/auth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {change_profile_pic} from '../../actions/profile';
+import {change_profile_pic, change_instructor} from '../../actions/profile';
 import { LineChart, PieChart } from 'react-chartkick'
 import 'chartkick/chart.js'
 import authHeader from '../../services/auth-header';
 import axios from "axios";
-    
+import {config} from '../../config/client'
+
 const ProfileSection = ({currentUser}) => {
     const { avatar } = currentUser;
     const { user_bio } = currentUser;
+    const {report_to} = currentUser;
     const [profileImg, setProfileImg] = useState(avatar)
     const [bio, setBio] = useState(user_bio);
     const [editBio, setEditBio] = useState(false)
     const dispatch = useDispatch();
+  
+  const [instructors_list, setInstructorsList] = useState([])
+  let [selectInstructor, setInstructor] = useState('Select your instructor')
+    useEffect(() => {
+      fetchInstructor();
+      if(report_to !==''){
+        setInstructor(report_to);
+      }
+    }, []);
 
     useEffect(async () => {
       
       setProfileImg('data:image/png;base64,' + avatar)
     }, [avatar]);
-
+    const fetchInstructor = async () => {
+      const response = await fetch(config.endpoint+"/instructors", {
+        method: 'GET',
+      headers: authHeader()
+      });
+      let json = await response.json();
+      if (json.instructor_list) {
+        setInstructorsList([...json.instructor_list])
+      }
+      // setJsonData(json);
+      // console.log(json);
+    };
     const handleChange = event => {
       const {name, value} = event.target;
       setBio(value)
@@ -56,7 +78,7 @@ const ProfileSection = ({currentUser}) => {
         </label>
             
           </div>
-          <div className="col-md-6 p-8 mt-16">
+          <div className="col-md-5 p-8 mt-16">
               <div className="row align-items-center">
                   <div className="col-md-7">
                       <h4 className="mb-1 text-gray-900 text-4xl">{currentUser.name}</h4>
@@ -87,6 +109,18 @@ const ProfileSection = ({currentUser}) => {
                   </div>
               </div>
           </div>
+          <div className="col md-3 p-8 mt-16">
+                  <label> Your Instructor </label>
+                  <DropDown className="fileSelect" disabled={!!instructors_list.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructors_list.map(name => ({
+                    name,
+                    onClick(e) {
+                      // e.preventDefault();
+                      setInstructor(name);
+                      dispatch(change_instructor(name));
+                    }
+                  }))} />
+          
+              </div>
       </div>
     )
 }
@@ -94,48 +128,91 @@ const ProfileSection = ({currentUser}) => {
 const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const { message } = useSelector(state => state.message);
   const parentRef = useRef();
-  const [instructors_list, setInstructorsList] = useState([])
-  let [selectInstructor, setInstructor] = useState('Select your instructor')
-  useEffect(() => {
-    if (!elementIsVisibleInViewport(parentRef.current)) return
-    // await updateInstructorDropdown();
-  }, [tabpanel])
+
+  // const [instructors_list, setInstructorsList] = useState([])
+  // let [selectInstructor, setInstructor] = useState('Select your instructor')
   // useEffect(async () => {
   //   await updateInstructorDropdown();
   //   // console.log(data.files_list);
 
   // }, []);
-  async function updateInstructorDropdown() {
-    console.log('instructor fetch')
-    let response = [];
-    try{
-      response = axios.get("localhost:9000/instructors")
-    }
-    catch(err){
-      console.log(err)
-    }
-    console.log(response)
+  // useEffect(async () => {
+  //   let mounted = true;
+  //   await getInstructorsList()
+  //     .then(items => {
+  //       if(mounted) {
+  //         console.log(items);
+  //         setList(items)
+  //       }
+  //     })
+  //   return () => mounted = false;
+  // }, [])
+  useEffect(() => {
+    if (!elementIsVisibleInViewport(parentRef.current)) return
+    // const fetchInstructor = async () => {
+    //   const response = await fetch(config.endpoint+"/instructors", {
+    //     method: 'GET',
+    //   headers: authHeader()
+    //   });
+    //   let json = await response.json();
+    //   if (json.instructor_list) {
+    //     setInstructorsList([...json.instructor_list])
+    //   }
+    //   // setJsonData(json);
+    //   // console.log(json);
+    // };
+    // fetchInstructor();
+  }, [tabpanel]);
+  // useEffect(() => {
+  //   if (!elementIsVisibleInViewport(parentRef.current)) return
+  //   // await updateInstructorDropdown();
+  // }, [tabpanel])
+  // const getInstructorsList = async () => {
+  //   const response =  await fetch('/instructors');
+  //   const data  = await response.json();
+  //   console.log(data);
+  //   return data;
+  // }
+  // const updateInstructorDropdown = async () => {
+  //   console.log('instructor fetch')
+  //   await fetch("/instructors", 
+  //   {
+  //     method: 'GET',
+  //     headers: authHeader()
+  //   }).then(response => response.json()).then(data => console.log(data));
+  //   console.log('instructor fetch 2 ');
+  // }
+    
+    // let response = [];
+    
+      // const response = await fetch("/instructors", 
+      // {
+      //   method: 'GET',
+      //   headers: authHeader()
+      // })
+      // let data = await response.json();
+     
+    // console.log(data)
+    
     // let data = await response.json();
     // if (data.instructors_list) {
     //   setInstructorsList([...data.instructors_list])
     // }
-  }
-  async function selectInstructorOption(email) {
-    let res = await fetch('/set_instructor', {
-      method: 'PATCH',
-      body:{"email":email},
-      headers: authHeader()
-    })
-    let json = await res.json()
+  
+  // async function selectInstructorOption(email) {
+  //   let res = await fetch(config.endpoint+'/set_instructor', {
+  //     method: 'PATCH',
+  //     body:JSON.stringify({"email":email}),
+  //     headers: authHeader()
+  //   })
+  //   let json = await res.json()
 
-    if (json.success) {
-      console.log('inside success')
-    }
-    // await updateFilesDropdown();
-    setInstructor(email)
-  }
-
-
+  //   if (json.success) {
+  //     console.log('inside success')
+  //   }
+  //   // await updateFilesDropdown();
+  //   setInstructor(email)
+  // }
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form name="uploadFileForm" method="POST">
                       <ProfileSection currentUser={currentUser}/>
@@ -165,18 +242,7 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                             </div>
                         )}
                   </Form>
-                  <div >
-                          <label> Your Instructor </label>
-                          <DropDown className="" disabled={!!instructors_list.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructors_list.map(email => ({
-                            email,
-                            onClick(e) {
-                              e.preventDefault();
-                              // setInstructor(email);
-                              selectInstructorOption(email);
-                            }
-                          }))} />
-                  
-                      </div>
+
   </div>
 }
 
@@ -301,7 +367,7 @@ const ChangePassword = ({ tabpanelIndex, tabpanel, currentUser }) => {
 
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
-
+    
   }, [tabpanel])
   return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form ref={form} onSubmit={handleSubmit}>
