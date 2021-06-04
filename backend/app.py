@@ -356,6 +356,8 @@ def register():
                         html_body=render_template('instructor_Access/instructor.html',
                                                         username=user['username'], email=user['email']))
                 return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
+            else:
+                user.save()
             return {'id': str(id), "message":"Registered successfully"}, 200
     except AlreadyRequested:
         raise AlreadyRequested('Already requested with same username, email and role' )
@@ -408,14 +410,14 @@ def login():
         if "user_bio" not in user:
             user.user_bio = ""
         if "report_to" not in user:
-            user.report_to = ""
+            user.report_to = None
         user.save()
         to_zone = tz.tzlocal()
         last_logged_in = user.last_logged_in.astimezone(to_zone)
         if user.username == 'admin':
             role = "admin"
         return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
-            'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio), "report_to":str(user.report_to), "role":role}, 200
+            'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio), "report_to":user.report_to, "role":role}, 200
     except UnauthorizedRole:
         raise UnauthorizedRole('User with '+role+' permission not allowed')
     except UnauthorizedError:
