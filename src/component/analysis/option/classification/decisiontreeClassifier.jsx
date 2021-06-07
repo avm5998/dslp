@@ -52,7 +52,7 @@ export default function ({ dataset, result, submit, visibleTabs}) {
                     result.test_size = v
                 }} customStyle={`w-64 `} attrs={{ list: 'test_size_dtc_list' }} />
 
-                <Label customStyle={``} text='Set parameters: max_depth'><InlineTip info="Default: None"/></Label>
+                <Label customStyle={``} text='Set parameters: max_depth'><InlineTip info="Default: None. The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples."/></Label>
                 <Input defaultValue={option.param_max_depth} placeholder='None' onInput={(e,v) => {
                     result.param_max_depth = v
                 }} customStyle={`w-64 `} attrs={{ list: 'max_depth_dtc_list' }} />
@@ -85,12 +85,12 @@ export default function ({ dataset, result, submit, visibleTabs}) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Set parameters: criterion'><InlineTip info="Default: gini"/></Label>
+                <Label customStyle={``} text='Set parameters: criterion'><InlineTip info="Default: gini. The function to measure the quality of a split. Supported criteria are “gini” for the Gini impurity and “entropy” for the information gain."/></Label>
                 <DropDown zIndex={27} defaultValue={option.param_criterion}  defaultText={'gini'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['gini', 'entropy']}
                     onSelect={name => {
                         result.param_criterion = name
                     }} />
-                <Label customStyle={``} text='Set parameters: max_leaf_nodes'><InlineTip info="Default: None"/></Label>
+                <Label customStyle={``} text='Set parameters: max_leaf_nodes'><InlineTip info="Default: None. Grow a tree with max_leaf_nodes in best-first fashion.  If None then unlimited number of leaf nodes."/></Label>
                 <Input defaultValue={option.param_max_leaf_nodes} placeholder='None' onInput={(e,v) => {
                     result.param_max_leaf_nodes = v
                     }} customStyle={`w-64`} attrs={{ list: 'max_leaf_nodes_dtc_list' }} />

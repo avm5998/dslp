@@ -52,12 +52,12 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     result.test_size = v
                 }} customStyle={`w-64 `} attrs={{ list: 'test_size_svc_list' }} />
 
-                <Label text='Set parameters: C'><InlineTip info="Float. Default: 1.0"/></Label>
+                <Label text='Set parameters: C'><InlineTip info="Float. Default: 1.0. Regularization parameter. The strength of the regularization is inversely proportional to C. Must be strictly positive. The penalty is a squared l2 penalty."/></Label>
                 <Input defaultValue={option.param_C} placeholder='1.0' onInput={(e,v) => {
                     result.param_C = v 
                 }} customStyle={`w-64`} attrs={{ list: 'C_svc_list' }} />
 
-                <Label text='Set parameters: gamma'><InlineTip info="Float. Default: 0.01"/></Label>
+                <Label text='Set parameters: gamma'><InlineTip info="Float. Default: 0.01. Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’."/></Label>
                 <Input defaultValue={option.param_gamma} placeholder='0.01' onInput={(e,v) => {
                     result.param_gamma = v 
                 }} customStyle={`w-64`} attrs={{ list: 'gamma_svc_list' }} />
@@ -88,7 +88,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
-                <Label customStyle={``} text='Set Parameters: kernel'><InlineTip info="Default: rbf"/></Label>
+                <Label customStyle={``} text='Set Parameters: kernel'><InlineTip info="Default: rbf. Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’."/></Label>
                 <DropDown zIndex={27} defaultValue={option.param_kernel} defaultText={'rbf'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']}
                     onSelect={name => {
                         result.param_kernel = name  

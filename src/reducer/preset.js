@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { cachePresetInfo } from "../util/util";
 
 const slice = createSlice({
-  name: "preset",
+  name: "model",
   initialState: {},
   reducers: {
     loadPreset(state, action) {
@@ -21,7 +21,7 @@ const slice = createSlice({
       let lastIndex = existingKeys.length
         ? existingKeys[existingKeys.length - 1].split(" ")[1]
         : "0";
-      let presetName = "Preset " + (Number(lastIndex) + 1);
+      let presetName = "Model " + (Number(lastIndex) + 1);
       state[userId][filename][identifier][presetName] = { ...result };
       cachePresetInfo(state);
     },

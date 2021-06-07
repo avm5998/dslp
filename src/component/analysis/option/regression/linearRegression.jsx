@@ -49,7 +49,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     } 
                 }/>
 
-                <Label text='Metrics of Model:'><InlineTip info="Assess model performance. "/></Label>
+                <Label text='Metrics of Model:'><InlineTip info="Assess model performance. 'explained variance' is used to measure the discrepancy between a model and actual data. 'neg_mean_absolute_error' measures the mean absolute error. 'neg_mean_squared_error' measures the mean squared error. 'r2' means proportion of the information in the data explained by the model. 'neg_mean_poisson_deviance' is equivalent to the Tweedie deviance with the power parameter power=1. 'neg_mean_gamma_deviance' is equivalent to the Tweedie deviance with the power parameter power=2."/></Label>
                 <DropDown defaultValue={option.metric} defaultText={'neg_mean_squared_error'} width='w-64'  items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {
                         result.metric = name
@@ -60,12 +60,12 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
+                <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Default=True. Whether to calculate the intercept for this model. If set to False, no intercept will be used in calculations. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
                 <DropDown zIndex={28} defaultValue={option.param_fit_intercept_lr} defaultText={'True'}  width='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_fit_intercept_lr = name
                 }} />
-                <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
+                <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Default=False. If True, the regressors X will be normalized before regression. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
                 <DropDown zIndex={27} defaultValue={option.param_normalize_lr} defaultText={'False'}  width='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_normalize_lr = name  

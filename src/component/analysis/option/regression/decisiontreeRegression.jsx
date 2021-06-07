@@ -48,7 +48,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     result.test_size = v 
                 }} customStyle={`w-64`} attrs={{ list: 'test_size_list' }} />
 
-                <Label text='Set parameters: max_depth'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Label text='Set parameters: max_depth'><InlineTip info="Integer or None. Default: None. The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples."/></Label>
                 <Input defaultValue={option.param_max_depth} placeholder='None' onInput={(e,v) => {
                     result.param_max_depth = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_depth_dtr_list' }} />
@@ -67,7 +67,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     } 
                 }/>
 
-                <Label text='Metrics of Model:'><InlineTip info="Assess model performance. Default: neg_mean_squared_error"/></Label>
+                <Label text='Metrics of Model:'><InlineTip info="Assess model performance. 'explained variance' is used to measure the discrepancy between a model and actual data. 'neg_mean_absolute_error' measures the mean absolute error. 'neg_mean_squared_error' measures the mean squared error. 'r2' means proportion of the information in the data explained by the model. 'neg_mean_poisson_deviance' is equivalent to the Tweedie deviance with the power parameter power=1. 'neg_mean_gamma_deviance' is equivalent to the Tweedie deviance with the power parameter power=2."/></Label>
                 <DropDown defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {
                         result.metric = name
@@ -85,26 +85,26 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
 
-                <Label customStyle={``} text='Set Parameters: criterion'><InlineTip info="Default: mse"/></Label>
+                <Label customStyle={``} text='Set Parameters: criterion'><InlineTip info="Default: mse. The function to measure the quality of a split. “mse” applies the mean squared error, “friedman_mse” uses mean squared error with Friedman’s improvement score for potential splits, “mae” relates to the mean absolute error, “poisson” uses reduction in Poisson deviance to find splits. "/></Label>
                 <DropDown zIndex={28} defaultValue={option.param_criterion} defaultText={'mse'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['mse','friedman_mse','mae', 'poisson']}
                     onSelect={name => {
                         result.param_criterion = name  
                 }} />
-                <Label customStyle={``} text='Set Parameters: splitter'><InlineTip info="Default: best"/></Label>
+                <Label customStyle={``} text='Set Parameters: splitter'><InlineTip info="Default: best. The strategy used to choose the split at each node. Supported strategies are “best” to choose the best split and “random” to choose the best random split."/></Label>
                 <DropDown zIndex={27} defaultValue={option.param_splitter} defaultText={'best'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['best','random']}
                     onSelect={name => {
                         result.param_splitter = name  
                 }} />
-                <Label customStyle={``} text='Set Parameters: max_features'><InlineTip info="Default: None"/></Label>
+                <Label customStyle={``} text='Set Parameters: max_features'><InlineTip info="Default: None. The number of features to consider when looking for the best split. If “auto”, then max_features=n_features; If “sqrt”, then max_features=sqrt(n_features); If “log2”, then max_features=log2(n_features); If None, then max_features=n_features."/></Label>
                 <DropDown zIndex={26} defaultValue={option.param_max_features} defaultText={'None'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['auto','sqrt', 'log2']}
                     onSelect={name => {
                         result.param_max_features = name 
                 }} />
-                <Label customStyle={``} text='Set Parameters: max_leaf_nodes'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Label customStyle={``} text='Set Parameters: max_leaf_nodes'><InlineTip info="Integer or None. Default: None. Grow a tree with max_leaf_nodes in best-first fashion.  If None then unlimited number of leaf nodes."/></Label>
                 <Input defaultValue={option.param_max_leaf_nodes} placeholder='None' onInput={(e,v) => {
                     result.param_max_leaf_nodes = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_leaf_nodes_dtr_list' }} />
-                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="Integer or None. Default: None"/></Label>
+                <Label customStyle={``} text='Set Parameters: random_state'><InlineTip info="Integer or None. Default: None. Controls the randomness of the estimator. The features are always randomly permuted at each split."/></Label>
                 <Input defaultValue={option.param_random_state} placeholder='None' onInput={(e,v) => {
                     result.param_random_state = v 
                 }} customStyle={`w-64`} attrs={{ list: 'random_state_dtr_list' }} />

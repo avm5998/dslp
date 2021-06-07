@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo, getProp, useCachedData, useSimpleForm } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo, getProp, useCachedData, useSimpleForm, useToggleGroup, toUnicode} from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -34,13 +34,18 @@ const OptionModels = {
     time_series_analysis: { 'SARIMA': SARIMAOptions },
 }
 
-// const Models = {
-//     'Select analytic method':[],
-//     'Regression':['Linear Regression', 'Decision Tree Regression', 'Random Forests Regression', 'Support Vector Machine Regressor'], //0
-//     'Classification': ['Logistic Regression', 'Decision Tree Classifier', 'Random Forests Classifier', 'Naive Bayes Classifier'],//1
-//     'Clustering':['K-Means', 'Agglometrative'],//2
-//     'Associate Rule': ['Apriori']//3
-// }
+const initialCode = data=>`import pandas as pd
+from io import StringIO
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import plotly.express as px
+
+data_json = StringIO(r"""${toUnicode(data)}""")
+df = pd.read_json(data_json) `
+
+
 const Analysis = () => {
     useCachedData()
 
@@ -61,11 +66,32 @@ const Analysis = () => {
     let { getData, result, input } = useSimpleForm({
         default_key: 'default_value'
     })
+ 
 
     let user = useSelector(state => state.auth).user
     let identifier = option + '#' + model
     let presets = getProp(preset, user.id, dataset.filename, identifier) || {}
     let presetsArr = Object.keys(presets)
+
+    let codeParent = useRef()
+    let kernelRef = useRef()
+    let { ref, hide: hideSelections } = useToggleGroup()
+    const [code,setCode] = useState('')
+    const runCode = async (e)=>{
+        let res = await kernelRef.current.requestExecute({code:initialCode(dfJSON)}).done
+        document.querySelector('.thebelab-run-button').click()
+    }
+    useEffect(()=>{
+        if(!code) return
+        codeParent.current.innerHTML = ''
+        let pre = document.createElement('pre')
+        pre.setAttribute('data-executable','true')
+        pre.setAttribute('data-language','python')
+        codeParent.current.appendChild(pre)
+        pre.innerHTML = code
+        thebelab.bootstrap();
+    },[code])
+
 
     useEffect(() => {
         result.analysis_option = option
@@ -126,7 +152,7 @@ const Analysis = () => {
             }} setIsOpen={setShowSubOptionModal}>
                 <div style={{zIndex:1000}} className="float-right flex justify-end items-center relative right-2 top-2 gap-4">
                     <div>
-                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No presets'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} deletable={true} onDelete={(e)=>{
+                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No models'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} deletable={true} onDelete={(e)=>{
                             deletePreset(e)
                         }} />
                     </div>
@@ -147,7 +173,7 @@ const Analysis = () => {
             <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
                 <div className='mx-5 w-12/12 w-full flex justify-start'>
                     <div className='w-72'>
-                        <DropDown text={optionText} width='w-72' items={
+                        <DropDown ref={ref} text={optionText} width='w-72' items={
                             Object.keys(OptionModels).map((item, i) => ({
                                 name: item, onClick(e) {
                                     {/*   0                           1                            2                               3                 4    */ }
@@ -159,7 +185,7 @@ const Analysis = () => {
                             }))} />
                     </div>
                     <div className='w-72 mx-5'>
-                        <DropDown defaultText='Select analytic method' width='w-72' items={
+                        <DropDown ref={ref} defaultText='Select model' width='w-72' items={
                             (OptionModels.hasOwnProperty(option) ? Object.keys(OptionModels[option]) : []).map((item, i) => ({
                                 name: item, onClick(e) {
                                     setModel(item)
@@ -185,10 +211,20 @@ const Analysis = () => {
                             setVisibleModalTabs([2]);
                         }
                     }} />
+
+                    <Button hasPadding={false} disabled={!code} text="SandBox Run" overrideClass={`w-40 rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
+                        ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
+
                 </div>
             </div>
+            
+          
 
-
+            <div className='flex-grow-1 w-full' ref={codeParent}>
+                {code?'':<div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                    Select a model to see the corresponding code
+                </div>}
+            </div>
 
 
             <div className=" w-full">
@@ -215,9 +251,9 @@ const Analysis = () => {
                 </div>
             </div>
 
-            {/* <Table PageSize={10}/> */}
-
         </div>
+      
+
     )
 }
 

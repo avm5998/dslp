@@ -57,13 +57,13 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     result.test_size = v
                 }} customStyle={`w-64 `} attrs={{ list: 'test_size_logr_list' }} />
 
-                <Label customStyle={``} text='Set parameters: solver'><InlineTip info="Default: lbfgs"/></Label>
+                <Label customStyle={``} text='Set parameters: solver'><InlineTip info="Default: lbfgs. Algorithm to use in the optimization problem. ‘newton-cg’, ‘lbfgs’, ‘sag’ and ‘saga’ handle L2 or no penalty; ‘liblinear’ and ‘saga’ also handle L1 penalty; ‘saga’ also supports ‘elasticnet’ penalty; ‘liblinear’ does not support setting penalty='none'"/></Label>
                 <DropDown zIndex={27} defaultValue={option.param_solver} defaultText={'lbfgs'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']}
                     onSelect={name => {
                         result.param_solver = name
                     }} />
 
-                <Label customStyle={``} text='Set parameters: C'><InlineTip info="Float. Default: 1.0"/></Label>
+                <Label customStyle={``} text='Set parameters: C'><InlineTip info="Float. Default: 1.0. Inverse of regularization strength; must be a positive float. "/></Label>
                 <Input defaultValue={option.param_C} placeholder='1.0' onInput={(e,v) => {
                     result.param_C = v
                 }} customStyle={`w-64`} attrs={{ list: 'C_logr_list' }} />

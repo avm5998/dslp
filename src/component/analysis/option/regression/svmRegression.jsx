@@ -46,12 +46,12 @@ export default function ({ dataset, result, submit,visibleTabs }) {
                     result.test_size = v 
                 }} customStyle={`w-64`} attrs={{ list: 'test_size_svr_list' }} />
 
-                <Label text='Set parameters: C'><InlineTip info="Float. Default: 1.0 "/></Label>
+                <Label text='Set parameters: C'><InlineTip info="Float. Default: 1.0. Regularization parameter. The strength of the regularization is inversely proportional to C. Must be strictly positive. "/></Label>
                 <Input defaultValue={option.param_C} placeholder='1.0' onInput={(e,v) => {
                     result.param_C = v 
                 }} customStyle={`w-64`} attrs={{ list: 'C_svm_list' }} />
 
-                <Label text='Set parameters: gamma'><InlineTip info="Float. Default: 0.01"/></Label>
+                <Label text='Set parameters: gamma'><InlineTip info="Float. Default: 0.01. Kernel coefficient."/></Label>
                 <Input defaultValue={option.param_gamma} placeholder='0.01' onInput={(e,v) => {
                     result.param_gamma = v 
                 }} customStyle={`w-64`} attrs={{ list: 'gamma_svm_list' }} />
@@ -64,7 +64,7 @@ export default function ({ dataset, result, submit,visibleTabs }) {
                     } 
                 }/>
 
-                <Label text='Metrics of Model:'><InlineTip info="Assess model performance.  Default: neg_mean_squared_error"/></Label>
+                <Label text='Metrics of Model:'><InlineTip info="Assess model performance. 'explained variance' is used to measure the discrepancy between a model and actual data. 'neg_mean_absolute_error' measures the mean absolute error. 'neg_mean_squared_error' measures the mean squared error. 'r2' means proportion of the information in the data explained by the model. 'neg_mean_poisson_deviance' is equivalent to the Tweedie deviance with the power parameter power=1. 'neg_mean_gamma_deviance' is equivalent to the Tweedie deviance with the power parameter power=2."/></Label>
                 <DropDown defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {
                         result.metric = name
@@ -84,7 +84,7 @@ export default function ({ dataset, result, submit,visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
 
-                <Label customStyle={``} text='Set Parameters: kernel'><InlineTip info="Default: rbf"/></Label>
+                <Label customStyle={``} text='Set Parameters: kernel'><InlineTip info="Default: rbf. Specifies the kernel type to be used in the algorithm. "/></Label>
                 <DropDown zIndex={28} defaultValue={option.param_kernel} defaultText={'rbf'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']}
                     onSelect={name => {
                         result.param_kernel = name  
