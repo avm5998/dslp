@@ -20,6 +20,7 @@ const ProfileSection = ({currentUser}) => {
     const { avatar } = currentUser;
     const { user_bio } = currentUser;
     const {report_to} = currentUser;
+    const {role} = currentUser;
     const [profileImg, setProfileImg] = useState(avatar)
     const [bio, setBio] = useState(user_bio);
     const [editBio, setEditBio] = useState(false)
@@ -109,7 +110,7 @@ const ProfileSection = ({currentUser}) => {
                   </div>
               </div>
           </div>
-          <div className="col md-3 p-8 mt-16">
+          {role === 'Student' && <div className="col md-3 p-8 mt-16">
                   <label> Your Instructor </label>
                   <DropDown className="fileSelect" disabled={!!instructors_list.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructors_list.map(name => ({
                     name,
@@ -120,7 +121,7 @@ const ProfileSection = ({currentUser}) => {
                     }
                   }))} />
           
-              </div>
+              </div>}
       </div>
     )
 }
@@ -128,91 +129,10 @@ const ProfileSection = ({currentUser}) => {
 const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const { message } = useSelector(state => state.message);
   const parentRef = useRef();
-
-  // const [instructors_list, setInstructorsList] = useState([])
-  // let [selectInstructor, setInstructor] = useState('Select your instructor')
-  // useEffect(async () => {
-  //   await updateInstructorDropdown();
-  //   // console.log(data.files_list);
-
-  // }, []);
-  // useEffect(async () => {
-  //   let mounted = true;
-  //   await getInstructorsList()
-  //     .then(items => {
-  //       if(mounted) {
-  //         console.log(items);
-  //         setList(items)
-  //       }
-  //     })
-  //   return () => mounted = false;
-  // }, [])
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
-    // const fetchInstructor = async () => {
-    //   const response = await fetch(config.endpoint+"/instructors", {
-    //     method: 'GET',
-    //   headers: authHeader()
-    //   });
-    //   let json = await response.json();
-    //   if (json.instructor_list) {
-    //     setInstructorsList([...json.instructor_list])
-    //   }
-    //   // setJsonData(json);
-    //   // console.log(json);
-    // };
-    // fetchInstructor();
   }, [tabpanel]);
-  // useEffect(() => {
-  //   if (!elementIsVisibleInViewport(parentRef.current)) return
-  //   // await updateInstructorDropdown();
-  // }, [tabpanel])
-  // const getInstructorsList = async () => {
-  //   const response =  await fetch('/instructors');
-  //   const data  = await response.json();
-  //   console.log(data);
-  //   return data;
-  // }
-  // const updateInstructorDropdown = async () => {
-  //   console.log('instructor fetch')
-  //   await fetch("/instructors", 
-  //   {
-  //     method: 'GET',
-  //     headers: authHeader()
-  //   }).then(response => response.json()).then(data => console.log(data));
-  //   console.log('instructor fetch 2 ');
-  // }
-    
-    // let response = [];
-    
-      // const response = await fetch("/instructors", 
-      // {
-      //   method: 'GET',
-      //   headers: authHeader()
-      // })
-      // let data = await response.json();
-     
-    // console.log(data)
-    
-    // let data = await response.json();
-    // if (data.instructors_list) {
-    //   setInstructorsList([...data.instructors_list])
-    // }
-  
-  // async function selectInstructorOption(email) {
-  //   let res = await fetch(config.endpoint+'/set_instructor', {
-  //     method: 'PATCH',
-  //     body:JSON.stringify({"email":email}),
-  //     headers: authHeader()
-  //   })
-  //   let json = await res.json()
 
-  //   if (json.success) {
-  //     console.log('inside success')
-  //   }
-  //   // await updateFilesDropdown();
-  //   setInstructor(email)
-  // }
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form name="uploadFileForm" method="POST">
                       <ProfileSection currentUser={currentUser}/>
@@ -249,14 +169,38 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
 const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const { message } = useSelector(state => state.message);
   const { progress, last_logged } = currentUser;
+  const {role} = currentUser;
   const [progressData, setProgressData] = useState(progress)
   const parentRef = useRef();
   const [option, setOption] = useState('days');
+  const [studCount, setStudCount] = useState(0);
+  const [instCount, setInstCount] = useState(0);
   
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
 
   }, [tabpanel])
+  useEffect(() => {
+    console.log('fetching details');
+    fetchDetails();
+  }, []);
+  const fetchDetails = async () => {
+    const response = await fetch(config.endpoint+"/graph_details", {
+      method: 'POST',
+      body:JSON.stringify({'role':role}),
+      headers: authHeader()
+    });
+    let json = await response.json();
+    if (json.students) {
+      setStudCount(json.students)
+    }
+    if (json.instructors) {
+      setInstCount(json.instructors)
+    }
+    // setJsonData(json);
+    // console.log(json);
+  };
+
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form name="uploadFileForm" method="POST">
                       <ProfileSection currentUser={currentUser}/>
@@ -267,7 +211,27 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                         </h1>
 
                       </div>
+                      <div className="flex flex-row justify-around  h-64 p-4 m-16">
+                        {(role==='admin' || role==='Instructor') && <div className="count-box w-64 h-full">
+                          <div className="top-box h-16">
+                            <h1>Students</h1>
+                          </div>
+                          <div className="bottom-box h-48">
+                          <h1>{studCount}</h1>
+                          </div>
+                        </div>}
+                        {(role==='admin') && <div className="count-box w-64 h-full">
+                          <div className="top-box h-16">
+                          <h1>Instructors</h1>
+                          </div>
+                          <div className="bottom-box h-48">
+                              <h1>{instCount}</h1>
+                          </div>
+                        </div>}
+                      </div>
+                      
                       <div className="p-4 mr-16">
+                        <h2>Your Activity</h2>
                         <div className="flex justify-end my-4">
                           <Button text='days' customStyle={` ${option==='days'? 'button-active':''} h-10 my-4 w-16 rounded-l`} hasPadding={false} isRounded={false} onClick={(e) => 
                           {e.preventDefault()
@@ -367,7 +331,7 @@ const ChangePassword = ({ tabpanelIndex, tabpanel, currentUser }) => {
 
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
-    
+
   }, [tabpanel])
   return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form ref={form} onSubmit={handleSubmit}>
@@ -435,7 +399,7 @@ const Profile = () => {
   const TabPanels = [
     { name: 'Edit Profile' },
     { name: 'Change password' },
-    { name: 'Your Activity' }
+    { name: 'Dashboard' }
   ]
   let [tabpanel, setTabpanel] = useState(0)
   if (!currentUser) {

@@ -250,7 +250,7 @@ def pending_requests():
     is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
     try:
         if not is_admin_username or is_admin_username != 'admin':
-            raise UnauthorizedError('err') 
+            raise UnauthorizedError('err')
         # reqs = pending_requests_collection.find({})
         data = []
         for count, req in enumerate(pending_requests_collection.find()):
@@ -645,6 +645,24 @@ def get_instructors():
     for instructor in user_collection.find({"$and":[{"roles":"Instructor"}, {"username":{"$ne":"admin"}}]}):
         instructor_list.append(instructor['email'])
     return {"instructor_list": instructor_list}
+
+
+@app.route('/graph_details',methods=['POST'])
+@cross_origin(origin="*")
+@jwt_required()
+def get_graph_details():
+    user_id = get_jwt_identity()
+    role = json.loads(request.data)['role']
+    # is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
+    
+    if role == 'admin':
+        instructors = user_collection.count_documents({"roles":{"$in":["Instructor"]}})
+        students = user_collection.count_documents({"roles":{"$in":["Student"]}})
+        return {"students":students, "instructors":instructors}
+    elif role == 'Instructor':
+        students = len(user_collection.find_one({"_id":ObjectId(user_id)})['students'])
+        # students = user_collection.count_documents({"roles":{"$in":["Student"]}})
+        return {"students":students}
 
 
 @app.route('/set_instructor',methods=['PATCH'])

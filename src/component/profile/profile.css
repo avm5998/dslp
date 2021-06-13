@@ -177,3 +177,26 @@ label{
     background-color:#d3e0ea  ;
     color: #276678;
   }
+.count-box{
+  display: flex;
+  flex-direction: column;
+}
+  
+  .top-box{
+    background-color: #1687a7;
+    color: #f6f5f5;
+    background-image: linear-gradient(#205463, #1687a7);
+    display: flex;
+    font-size: x-large;
+    justify-content: center;
+    align-items: center;
+    
+  }
+  .bottom-box{
+        background-color: #d3e0ea;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 72px;
+        color: white;
+  }
