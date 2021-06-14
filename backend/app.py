@@ -393,7 +393,7 @@ def login():
             imgStr = ""
         if "user_activity" in user:
             if user.user_activity != {}:
-                progress = extract_report(user)
+                progress = extract_report(user.user_activity.items())
             else:
                 progress = {}
         else:
@@ -430,11 +430,13 @@ def login():
         raise InternalServerError('Something went wrong')
 
 
-def extract_report(user):
+def extract_report(dates):
+    if dates == {}:
+        return {"days":{}, "weeks":{}, "months":{}}
     # img = BytesIO()
     # sns.set_style("whitegrid", {'axes.grid' : False})
     # plt.figure(figsize=(12,12))
-    df = pd.DataFrame(user.user_activity.items(), columns=["date", "hrs"])
+    df = pd.DataFrame(dates, columns=["date", "hrs"])
     df['date'] = df['date'].apply(lambda a: datetime.strptime(a, '%Y-%m-%d'))
     df.sort_values(by=['date'], ignore_index=True, inplace=True)
     all_days = pd.date_range(df['date'].min(), df['date'].max(), freq='D')
@@ -654,15 +656,53 @@ def get_graph_details():
     user_id = get_jwt_identity()
     role = json.loads(request.data)['role']
     # is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
-    
+    dates = {}
+    result = {}
     if role == 'admin':
         instructors = user_collection.count_documents({"roles":{"$in":["Instructor"]}})
         students = user_collection.count_documents({"roles":{"$in":["Student"]}})
-        return {"students":students, "instructors":instructors}
+        result["students"] = students - 1
+        result["instructors"] = instructors - 1
+        r = user_collection.find({"username":{"$ne":"admin"}})       
+        for d in r:
+            add_time(d, dates)
+        # return {"students":students, "instructors":instructors}
     elif role == 'Instructor':
-        students = len(user_collection.find_one({"_id":ObjectId(user_id)})['students'])
+        students = user_collection.find_one({"_id":ObjectId(user_id)})['students']
+        for s in students:
+            d = user_collection.find_one({"_id":s})
+            add_time(d, dates)
         # students = user_collection.count_documents({"roles":{"$in":["Student"]}})
-        return {"students":students}
+        result["students"] = len(students)
+    result["dates"] = extract_report(dates.items())
+    return result
+
+
+def add_time(doc, dates):
+    for date in doc["user_activity"]:
+        if date not in dates:
+            dates[date] = doc["user_activity"][date]
+        else:
+            dates[date] += doc["user_activity"][date]
+    return dates
+
+# @app.route('/total_hours',methods=['POST'])
+# @cross_origin(origin="*")
+# @jwt_required()
+# def get_graph_details():
+#     user_id = get_jwt_identity()
+#     role = json.loads(request.data)['role']
+#     # is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
+    
+#     if role == 'admin':
+          
+#     elif role == 'Instructor':
+#         students = len(user_collection.find_one({"_id":ObjectId(user_id)})['students'])
+#         for s in students:
+#             d = user_collection.find_one({"_id":s})
+#             add_time(d, dates)
+#         # students = user_collection.count_documents({"roles":{"$in":["Student"]}})
+#     return {"dates":dates}
 
 
 @app.route('/set_instructor',methods=['PATCH'])

@@ -10,7 +10,7 @@ import Input from "react-validation/build/input";
 import { reset_password_confirm } from '../../actions/auth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {change_profile_pic, change_instructor} from '../../actions/profile';
-import { LineChart, PieChart } from 'react-chartkick'
+import { LineChart, PieChart, AreaChart } from 'react-chartkick'
 import 'chartkick/chart.js'
 import authHeader from '../../services/auth-header';
 import axios from "axios";
@@ -175,6 +175,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const [option, setOption] = useState('days');
   const [studCount, setStudCount] = useState(0);
   const [instCount, setInstCount] = useState(0);
+  const [dates, setDates] = useState({})
   
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
@@ -197,9 +198,11 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     if (json.instructors) {
       setInstCount(json.instructors)
     }
-    // setJsonData(json);
-    // console.log(json);
+    if(json.dates){
+      setDates(json.dates);
+    }
   };
+
 
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form name="uploadFileForm" method="POST">
@@ -229,9 +232,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                           </div>
                         </div>}
                       </div>
-                      
                       <div className="p-4 mr-16">
-                        <h2>Your Activity</h2>
                         <div className="flex justify-end my-4">
                           <Button text='days' customStyle={` ${option==='days'? 'button-active':''} h-10 my-4 w-16 rounded-l`} hasPadding={false} isRounded={false} onClick={(e) => 
                           {e.preventDefault()
@@ -243,9 +244,18 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                           {e.preventDefault()
                           setOption(e.target.innerText)}}/>
                         </div>
-                        {/* <img className={progress!=""?`w-50 h-96`:"hidden"} src={'data:image/png;base64,' + progressImg} alt="" /> */}
-                        <LineChart xtitle={option} ytitle="Hours" data={progressData[option]} />
                       </div>
+                      <div className="w-4/5 flex align-center flex-col px-20">
+                        {role==='admin' && <h2 className="graph-heading my-5">Total hours of all users</h2>}
+                        {role==='Instructor' && <h2 className="graph-heading my-5">Total hours of all students</h2>}
+                        <AreaChart xtitle={option} ytitle="Hours" data={dates[option]} />
+                        <h2 className="graph-heading my-5">Your activity</h2>
+                        <div>
+                          <LineChart xtitle={option} ytitle="Hours" data={progressData[option]} />
+                        </div>
+                        
+                      </div>
+                      
 
                   </Form>
   </div>
