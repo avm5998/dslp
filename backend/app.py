@@ -682,11 +682,12 @@ def get_graph_details():
 
 
 def add_time(doc, dates):
-    for date in doc["user_activity"]:
-        if date not in dates:
-            dates[date] = doc["user_activity"][date]
-        else:
-            dates[date] += doc["user_activity"][date]
+    if "user_activity" in doc:
+        for date in doc["user_activity"]:
+            if date not in dates:
+                dates[date] = doc["user_activity"][date]
+            else:
+                dates[date] += doc["user_activity"][date]
     return dates
 
 # @app.route('/total_hours',methods=['POST'])
