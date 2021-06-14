@@ -392,7 +392,7 @@ def login():
             user.profile_image.put(user_avatar, filename='avatar.png')
             imgStr = ""
         if "user_activity" in user:
-            if user.user_activity:
+            if not user.user_activity:
                 progress = {}
             else:
                 progress = extract_report(user.user_activity.items())
