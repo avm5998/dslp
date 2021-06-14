@@ -86,6 +86,18 @@ const ButtonTypeStyleText = {
       " "
     ),
   },
+  static: {
+    default: "outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      " "
+    ),
+    hover: [],
+  },
+  normal_r: {
+    default: "outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      " "
+    ),
+    hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500".split(" "),
+  },
 };
 
 export function Label({
@@ -174,6 +186,7 @@ export function Button({
 
   return (
     <button
+      type="button"
       className={
         overrideClass
           ? overrideClass
@@ -270,6 +283,7 @@ export const MultiSelect = forwardRef(
         <button
           id={id}
           ref={buttonRef}
+          type="button"
           className={cn(
             "box-border",
             "pl-2",
@@ -487,7 +501,6 @@ export const DropDown = forwardRef(
     },[defaultValue])
 
     let hasControl = text === undefined; //give control to DropDown component itself
-
     let AdditionalInput = (
       <div
         ref={inputParentRef}
@@ -503,6 +516,7 @@ export const DropDown = forwardRef(
           "items-center"
         )}
         onClick={(e) => {
+          if(disabled) return
           if (e.target === inputParentRef.current) {
             if (hasControl && inputRef.current) {
               setCurrentText(inputRef.current.value);
@@ -517,6 +531,8 @@ export const DropDown = forwardRef(
           style={additionalInputStyle}
           ref={inputRef}
           onKeyDown={(e) => {
+            if(disabled) return
+
             if (e.keyCode == 13) {
               if (hasControl) {
                 setCurrentText(e.target.value);
@@ -538,11 +554,15 @@ export const DropDown = forwardRef(
         tabIndex={tabIndex}
         onBlur={handleBlur(() => setMenuOpen(0))}
         onMouseLeave={() => {
+          if(disabled) return
+          
           if (showOnHover) {
             setMenuOpen(0);
           }
         }}
         onMouseEnter={() => {
+          if(disabled) return
+
           if (showOnHover) {
             setMenuOpen(1);
           }
@@ -550,8 +570,10 @@ export const DropDown = forwardRef(
         style={{ zIndex, ...(customStyle instanceof Object ? customStyle : {}) }}
       >
         <button
+          type="button"
           id={id}
           onClick={() => {
+            if(disabled) return
             setMenuOpen((s) => !s);
           }}
           ref={buttonRef}
@@ -567,7 +589,7 @@ export const DropDown = forwardRef(
             "items-center",
             "self-start",
             height,
-            disabled ? "" : "hover:bg-gray-200"
+            disabled ? "cursor-not-allowed" : "hover:bg-gray-200"
           )}
         >
           <span className="pr-1 text-gray-400 flex-1">
