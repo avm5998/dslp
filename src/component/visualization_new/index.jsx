@@ -21,7 +21,7 @@ import { ChromePicker } from 'react-color';
 import './index.css'
 import { InlineTip } from '../common/tip';
 import Waffle from './waffleChart'
-
+//
 const Graphs = [
     AreaGraph,
     BarChart,
