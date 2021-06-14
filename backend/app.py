@@ -314,53 +314,53 @@ def register():
     try:
         body = request.get_json()
         role = body['roles']
-        try:
-            user_db = User.objects.get(email=body.get('email'))
-            if user_db['username'] != body['username']:
-                raise NotUniqueError
-            authorized = user_db.check_password(body.get('password'))
-            if not authorized:
-                raise UnauthorizedRole('um')
+        # try:
+        #     user_db = User.objects.get(email=body.get('email'))
+        #     if user_db['username'] != body['username']:
+        #         raise NotUniqueError
+        #     authorized = user_db.check_password(body.get('password'))
+        #     if not authorized:
+        #         raise UnauthorizedRole('um')
             
-            if role[0] in user_db['roles'] or role[0] != 'Instructor':
-                raise UnauthorizedRole('um')
-            else:
-                # user_db['roles'].extend(role)
-                instructorRegister(user_db)
-                send_email('[Awesome data mining] New Instructor Login request',
+        #     if role[0] in user_db['roles'] or role[0] != 'Instructor':
+        #         raise UnauthorizedRole('um')
+        #     else:
+        #         # user_db['roles'].extend(role)
+        #         instructorRegister(user_db)
+        #         send_email('[Awesome data mining] New Instructor Login request',
+        #             sender='awesomedatamining@gmail.com',
+        #             recipients=['datasciencelearningplatform1@gmail.com'],
+        #             text_body=render_template('instructor_Access/instructor.txt',
+        #                                             username=user_db['username'], email=user_db['email']),
+        #             html_body=render_template('instructor_Access/instructor.html',
+        #                                             username=user_db['username'], email=user_db['email']))
+        #         # user_db.save()
+                
+                
+        #         return {'id': str(user_db.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
+        # except DoesNotExist:
+        user =  User(**body)
+        user_db = user_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
+        if user_db:
+            raise NotUniqueError
+        user.hash_password()   
+        # user.save()
+        id = user.id
+        if role[0] == 'Instructor':
+            instructorRegister(user)
+            send_email('[Awesome data mining] New Instructor Login request',
                     sender='awesomedatamining@gmail.com',
                     recipients=['datasciencelearningplatform1@gmail.com'],
                     text_body=render_template('instructor_Access/instructor.txt',
-                                                    username=user_db['username'], email=user_db['email']),
+                                                    username=user['username'], email=user['email']),
                     html_body=render_template('instructor_Access/instructor.html',
-                                                    username=user_db['username'], email=user_db['email']))
-                # user_db.save()
-                
-                
-                return {'id': str(user_db.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
-        except DoesNotExist:
-            user =  User(**body)
-            user_db = user_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
-            if user_db:
-                raise NotUniqueError
-            user.hash_password()   
-            # user.save()
-            id = user.id
-            if role[0] == 'Instructor':
-                instructorRegister(user)
-                send_email('[Awesome data mining] New Instructor Login request',
-                        sender='awesomedatamining@gmail.com',
-                        recipients=['datasciencelearningplatform1@gmail.com'],
-                        text_body=render_template('instructor_Access/instructor.txt',
-                                                        username=user['username'], email=user['email']),
-                        html_body=render_template('instructor_Access/instructor.html',
-                                                        username=user['username'], email=user['email']))
-                return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
-            else:          
-                user_avatar = open('backend/assets/images/avatar.png','rb')
-                user.profile_image.put(user_avatar, filename='avatar.png')
-                user.save()
-            return {'id': str(id), "message":"Registered successfully"}, 200
+                                                    username=user['username'], email=user['email']))
+            return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
+        else:          
+            user_avatar = open('backend/assets/images/avatar.png','rb')
+            user.profile_image.put(user_avatar, filename='avatar.png')
+            user.save()
+        return {'id': str(id), "message":"Registered successfully"}, 200
     except AlreadyRequested:
         raise AlreadyRequested('Already requested with same username, email and role' )
     except UnauthorizedRole:
