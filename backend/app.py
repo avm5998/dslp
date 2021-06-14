@@ -392,10 +392,10 @@ def login():
             user.profile_image.put(user_avatar, filename='avatar.png')
             imgStr = ""
         if "user_activity" in user:
-            if user.user_activity != {}:
-                progress = extract_report(user.user_activity.items())
-            else:
+            if user.user_activity:
                 progress = {}
+            else:
+                progress = extract_report(user.user_activity.items())
         else:
             progress = {}
         if not user["roles"]:
@@ -674,7 +674,10 @@ def get_graph_details():
             add_time(d, dates)
         # students = user_collection.count_documents({"roles":{"$in":["Student"]}})
         result["students"] = len(students)
-    result["dates"] = extract_report(dates.items())
+    if role != 'Student':
+        result["dates"] = extract_report(dates.items())
+    else:
+        result['dates'] = {}
     return result
 
 
