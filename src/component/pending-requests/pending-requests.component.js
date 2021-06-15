@@ -53,7 +53,7 @@ const PendingRequests = (props) => {
     }, []);
 
     const grant_access = async (email) => {
-        const response = await axios('http://localhost:9000/api/auth/grant_intructor_access', {
+        const response = await axios(config.endpoint+'/api/auth/grant_intructor_access', {
         method: 'POST',
         data:{"email": email},
         headers: authHeader()
