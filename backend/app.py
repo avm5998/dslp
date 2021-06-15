@@ -314,53 +314,55 @@ def register():
     try:
         body = request.get_json()
         role = body['roles']
-        try:
-            user_db = User.objects.get(email=body.get('email'))
-            if user_db['username'] != body['username']:
-                raise NotUniqueError
-            authorized = user_db.check_password(body.get('password'))
-            if not authorized:
-                raise UnauthorizedRole('um')
+        # try:
+        #     user_db = User.objects.get(email=body.get('email'))
+        #     if user_db['username'] != body['username']:
+        #         raise NotUniqueError
+        #     authorized = user_db.check_password(body.get('password'))
+        #     if not authorized:
+        #         raise UnauthorizedRole('um')
             
-            if role[0] in user_db['roles'] or role[0] != 'Instructor':
-                raise UnauthorizedRole('um')
-            else:
-                # user_db['roles'].extend(role)
-                instructorRegister(user_db)
-                send_email('[Awesome data mining] New Instructor Login request',
-                    sender='awesomedatamining@gmail.com',
-                    recipients=['datasciencelearningplatform1@gmail.com'],
-                    text_body=render_template('instructor_Access/instructor.txt',
-                                                    username=user_db['username'], email=user_db['email']),
-                    html_body=render_template('instructor_Access/instructor.html',
-                                                    username=user_db['username'], email=user_db['email']))
-                # user_db.save()
+        #     if role[0] in user_db['roles'] or role[0] != 'Instructor':
+        #         raise UnauthorizedRole('um')
+        #     else:
+        #         # user_db['roles'].extend(role)
+        #         instructorRegister(user_db)
+        #         send_email('[Awesome data mining] New Instructor Login request',
+        #             sender='awesomedatamining@gmail.com',
+        #             recipients=['datasciencelearningplatform1@gmail.com'],
+        #             text_body=render_template('instructor_Access/instructor.txt',
+        #                                             username=user_db['username'], email=user_db['email']),
+        #             html_body=render_template('instructor_Access/instructor.html',
+        #                                             username=user_db['username'], email=user_db['email']))
+        #         # user_db.save()
                 
                 
-                return {'id': str(user_db.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
-        except DoesNotExist:
-            user =  User(**body)
-            user_db = user_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
-            if user_db:
-                raise NotUniqueError
-            user.hash_password()   
-            # user.save()
-            id = user.id
-            if role[0] == 'Instructor':
-                instructorRegister(user)
-                send_email('[Awesome data mining] New Instructor Login request',
-                        sender='awesomedatamining@gmail.com',
-                        recipients=['datasciencelearningplatform1@gmail.com'],
-                        text_body=render_template('instructor_Access/instructor.txt',
-                                                        username=user['username'], email=user['email']),
-                        html_body=render_template('instructor_Access/instructor.html',
-                                                        username=user['username'], email=user['email']))
-                return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
-            else:          
-                user_avatar = open('backend/assets/images/avatar.png','rb')
-                user.profile_image.put(user_avatar, filename='avatar.png')
-                user.save()
-            return {'id': str(id), "message":"Registered successfully"}, 200
+        #         return {'id': str(user_db.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
+        # except DoesNotExist:
+        
+        user =  User(**body)
+        user_db = user_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
+        if user_db:
+            raise NotUniqueError
+        user.hash_password()   
+        # user.save()
+        id = user.id
+        if role[0] == 'Instructor':
+            instructorRegister(user)
+            # send_email('[Awesome data mining] New Instructor Login request',
+            #         sender='awesomedatamining@gmail.com',
+            #         recipients=['datasciencelearningplatform1@gmail.com'],
+            #         text_body=render_template('instructor_Access/instructor.txt',
+            #                                         username=user['username'], email=user['email']),
+            #         html_body=render_template('instructor_Access/instructor.html',
+            #                                         username=user['username'], email=user['email']))
+            return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200                                                 
+            
+        else:          
+            user_avatar = open('backend/assets/images/avatar.png','rb')
+            user.profile_image.put(user_avatar, filename='avatar.png')
+            user.save()
+        return {'id': str(id), "message":"Registered successfully"}, 200
     except AlreadyRequested:
         raise AlreadyRequested('Already requested with same username, email and role' )
     except UnauthorizedRole:
@@ -392,10 +394,10 @@ def login():
             user.profile_image.put(user_avatar, filename='avatar.png')
             imgStr = ""
         if "user_activity" in user:
-            if user.user_activity != {}:
-                progress = extract_report(user)
-            else:
+            if not user.user_activity:
                 progress = {}
+            else:
+                progress = extract_report(user.user_activity.items())
         else:
             progress = {}
         if not user["roles"]:
@@ -430,11 +432,13 @@ def login():
         raise InternalServerError('Something went wrong')
 
 
-def extract_report(user):
+def extract_report(dates):
+    if dates == {}:
+        return {"days":{}, "weeks":{}, "months":{}}
     # img = BytesIO()
     # sns.set_style("whitegrid", {'axes.grid' : False})
     # plt.figure(figsize=(12,12))
-    df = pd.DataFrame(user.user_activity.items(), columns=["date", "hrs"])
+    df = pd.DataFrame(dates, columns=["date", "hrs"])
     df['date'] = df['date'].apply(lambda a: datetime.strptime(a, '%Y-%m-%d'))
     df.sort_values(by=['date'], ignore_index=True, inplace=True)
     all_days = pd.date_range(df['date'].min(), df['date'].max(), freq='D')
@@ -654,15 +658,57 @@ def get_graph_details():
     user_id = get_jwt_identity()
     role = json.loads(request.data)['role']
     # is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
-    
+    dates = {}
+    result = {}
     if role == 'admin':
         instructors = user_collection.count_documents({"roles":{"$in":["Instructor"]}})
         students = user_collection.count_documents({"roles":{"$in":["Student"]}})
-        return {"students":students, "instructors":instructors}
+        result["students"] = students - 1
+        result["instructors"] = instructors - 1
+        r = user_collection.find({"username":{"$ne":"admin"}})       
+        for d in r:
+            add_time(d, dates)
+        # return {"students":students, "instructors":instructors}
     elif role == 'Instructor':
-        students = len(user_collection.find_one({"_id":ObjectId(user_id)})['students'])
+        students = user_collection.find_one({"_id":ObjectId(user_id)})['students']
+        for s in students:
+            d = user_collection.find_one({"_id":s})
+            add_time(d, dates)
         # students = user_collection.count_documents({"roles":{"$in":["Student"]}})
-        return {"students":students}
+        result["students"] = len(students)
+    if role != 'Student':
+        result["dates"] = extract_report(dates.items())
+    else:
+        result['dates'] = {}
+    return result
+
+
+def add_time(doc, dates):
+    if "user_activity" in doc:
+        for date in doc["user_activity"]:
+            if date not in dates:
+                dates[date] = doc["user_activity"][date]
+            else:
+                dates[date] += doc["user_activity"][date]
+    return dates
+
+# @app.route('/total_hours',methods=['POST'])
+# @cross_origin(origin="*")
+# @jwt_required()
+# def get_graph_details():
+#     user_id = get_jwt_identity()
+#     role = json.loads(request.data)['role']
+#     # is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
+    
+#     if role == 'admin':
+          
+#     elif role == 'Instructor':
+#         students = len(user_collection.find_one({"_id":ObjectId(user_id)})['students'])
+#         for s in students:
+#             d = user_collection.find_one({"_id":s})
+#             add_time(d, dates)
+#         # students = user_collection.count_documents({"roles":{"$in":["Student"]}})
+#     return {"dates":dates}
 
 
 @app.route('/set_instructor',methods=['PATCH'])
