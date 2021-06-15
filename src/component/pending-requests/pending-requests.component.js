@@ -4,6 +4,7 @@ import authHeader from '../../services/auth-header';
 import axios from "axios";
 
 import './pending-requests.styles.css'
+import {config} from '../../config/client'
 
 
 
@@ -33,7 +34,7 @@ const DataItem = ({item:{ fullname, email}, grant_access}) => (
 const PendingRequests = (props) => {
     const [requestsList, setRequestsList] = useState([]);
     const getRequests = async () => {
-        const response = await axios('http://localhost:9000/pending_requests', {
+        const response = await axios(config.endpoint+'/pending_requests', {
         method: 'GET',
         headers: authHeader()
         });

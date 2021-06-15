@@ -339,6 +339,7 @@ def register():
                 
         #         return {'id': str(user_db.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
         # except DoesNotExist:
+        
         user =  User(**body)
         user_db = user_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
         if user_db:
@@ -348,14 +349,15 @@ def register():
         id = user.id
         if role[0] == 'Instructor':
             instructorRegister(user)
-            send_email('[Awesome data mining] New Instructor Login request',
-                    sender='awesomedatamining@gmail.com',
-                    recipients=['datasciencelearningplatform1@gmail.com'],
-                    text_body=render_template('instructor_Access/instructor.txt',
-                                                    username=user['username'], email=user['email']),
-                    html_body=render_template('instructor_Access/instructor.html',
-                                                    username=user['username'], email=user['email']))
-            return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200
+            # send_email('[Awesome data mining] New Instructor Login request',
+            #         sender='awesomedatamining@gmail.com',
+            #         recipients=['datasciencelearningplatform1@gmail.com'],
+            #         text_body=render_template('instructor_Access/instructor.txt',
+            #                                         username=user['username'], email=user['email']),
+            #         html_body=render_template('instructor_Access/instructor.html',
+            #                                         username=user['username'], email=user['email']))
+            return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200                                                 
+            
         else:          
             user_avatar = open('backend/assets/images/avatar.png','rb')
             user.profile_image.put(user_avatar, filename='avatar.png')
