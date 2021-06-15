@@ -19,6 +19,16 @@
     text-transform: uppercase;
     font-size: 1.4em;
 }
+
+.logo{
+    position: absolute;
+    padding-left: 20px;
+    float: left;
+    line-height: 64px;
+    font-size: 1rem;
+    color:#fff;
+}
+
 .brand a, .brand a:visited {
     color: #fff;
     text-decoration: none;
@@ -48,8 +58,8 @@ nav ul li a, nav ul li a:visited {
     text-decoration: none;
 }
 nav ul li a:hover, nav ul li a:visited:hover {
-    background: #2581dc;
-    color: #fff;
+    background: #d3e0ea;
+    color: #262626;
 }
 .span{
     padding-left: 4px;
