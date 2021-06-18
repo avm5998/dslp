@@ -43,8 +43,167 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 
 data_json = StringIO(r"""${toUnicode(data)}""")
-df = pd.read_json(data_json) `
+df = pd.read_json(data_json) 
+print(df.head(10))
+`
 
+const MethodSampleFile = {
+    'regression':'house_price_prediction_regression.csv'
+}
+
+  async function getSampleCodeData(filename, existing) {
+    
+    let res = await fetch('/file/?filename=' + filename+'&default='+existing, {
+      method: 'GET',
+      headers: authHeader()
+    })
+    let json = await res.json()
+
+    return json.data;
+  }
+  
+
+const optionCode =  {
+    regression: 
+    `
+    # example code for regression
+    # import libraries
+    import io
+    import pandas as pd
+    from sklearn.model_selection import train_test_split, cross_val_score, KFold
+    from sklearn.linear_model import LinearRegression
+    from sklearn.tree import DecisionTreeRegressor
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.svm import SVR
+
+    # read dataset
+    data_json = StringIO(r"""""")
+    df = pd.read_json(data_json)
+    print(df.head(10))
+    # independent variales
+    X = df[['rent amount','property tax','fire insurance']]
+    # dependent variable, our target variable
+    Y = df['total']
+    # split the dataset into two parts: training dataset and testing dataset
+    X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+    # build a model, users can modify parameters
+    # model 1: Linear Regression
+    model = LinearRegression(fit_intercept=True, normalize=False) 
+    # model 2: Decision Tree Regression, remove "#" to check
+    # model = DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=3, max_features=None, max_leaf_nodes=None, random_state=None)
+    # model 3: Random Forests Regression, remove "#" to check
+    # model = RandomForestRegressor(n_estimators=100, criterion='mse, max_depth=3, max_features='auto', max_leaf_nodes=None, random_state=None)
+    # model 4: SVM Regression, remove "#" to check
+    # model = SVR(kernel='rbf', gamma=0.01, C=1.0)
+
+    # fit model to train, and predict testing dataset
+    Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+    # print predicted results
+    print(Y_pred)
+    # run kfold to validate dataset
+    kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+    # measure performance of model with metric
+    metric = "neg_mean_absolute_error" 
+    metric_res = cross_val_score(model, df[X], df[Y], cv=kfold, scoring=metric)
+    # print related statistics of metric
+    print("Metric:  " + metric + " mean=" + str(metric_res.mean()) + "; standard deviation=" + str(metric_res.std())
+
+    `
+    ,
+    classification:
+    `
+    # example code for classification
+    # import libraries
+    import pandas as pd
+    from sklearn.model_selection import train_test_split, cross_val_score, KFold
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import SVC
+    from sklearn.metrics import classification_report
+
+    # read dataset "titanic.csv"
+    df = pd.read('')
+    # independent variales
+    X = df[['Age']]
+    # dependent variable, our target variable
+    Y = df['Survived']
+    # split the dataset into two parts: training dataset and testing dataset
+    X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+    # build a model, users can modify parameters
+    # model 1: Logistic Regression
+    model = LogisticRegression(solver='lbfgs', C=1.0)
+    # model 2: Decision Tree Classifier, remove "#" to check
+    # model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
+    # model 3: Random Forests Classifier, remove "#" to check
+    # model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
+    # model 4: SVM Classifier, remove "#" to check
+    # model = SVC(kernel='rbf', gamma=0.01, C=1.0)
+    # model 5: Naive Bayes Classifier, remove "#" to check
+    # model = GaussianNB()
+    # fit model to train, and predict testing dataset
+    Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+    # print predicted results
+    print(Y_pred)
+    # measure performance of model with 'Classification Report'
+    report = classification_report(Y_test, Y_pred)
+    # print Classification Report
+    print(report)
+
+    `
+    ,
+    clustering:
+    `
+    # example code for clustering
+    # import libraries
+    import pandas as pd
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.cluster import KMeans
+    import seaborn as sns
+
+    # read dataset "Mall_Customers.csv"
+    df = pd.read('')
+    # independent variales
+    X = df[['Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']]
+    scaled_data = StandardScaler().fit_transform(X) 
+    # build a model, users can modify parameters
+    model = KMeans(n_clusters=3, init='k-means++', algorithm='auto', random_state=None)
+    pred = model.fit(scaled_data)
+    df['Clusters'] = pd.DataFrame(pred.labels_)
+    count_val = df['Clusters'].value_counts()
+    print("Number of Points in Each Cluster: " + count_val)
+    labeledData = pd.concat((X_train, df['Clusters']), axis=1)
+    sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
+
+    `
+    ,
+    associate_rule:
+    `
+    # example code for associate_rule
+    # import libraries
+    import pandas as pd
+    from mlxtend.frequent_patterns import apriori, association_rules 
+
+    # read dataset "BreadBasket_DMS.csv"
+    df = pd.read('')
+    df['Quantity']= 1
+    basket_data = df.groupby(['Transaction','Item'])['Quantity'].sum().unstack().fillna(0)
+
+    def transform_transaction(val):
+        if val <= 0:
+            return 0
+        if val >= 1:
+            return 1
+    basket_sets = basket_data.applymap(transform_transaction)
+    print('basket_sets=', basket_sets)
+    frequent_itemsets = apriori(basket_sets, min_support=0.01, use_colnames=True)
+    print(frequent_itemsets)
+    rules = association_rules(frequent_itemsets, metric='support', min_threshold=0.01)
+    rules = rules[ ((rules['confidence'] > 0.1) & (rules['lift'] > 1) ]
+    print(rules)
+    `
+    
+}
 
 const Analysis = () => {
     useCachedData()
@@ -56,7 +215,7 @@ const Analysis = () => {
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let [visibleModalTabs, setVisibleModalTabs] = useState([0, 1])
     let [currentPresetIndex, setCurrentPresetIndex] = useState(-1)
-
+    let [dfJSON,setDfJSON] = useState('')//dataframe json
     let dataset = useSelector(state => state.dataset)
     let preset = useSelector(state => state.preset)
 
@@ -212,6 +371,11 @@ const Analysis = () => {
                         }
                     }} />
 
+                    <Button text={'Display Sandbox Code'} width='w-65' onClick={async () =>  {
+                        let data = await getSampleCodeData(MethodSampleFile[option],'true')
+                        console.log(data)
+                    }} />
+
                     <Button hasPadding={false} disabled={!code} text="SandBox Run" overrideClass={`w-40 rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
                         ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
 
@@ -221,7 +385,7 @@ const Analysis = () => {
           
 
             <div className='flex-grow-1 w-full' ref={codeParent}>
-                {code?'':<div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                {code?code:<div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
                     Select a model to see the corresponding code
                 </div>}
             </div>
