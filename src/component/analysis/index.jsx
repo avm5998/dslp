@@ -24,6 +24,7 @@ import AgglomerativeOptions from './option/clustering/agglomerative'
 import AprioriOptions from './option/associate_rule/apriori'
 import SARIMAOptions from './option/time_series_analysis/sarima'
 import { construct } from 'core-js/fn/reflect';
+import authHeader from "../../services/auth-header";
 //cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js
 //cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css
 const OptionModels = {
@@ -51,70 +52,76 @@ const MethodSampleFile = {
     'regression':'house_price_prediction_regression.csv'
 }
 
-  async function getSampleCodeData(filename, existing) {
-    
-    let res = await fetch('/file/?filename=' + filename+'&default='+existing, {
-      method: 'GET',
-      headers: authHeader()
-    })
-    let json = await res.json()
+async function getSampleCodeData(filename, existing) {
 
-    return json.data;
-  }
-  
 
-const optionCode =  {
-    regression: 
-    `
-    # example code for regression
-    # import libraries
-    import io
-    import pandas as pd
-    from sklearn.model_selection import train_test_split, cross_val_score, KFold
-    from sklearn.linear_model import LinearRegression
-    from sklearn.tree import DecisionTreeRegressor
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.svm import SVR
+}
+const GetDisplayCode = (method)=>{
+    return optionCode[method]``
+}
 
-    # read dataset
-    data_json = StringIO(r"""""")
-    df = pd.read_json(data_json)
-    print(df.head(10))
-    # independent variales
-    X = df[['rent amount','property tax','fire insurance']]
-    # dependent variable, our target variable
-    Y = df['total']
-    # split the dataset into two parts: training dataset and testing dataset
-    X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
-    # build a model, users can modify parameters
-    # model 1: Linear Regression
-    model = LinearRegression(fit_intercept=True, normalize=False) 
-    # model 2: Decision Tree Regression, remove "#" to check
-    # model = DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=3, max_features=None, max_leaf_nodes=None, random_state=None)
-    # model 3: Random Forests Regression, remove "#" to check
-    # model = RandomForestRegressor(n_estimators=100, criterion='mse, max_depth=3, max_features='auto', max_leaf_nodes=None, random_state=None)
-    # model 4: SVM Regression, remove "#" to check
-    # model = SVR(kernel='rbf', gamma=0.01, C=1.0)
+const InitialCode = {
+    regression:code=>`# read dataset "titanic.csv"
+import pandas as pd
+from io import StringIO
+data_io = StringIO(r"""${code}""")
+df = pd.read_json(data_io)
+`
+}
+const DisplayCode = {
+    regression:code=>`# example code for regression
+# import libraries
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 
-    # fit model to train, and predict testing dataset
-    Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-    # print predicted results
-    print(Y_pred)
-    # run kfold to validate dataset
-    kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-    # measure performance of model with metric
-    metric = "neg_mean_absolute_error" 
-    metric_res = cross_val_score(model, df[X], df[Y], cv=kfold, scoring=metric)
-    # print related statistics of metric
-    print("Metric:  " + metric + " mean=" + str(metric_res.mean()) + "; standard deviation=" + str(metric_res.std())
+# read dataset
+print(df.head(10))
+# independent variales
+X = df[['rent amount','property tax','fire insurance']]
+# dependent variable, our target variable
+Y = df['total']
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+# build a model, users can modify parameters
+# model 1: Linear Regression
+model = LinearRegression(fit_intercept=True, normalize=False) 
+# model 2: Decision Tree Regression, remove "#" to check
+# model = DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=3, max_features=None, max_leaf_nodes=None, random_state=None)
+# model 3: Random Forests Regression, remove "#" to check
+# model = RandomForestRegressor(n_estimators=100, criterion='mse, max_depth=3, max_features='auto', max_leaf_nodes=None, random_state=None)
+# model 4: SVM Regression, remove "#" to check
+# model = SVR(kernel='rbf', gamma=0.01, C=1.0)
 
-    `
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+# print predicted results
+print(Y_pred)
+# run kfold to validate dataset
+kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+# measure performance of model with metric
+metric = "neg_mean_absolute_error" 
+metric_res = cross_val_score(model, df[X], df[Y], cv=kfold, scoring=metric)
+# print related statistics of metric
+print("Metric:  " + metric + " mean=" + str(metric_res.mean()) + "; standard deviation=" + str(metric_res.std()))
+`
+}
+
+const DisplayCodeOld =  {
+    regression: code=>`${code}`
     ,
-    classification:
+    classification:code=>
     `
+    # read dataset "titanic.csv"
+    import pandas as pd
+    from io import StringIO
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+
     # example code for classification
     # import libraries
-    import pandas as pd
     from sklearn.model_selection import train_test_split, cross_val_score, KFold
     from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
@@ -122,8 +129,8 @@ const optionCode =  {
     from sklearn.svm import SVC
     from sklearn.metrics import classification_report
 
-    # read dataset "titanic.csv"
-    df = pd.read('')
+
+    
     # independent variales
     X = df[['Age']]
     # dependent variable, our target variable
@@ -218,7 +225,7 @@ const Analysis = () => {
     let [dfJSON,setDfJSON] = useState('')//dataframe json
     let dataset = useSelector(state => state.dataset)
     let preset = useSelector(state => state.preset)
-
+    let kernelRef = useRef()
     let [predictVisible, setPredictVisible] = useState(1)
     let dispatch = useDispatch()
 
@@ -233,13 +240,9 @@ const Analysis = () => {
     let presetsArr = Object.keys(presets)
 
     let codeParent = useRef()
-    let kernelRef = useRef()
     let { ref, hide: hideSelections } = useToggleGroup()
     const [code,setCode] = useState('')
-    const runCode = async (e)=>{
-        let res = await kernelRef.current.requestExecute({code:initialCode(dfJSON)}).done
-        document.querySelector('.thebelab-run-button').click()
-    }
+
     useEffect(()=>{
         if(!code) return
         codeParent.current.innerHTML = ''
@@ -249,8 +252,28 @@ const Analysis = () => {
         codeParent.current.appendChild(pre)
         pre.innerHTML = code
         thebelab.bootstrap();
+
+        thebelab.on("status", async function (evt, data) {
+            if(data.status === 'ready'){
+                kernelRef.current = data.kernel
+                // alert('Ready')
+                // setActivateStatus('Ready')
+            }
+        })
     },[code])
 
+    const runCode = async (e)=>{
+        let res = await fetch('/file/?filename=' + MethodSampleFile[option]+'&default='+'true', {
+            method: 'GET',
+            headers: authHeader()
+        })
+
+        let json = await res.json();
+
+        let res2 = await kernelRef.current.requestExecute({code:InitialCode[option](json.data)}).done
+
+        document.querySelector('.thebelab-run-button').click()
+    }
 
     useEffect(() => {
         result.analysis_option = option
@@ -372,11 +395,12 @@ const Analysis = () => {
                     }} />
 
                     <Button text={'Display Sandbox Code'} width='w-65' onClick={async () =>  {
-                        let data = await getSampleCodeData(MethodSampleFile[option],'true')
-                        console.log(data)
+                        setCode(DisplayCode[option](''))
                     }} />
 
-                    <Button hasPadding={false} disabled={!code} text="SandBox Run" overrideClass={`w-40 rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
+                    <Button onClick={()=>{
+                        runCode()
+                    }} hasPadding={false} disabled={!code} text="SandBox Run" overrideClass={`w-40 rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
                         ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
 
                 </div>
