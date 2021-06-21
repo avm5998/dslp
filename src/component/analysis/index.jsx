@@ -35,21 +35,23 @@ const OptionModels = {
     time_series_analysis: { 'SARIMA': SARIMAOptions },
 }
 
-const initialCode = data=>`import pandas as pd
-from io import StringIO
-import matplotlib.pyplot as plt
-import numpy as np
-import math
-import matplotlib.pyplot as plt
-import plotly.express as px
+// const initialCode = data=>`import pandas as pd
+// from io import StringIO
+// import matplotlib.pyplot as plt
+// import numpy as np
+// import math
+// import matplotlib.pyplot as plt
+// import plotly.express as px
 
-data_json = StringIO(r"""${toUnicode(data)}""")
-df = pd.read_json(data_json) 
-print(df.head(10))
-`
+// data_json = StringIO(r"""${toUnicode(data)}""")
+// df = pd.read_json(data_json) 
+// print(df.head(5))
+// `
 
 const MethodSampleFile = {
-    'regression':'house_price_prediction_regression.csv'
+    'regression':'house_price_prediction_regression.csv',
+    'classification':'credit_card_default_classification.csv',
+    'clustering':'Mall_Customers_clustering.csv'
 }
 
 async function getSampleCodeData(filename, existing) {
@@ -61,7 +63,22 @@ const GetDisplayCode = (method)=>{
 }
 
 const InitialCode = {
-    regression:code=>`# read dataset "titanic.csv"
+    regression:code=>`
+import pandas as pd
+from io import StringIO
+data_io = StringIO(r"""${code}""")
+df = pd.read_json(data_io)
+`,
+
+classification:code=>`
+import pandas as pd
+from io import StringIO
+data_io = StringIO(r"""${code}""")
+df = pd.read_json(data_io)
+`
+,
+
+clustering:code=>`
 import pandas as pd
 from io import StringIO
 data_io = StringIO(r"""${code}""")
@@ -69,7 +86,9 @@ df = pd.read_json(data_io)
 `
 }
 const DisplayCode = {
-    regression:code=>`# example code for regression
+    regression:code=>`
+# example code for regression
+
 # import libraries
 from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.linear_model import LinearRegression
@@ -77,12 +96,19 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 
-# read dataset
-print(df.head(10))
-# independent variales
-X = df[['rent amount','property tax','fire insurance']]
-# dependent variable, our target variable
-Y = df['total']
+# read sample dataset 'house_price_prediction_regression.csv'
+print(df.head(5))
+#      date      price      bedrooms  bathrooms  sqft_living  sqft_lot  floors  ...
+#0 2014-05-02   313000.0         3       1.50         1340      7912     1.5   
+#1 2014-05-02  2384000.0         5       2.50         3650      9050     2.0   
+#2 2014-05-02   342000.0         3       2.00         1930     11947     1.0   
+#3 2014-05-02   420000.0         3       2.25         2000      8030     1.0   
+#4 2014-05-02   550000.0         4       2.50         1940     10500     1.0   
+
+# multiple independent variales
+X = ['bedrooms','sqft_lot','yr_built']
+# one dependent variable, our target variable
+Y = 'price'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 # build a model, users can modify parameters
@@ -106,111 +132,193 @@ metric = "neg_mean_absolute_error"
 metric_res = cross_val_score(model, df[X], df[Y], cv=kfold, scoring=metric)
 # print related statistics of metric
 print("Metric:  " + metric + " mean=" + str(metric_res.mean()) + "; standard deviation=" + str(metric_res.std()))
+`,
+
+classification:code=>`
+
+# example code for classification
+
+# import libraries
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report
+
+# read sample dataset 'credit_card_default_classification.csv'
+print(df.head(5))
+# multiple independent variales
+X = ['X1']
+# dependent variable, our target variable
+Y = 'Y'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+# build a model, users can modify parameters
+# model 1: Logistic Regression
+model = LogisticRegression(solver='lbfgs', C=1.0)
+# model 2: Decision Tree Classifier, remove "#" to check
+# model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
+# model 3: Random Forests Classifier, remove "#" to check
+# model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
+# model 4: SVM Classifier, remove "#" to check
+# model = SVC(kernel='rbf', gamma=0.01, C=1.0)
+# model 5: Naive Bayes Classifier, remove "#" to check
+# model = GaussianNB()
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+# print predicted results
+print(Y_pred)
+# measure performance of model with 'Classification Report'
+report = classification_report(Y_test, Y_pred)
+# print Classification Report
+print(report)
+`
+,
+clustering:code=>`
+# example code for clustering
+
+# import libraries
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.cluster import KMeans
+import seaborn as sns
+
+# read sample dataset "Mall_Customers.csv"
+print(df.head(5))
+#     CustomerID   Genre  Age  Annual Income (k$)  Spending Score (1-100)
+# 0           1    Male   19                  15                      39
+# 1           2    Male   21                  15                      81
+# 2           3  Female   20                  16                       6
+# 3           4  Female   23                  16                      77
+# 4           5  Female   31                  17                      40
+
+# independent variales
+X = ['Genre', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+# one hot code, use integer to represent categoriacl values
+label = LabelEncoder()
+df['Genre'] = label.fit_transform(df['Genre'])
+# convert column 'Genre' to numeric data type
+df['Genre'] = pd.to_numeric(df['Genre'], errors='coerce')
+# check data type
+# print(df.dtypes)
+# normalize dataset
+scaled_data = StandardScaler().fit_transform(df[X]) 
+# print(scaled_data)
+# build a model, users can modify parameters
+model = KMeans(n_clusters=3, init='k-means++', algorithm='auto', random_state=None)
+pred = model.fit(scaled_data)
+df['Clusters'] = pd.DataFrame(pred.labels_)
+count_val = df['Clusters'].value_counts()
+print("Number of Points in Each Cluster:")
+print(count_val)
+labeledData = pd.concat((df[X], df['Clusters']), axis=1)
+sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
 `
 }
 
-const DisplayCodeOld =  {
-    regression: code=>`${code}`
-    ,
-    classification:code=>
-    `
-    # read dataset "titanic.csv"
-    import pandas as pd
-    from io import StringIO
-    data_io = StringIO(r"""${code}""")
-    df = pd.read_json(data_io)
+// const DisplayCodeOld =  {
+//     regression: code=>`${code}`
+//     ,
+//     classification:code=>
+//     `
+//     # read dataset "titanic.csv"
+//     import pandas as pd
+//     from io import StringIO
+//     data_io = StringIO(r"""${code}""")
+//     df = pd.read_json(data_io)
 
-    # example code for classification
-    # import libraries
-    from sklearn.model_selection import train_test_split, cross_val_score, KFold
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.svm import SVC
-    from sklearn.metrics import classification_report
+//     # example code for classification
+//     # import libraries
+//     from sklearn.model_selection import train_test_split, cross_val_score, KFold
+//     from sklearn.linear_model import LogisticRegression
+//     from sklearn.tree import DecisionTreeClassifier
+//     from sklearn.ensemble import RandomForestClassifier
+//     from sklearn.svm import SVC
+//     from sklearn.metrics import classification_report
 
 
     
-    # independent variales
-    X = df[['Age']]
-    # dependent variable, our target variable
-    Y = df['Survived']
-    # split the dataset into two parts: training dataset and testing dataset
-    X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
-    # build a model, users can modify parameters
-    # model 1: Logistic Regression
-    model = LogisticRegression(solver='lbfgs', C=1.0)
-    # model 2: Decision Tree Classifier, remove "#" to check
-    # model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
-    # model 3: Random Forests Classifier, remove "#" to check
-    # model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
-    # model 4: SVM Classifier, remove "#" to check
-    # model = SVC(kernel='rbf', gamma=0.01, C=1.0)
-    # model 5: Naive Bayes Classifier, remove "#" to check
-    # model = GaussianNB()
-    # fit model to train, and predict testing dataset
-    Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-    # print predicted results
-    print(Y_pred)
-    # measure performance of model with 'Classification Report'
-    report = classification_report(Y_test, Y_pred)
-    # print Classification Report
-    print(report)
+//     # independent variales
+//     X = df[['Age']]
+//     # dependent variable, our target variable
+//     Y = df['Survived']
+//     # split the dataset into two parts: training dataset and testing dataset
+//     X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+//     # build a model, users can modify parameters
+//     # model 1: Logistic Regression
+//     model = LogisticRegression(solver='lbfgs', C=1.0)
+//     # model 2: Decision Tree Classifier, remove "#" to check
+//     # model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
+//     # model 3: Random Forests Classifier, remove "#" to check
+//     # model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
+//     # model 4: SVM Classifier, remove "#" to check
+//     # model = SVC(kernel='rbf', gamma=0.01, C=1.0)
+//     # model 5: Naive Bayes Classifier, remove "#" to check
+//     # model = GaussianNB()
+//     # fit model to train, and predict testing dataset
+//     Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+//     # print predicted results
+//     print(Y_pred)
+//     # measure performance of model with 'Classification Report'
+//     report = classification_report(Y_test, Y_pred)
+//     # print Classification Report
+//     print(report)
 
-    `
-    ,
-    clustering:
-    `
-    # example code for clustering
-    # import libraries
-    import pandas as pd
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.cluster import KMeans
-    import seaborn as sns
+//     `
+//     ,
+//     clustering:
+//     `
+//     # example code for clustering
+//     # import libraries
+//     import pandas as pd
+//     from sklearn.preprocessing import StandardScaler
+//     from sklearn.cluster import KMeans
+//     import seaborn as sns
 
-    # read dataset "Mall_Customers.csv"
-    df = pd.read('')
-    # independent variales
-    X = df[['Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']]
-    scaled_data = StandardScaler().fit_transform(X) 
-    # build a model, users can modify parameters
-    model = KMeans(n_clusters=3, init='k-means++', algorithm='auto', random_state=None)
-    pred = model.fit(scaled_data)
-    df['Clusters'] = pd.DataFrame(pred.labels_)
-    count_val = df['Clusters'].value_counts()
-    print("Number of Points in Each Cluster: " + count_val)
-    labeledData = pd.concat((X_train, df['Clusters']), axis=1)
-    sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
+//     # read dataset "Mall_Customers.csv"
+//     df = pd.read('')
+//     # independent variales
+//     X = df[['Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']]
+//     scaled_data = StandardScaler().fit_transform(X) 
+//     # build a model, users can modify parameters
+//     model = KMeans(n_clusters=3, init='k-means++', algorithm='auto', random_state=None)
+//     pred = model.fit(scaled_data)
+//     df['Clusters'] = pd.DataFrame(pred.labels_)
+//     count_val = df['Clusters'].value_counts()
+//     print("Number of Points in Each Cluster: " + count_val)
+//     labeledData = pd.concat((X_train, df['Clusters']), axis=1)
+//     sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
 
-    `
-    ,
-    associate_rule:
-    `
-    # example code for associate_rule
-    # import libraries
-    import pandas as pd
-    from mlxtend.frequent_patterns import apriori, association_rules 
+//     `
+//     ,
+//     associate_rule:
+//     `
+//     # example code for associate_rule
+//     # import libraries
+//     import pandas as pd
+//     from mlxtend.frequent_patterns import apriori, association_rules 
 
-    # read dataset "BreadBasket_DMS.csv"
-    df = pd.read('')
-    df['Quantity']= 1
-    basket_data = df.groupby(['Transaction','Item'])['Quantity'].sum().unstack().fillna(0)
+//     # read dataset "BreadBasket_DMS.csv"
+//     df = pd.read('')
+//     df['Quantity']= 1
+//     basket_data = df.groupby(['Transaction','Item'])['Quantity'].sum().unstack().fillna(0)
 
-    def transform_transaction(val):
-        if val <= 0:
-            return 0
-        if val >= 1:
-            return 1
-    basket_sets = basket_data.applymap(transform_transaction)
-    print('basket_sets=', basket_sets)
-    frequent_itemsets = apriori(basket_sets, min_support=0.01, use_colnames=True)
-    print(frequent_itemsets)
-    rules = association_rules(frequent_itemsets, metric='support', min_threshold=0.01)
-    rules = rules[ ((rules['confidence'] > 0.1) & (rules['lift'] > 1) ]
-    print(rules)
-    `
+//     def transform_transaction(val):
+//         if val <= 0:
+//             return 0
+//         if val >= 1:
+//             return 1
+//     basket_sets = basket_data.applymap(transform_transaction)
+//     print('basket_sets=', basket_sets)
+//     frequent_itemsets = apriori(basket_sets, min_support=0.01, use_colnames=True)
+//     print(frequent_itemsets)
+//     rules = association_rules(frequent_itemsets, metric='support', min_threshold=0.01)
+//     rules = rules[ ((rules['confidence'] > 0.1) & (rules['lift'] > 1) ]
+//     print(rules)
+//     `
     
-}
+// }
 
 const Analysis = () => {
     useCachedData()

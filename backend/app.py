@@ -1172,7 +1172,7 @@ def cond_eng_json():
         print("cols1-=", cols)
         for index, col in cols:
             label = LabelEncoder()
-            ndf[col] = label.fit_transform(ndf[col].astype(str))
+            ndf[col] = label.fit_transform(ndf[col].as
     elif option == 2:
         suboption_checked = params['suboption_checked']
         print('suboption_checked 2= ', suboption_checked)
