@@ -13,6 +13,9 @@ import {change_profile_pic, change_instructor} from '../../actions/profile';
 import { LineChart, PieChart, AreaChart } from 'react-chartkick'
 import 'chartkick/chart.js'
 import authHeader from '../../services/auth-header';
+import { JsonToCsv, useJsonToCsv } from 'react-json-csv';
+import CsvDownload from 'react-json-to-csv'
+// import json2xls from 'json2xls';
 import axios from "axios";
 import {config} from '../../config/client'
 
@@ -166,7 +169,57 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
   </div>
 }
 
+const csvFormatDataArr = (data) => {
+  console.log('csv',data);
+  let dataArr = []
+  for(let key in data){
+    dataArr.push({"days":key, "hours":data[key]})
+  }
+
+return dataArr;
+};
+const exportToCsv = (data) => {
+  console.log('inside export');
+  console.log('exp',data)
+  const fields = {
+    "days": "Days",
+    "hours": "Hours"
+  };
+
+  let resultData = [];
+  const style = { padding: "5px"};
+  // useEffect(  () => {
+  //   let dataArr = []
+  //   for(let key in data){
+  //     dataArr.push({"days":key, "hours":data[key]})
+  //   }
+  //   setResultData([...dataArr]);
+  // }, [resultData])
+  // const { saveAsCsv } = useJsonToCsv();
+  
+
+  let today = new Date();
+  let date = today.getFullYear() + '_' + (today.getMonth() + 1) + '_' + today.getDate();
+  const filename = 'activity_'+date;
+  
+  resultData = csvFormatDataArr(data)
+
+  console.log('arr',resultData);
+  return resultData
+    // <JsonToCsv
+    //   data={csvFormatDataArr(data)}
+    //   filename={filename}
+    //   fields={fields}
+    //   style={style}
+    //   // text={text}
+    // />
+    
+    // <CsvDownload data={{"data":resultData}} />
+  
+}
+
 const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
+  const { saveAsCsv } = useJsonToCsv();
   const { message } = useSelector(state => state.message);
   const { progress, last_logged } = currentUser;
   const {role} = currentUser;
@@ -181,13 +234,24 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const [allDates, setAllDates] = useState({})
   let [selectInstructor, setInstructor] = useState('See Instructor activity')
   let [selectStudent, setStudent] = useState('See Student activity')
+  const [exportData, setExportData] = useState([])
+  const [exportPersonalData, setExportPersonalData] = useState([])
+   
+  const fields = {
+    "days": "Days",
+    "hours": "Hours"
+  };
+  let today = new Date();
+  let date = today.getFullYear() + '_' + (today.getMonth() + 1) + '_' + today.getDate();
+  const filename = 'activity_'+date;
+  
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
-
-  }, [tabpanel])
+  }, [tabpanel, exportData])
   useEffect(() => {
     console.log('fetching details');
     fetchDetails();
+    setExportPersonalData([...exportToCsv(progress["days"])])
   }, []);
   const fetchDetails = async () => {
     const response = await fetch(config.endpoint+"/graph_details", {
@@ -205,6 +269,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     if(json.dates){
       setAllDates(json.dates);
       setDates(json.dates);
+      setExportData([...exportToCsv(json.dates["days"])])
     }
     if(json.student_details){
       setStudentDetails([...json.student_details, "All"]);
@@ -226,6 +291,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     let json = await response.json();
     if(json.progress){
       setDates(json.progress);
+      setExportData([...exportToCsv(json.progress["days"])])
     }
   }
 
@@ -234,10 +300,11 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                       <ProfileSection currentUser={currentUser}/>
                       <hr className="my-4" />
                       <div className='w-full my-4'>
-                        <h1> 
+                      <div className="flex flex-row justify-start items-center">   
+                        <h2 className="graph-heading p-5"> 
                           Last Logged In : {last_logged}
-                        </h1>
-
+                        </h2>
+                      </div>
                       </div>
                       <div className="flex flex-row justify-around  h-64 p-4 m-16">
                         {(role==='admin' || role==='Instructor') && <div className="count-box w-64 h-full">
@@ -272,54 +339,83 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                         <div className="flex flex-row justify-around">
                             <div>
                             {role==='admin' && 
-                            <DropDown className="fileSelect" disabled={!!instructorDetails.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructorDetails.map((name) => ({
-                              name,
-                              onClick(e) {
-                                // e.preventDefault();
-                                setInstructor(name);
-                                
-                                setStudent('See Student activity')
-                                if(name==="All"){
-                                  setDates(allDates);
-                                }else{
-                                  fetchUserActivity(name)
+                            <div className='flex flex-row items-center' >
+                              <DropDown className="fileSelect" disabled={!!instructorDetails.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructorDetails.map((name) => ({
+                                name,
+                                onClick(e) {
+                                  // e.preventDefault();
+                                  setInstructor(name);
+                                  
+                                  setStudent('See Student activity')
+                                  if(name==="All"){
+                                    setDates(allDates);
+                                  }else{
+                                    fetchUserActivity(name)
+                                  }
+                                  
                                 }
+                              }))} />
                                 
-                              }
-                            }))} />}
+                            </div>
+                            
+                            }
                             </div>
                           <div>
                             {(role==='Instructor' || role ==='admin' )&& 
-                            <DropDown className="fileSelect" disabled={!!studentDetails.length} customStyle='w-72' height='h-10' text={selectStudent} items={studentDetails.map((name) => ({
-                              name,
-                              onClick(e) {
-                                setStudent(name);
-                                if(role==='admin'){
-                                  setInstructor('See Instructor activity')
-                                }
-                                if(name==="All"){
-                                  setDates(allDates);
-                                }else{
-                                  fetchUserActivity(name)
-                                }
+                            <div className='flex flex-row items-center'>
+
+                                <DropDown className="fileSelect" disabled={!!studentDetails.length} customStyle='w-72' height='h-10' text={selectStudent} items={studentDetails.map((name) => ({
+                                  name,
+                                  onClick(e) {
+                                    setStudent(name);
+                                    if(role==='admin'){
+                                      setInstructor('See Instructor activity')
+                                    }
+                                    if(name==="All"){
+                                      setDates(allDates);
+                                    }else{
+                                      fetchUserActivity(name)
+                                    }
+                                    
+                                  }
+                                }))} />
                                 
-                              }
-                            }))} />}
+                            </div>}
+                            
                             </div>
+                            {exportData.length > 0?
+                                <FontAwesomeIcon icon='download' className='p-3 profile-button' onClick={(e) => {
+                                e.preventDefault();
+                                saveAsCsv({ data:exportData, fields, filename })}} />
+                              :''}
                         </div>
                         
                       </div>
                       <div className="w-4/5 flex align-center flex-col px-20">
-                        {role==='admin' && <h2 className="graph-heading my-5">Total hours for {
+                        {role==='admin' &&
+                        <div className="flex flex-row justify-start items-center">   
+                           <h2 className="graph-heading my-5">Total hours for {
                           (selectInstructor === "All")? 'all users':
                               selectInstructor !== 'See Instructor activity'?
                                   `${selectInstructor}` : 
                                       (selectStudent === "All")? 'all users': selectStudent !== 'See Student activity'?`${selectStudent}`:'all users'}
-                        </h2>}
-                        {role==='Instructor' && <h2 className="graph-heading my-5">Total hours for {selectStudent === "All"?'all students':`${selectStudent}`}</h2>}
-                        
+                        </h2> 
+                        </div>}
+                        {role==='Instructor' && 
+                        <div className="flex flex-row justify-start items-center">                        
+                          <h2 className="graph-heading my-5">Total hours for {selectStudent === "All"?'all students':`${selectStudent}`}</h2>
+                        </div>}
                         <AreaChart xtitle={option} ytitle="Hours" data={dates[option]} />
+                        <div className="flex flex-row justify-between items-center">
                         <h2 className="graph-heading my-5">Your activity</h2>
+                        {exportPersonalData.length > 0?
+                                <FontAwesomeIcon icon='download' className='p-3 profile-button' onClick={(e) => {
+                                e.preventDefault();
+                                saveAsCsv({ data:exportPersonalData, fields, filename })}} />
+                              :''}
+                        </div>
+                        
+                        
                         <div>
                           <LineChart xtitle={option} ytitle="Hours" data={progressData[option]} />
                         </div>
