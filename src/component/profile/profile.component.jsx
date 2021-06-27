@@ -175,8 +175,12 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const [option, setOption] = useState('days');
   const [studCount, setStudCount] = useState(0);
   const [instCount, setInstCount] = useState(0);
+  const [studentDetails, setStudentDetails] = useState([]);
+  const [instructorDetails, setInstructorDetails] = useState([]);
   const [dates, setDates] = useState({})
-  
+  const [allDates, setAllDates] = useState({})
+  let [selectInstructor, setInstructor] = useState('See Instructor activity')
+  let [selectStudent, setStudent] = useState('See Student activity')
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
 
@@ -199,10 +203,31 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
       setInstCount(json.instructors)
     }
     if(json.dates){
+      setAllDates(json.dates);
       setDates(json.dates);
+    }
+    if(json.student_details){
+      setStudentDetails([...json.student_details, "All"]);
+
+      console.log(json.student_details);
+    }
+    if(json.instructor_details){
+      setInstructorDetails([...json.instructor_details, "All"]);
+      console.log(json.instructor_details);
     }
   };
 
+  const fetchUserActivity = async (email) => {
+    const response = await fetch(config.endpoint+"/get_user_activity", {
+      method: 'POST',
+      body:JSON.stringify({'email':email}),
+      headers: authHeader()
+    });
+    let json = await response.json();
+    if(json.progress){
+      setDates(json.progress);
+    }
+  }
 
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
                 <Form name="uploadFileForm" method="POST">
@@ -244,10 +269,55 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                           {e.preventDefault()
                           setOption(e.target.innerText)}}/>
                         </div>
+                        <div className="flex flex-row justify-around">
+                            <div>
+                            {role==='admin' && 
+                            <DropDown className="fileSelect" disabled={!!instructorDetails.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructorDetails.map((name) => ({
+                              name,
+                              onClick(e) {
+                                // e.preventDefault();
+                                setInstructor(name);
+                                
+                                setStudent('See Student activity')
+                                if(name==="All"){
+                                  setDates(allDates);
+                                }else{
+                                  fetchUserActivity(name)
+                                }
+                                
+                              }
+                            }))} />}
+                            </div>
+                          <div>
+                            {(role==='Instructor' || role ==='admin' )&& 
+                            <DropDown className="fileSelect" disabled={!!studentDetails.length} customStyle='w-72' height='h-10' text={selectStudent} items={studentDetails.map((name) => ({
+                              name,
+                              onClick(e) {
+                                setStudent(name);
+                                if(role==='admin'){
+                                  setInstructor('See Instructor activity')
+                                }
+                                if(name==="All"){
+                                  setDates(allDates);
+                                }else{
+                                  fetchUserActivity(name)
+                                }
+                                
+                              }
+                            }))} />}
+                            </div>
+                        </div>
+                        
                       </div>
                       <div className="w-4/5 flex align-center flex-col px-20">
-                        {role==='admin' && <h2 className="graph-heading my-5">Total hours of all users</h2>}
-                        {role==='Instructor' && <h2 className="graph-heading my-5">Total hours of all students</h2>}
+                        {role==='admin' && <h2 className="graph-heading my-5">Total hours for {
+                          (selectInstructor === "All")? 'all users':
+                              selectInstructor !== 'See Instructor activity'?
+                                  `${selectInstructor}` : 
+                                      (selectStudent === "All")? 'all users': selectStudent !== 'See Student activity'?`${selectStudent}`:'all users'}
+                        </h2>}
+                        {role==='Instructor' && <h2 className="graph-heading my-5">Total hours for {selectStudent === "All"?'all students':`${selectStudent}`}</h2>}
+                        
                         <AreaChart xtitle={option} ytitle="Hours" data={dates[option]} />
                         <h2 className="graph-heading my-5">Your activity</h2>
                         <div>

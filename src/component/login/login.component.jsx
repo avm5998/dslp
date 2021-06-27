@@ -48,6 +48,7 @@ const Login = (props) => {
 
   const onChangeRole = (e) => {
     const role = e.target.value;
+    console.log("role")
     setSelectedOption(role);
   }
   const handleLogin = (e) => {
@@ -121,14 +122,19 @@ const Login = (props) => {
             </div>
 
             <div className="flex flex-row justify-center col-span-2  py-4">
-              <div>
-                <input onChange={onChangeRole} type="radio" name="role" id="Student_radio" defaultChecked={true} />
+              {/* <div>
+                <input onChange={onChangeRole} type="radio" name="role" id="Student_radio" checked={selectedOption === "Student"} />
                 <label className="login-label" htmlFor="Student_radio">Student</label>
               </div>
               <div>
-                <input onChange={onChangeRole} type="radio" name="role" id="Instructor_radio" defaultChecked={true} />
+                <input onChange={onChangeRole} type="radio" name="role" id="Instructor_radio" checked={selectedOption === "Instructor"} />
                 <label className="login-label" htmlFor="Instructor_radio">Instructor</label>
-              </div>
+              </div> */}
+              <Input type="radio" value="Student" name="role" id="Student" onChange={onChangeRole} checked={selectedOption === "Student"} />
+              <label htmlFor="Student" className='login-label'>Student</label>
+
+              <Input type="radio" value="Instructor" name="role" id="Instructor" onChange={onChangeRole} checked={selectedOption === "Instructor"} />  
+              <label htmlFor="Instructor" className='login-label'>Instructor</label>
             </div>
             <div className="col-span-2 flex justify-center">
               <button className="py-2 px-12 w-auto login-button" disabled={loading}>
@@ -162,3 +168,24 @@ const Login = (props) => {
 };
 
 export default Login;
+
+{/* <div className="flex flex-row justify-between col-span-2  py-4">
+<Input
+type="radio"
+value="Student"
+name="role"
+id="Student"
+onChange={onChangeRole}
+checked={selectedOption === "Student"}
+/>
+<label htmlFor="Student">Student</label>
+
+<Input
+type="radio"
+value="Instructor"
+name="role"
+id="Instructor"
+onChange={onChangeRole}
+checked={selectedOption === "Instructor"}
+/>
+<label htmlFor="Instructor">Instructor</label> */}

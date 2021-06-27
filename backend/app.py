@@ -651,6 +651,21 @@ def get_instructors():
     return {"instructor_list": instructor_list}
 
 
+@app.route('/get_user_activity',methods=['POST'])
+@cross_origin(origin="*")
+@jwt_required()
+def get_user_activity():
+    email = json.loads(request.data)['email']
+    user = user_collection.find_one({"email":email})
+    if "user_activity" in user:
+        if not user['user_activity']:
+            progress = {}
+        else:
+            progress = extract_report(user['user_activity'].items())
+    else:
+        progress = {}
+    return {"progress":progress}
+
 @app.route('/graph_details',methods=['POST'])
 @cross_origin(origin="*")
 @jwt_required()
@@ -665,17 +680,29 @@ def get_graph_details():
         students = user_collection.count_documents({"roles":{"$in":["Student"]}})
         result["students"] = students - 1
         result["instructors"] = instructors - 1
+        student_details = []
+        instructor_details = []
         r = user_collection.find({"username":{"$ne":"admin"}})       
         for d in r:
+            if "roles" in d:
+                if "Student" in d["roles"]:
+                    student_details.append(d["email"])
+                else:
+                    instructor_details.append(d["email"])
             add_time(d, dates)
+        result["student_details"] = student_details 
+        result["instructor_details"] = instructor_details
         # return {"students":students, "instructors":instructors}
     elif role == 'Instructor':
         students = user_collection.find_one({"_id":ObjectId(user_id)})['students']
+        student_details = []
         for s in students:
             d = user_collection.find_one({"_id":s})
+            student_details.append(d["email"])
             add_time(d, dates)
         # students = user_collection.count_documents({"roles":{"$in":["Student"]}})
         result["students"] = len(students)
+        result["student_details"] = student_details 
     if role != 'Student':
         result["dates"] = extract_report(dates.items())
     else:
@@ -691,6 +718,8 @@ def add_time(doc, dates):
             else:
                 dates[date] += doc["user_activity"][date]
     return dates
+
+
 
 # @app.route('/total_hours',methods=['POST'])
 # @cross_origin(origin="*")
@@ -1172,7 +1201,7 @@ def cond_eng_json():
         print("cols1-=", cols)
         for index, col in cols:
             label = LabelEncoder()
-            ndf[col] = label.fit_transform(ndf[col].as
+            # ndf[col] = label.fit_transform(ndf[col].as
     elif option == 2:
         suboption_checked = params['suboption_checked']
         print('suboption_checked 2= ', suboption_checked)

@@ -198,7 +198,7 @@ const Register = (props) => {
                 />
 
               </div>
-              <div className="flex flex-row justify-center col-span-2  py-4">
+              {/* <div className="flex flex-row justify-center col-span-2  py-4">
                 <div>
                   <input onChange={onChangeRole} type="radio" name="role" id="Student_radio" defaultChecked={true} />
                   <label className="login-label" htmlFor="Student_radio">Student</label>
@@ -207,6 +207,14 @@ const Register = (props) => {
                   <input onChange={onChangeRole} type="radio" name="role" id="Instructor_radio" defaultChecked={true} />
                   <label className="login-label" htmlFor="Instructor_radio">Instructor</label>
                 </div>
+              </div> */}
+              
+              <div className="flex flex-row justify-center col-span-2  py-4">
+                <Input type="radio" value="Student" name="role" id="Student_radio" onChange={onChangeRole} checked={selectedOption === "Student"} />
+                <label htmlFor="Student_radio" className='login-label'>Student</label>
+
+                <Input type="radio" value="Instructor" name="role" id="Instructor_radio" onChange={onChangeRole} checked={selectedOption === "Instructor"} />  
+                <label htmlFor="Instructor_radio" className='login-label'>Instructor</label>
               </div>
               <div className="col-span-2 flex justify-center">
                 <button className="py-2 px-12 w-auto register-button">
