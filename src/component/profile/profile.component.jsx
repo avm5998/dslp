@@ -13,9 +13,7 @@ import {change_profile_pic, change_instructor} from '../../actions/profile';
 import { LineChart, PieChart, AreaChart } from 'react-chartkick'
 import 'chartkick/chart.js'
 import authHeader from '../../services/auth-header';
-import { JsonToCsv, useJsonToCsv } from 'react-json-csv';
-import CsvDownload from 'react-json-to-csv'
-// import json2xls from 'json2xls';
+import {  useJsonToCsv } from 'react-json-csv';
 import axios from "axios";
 import {config} from '../../config/client'
 
