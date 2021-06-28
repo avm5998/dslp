@@ -60,7 +60,7 @@ const DisplayCode = ({code}) => {
   )
 }
 
-const Variables = ({ tabpanelIndex, tabpanel }) => {
+const Variables = ({ location, tabpanelIndex, tabpanel }) => {
   let [modalOpened, setModalOpened] = useState(false)
   const dataset = useSelector(state => state.dataset)
   let [curCol, setCurCol] = useState('')
@@ -76,7 +76,6 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
       ...initialFormCheckbox({ type: 'log', subTypes: ['x', 'y'] }),
     },
     checkForm: () => {
-      console.log(form.getData());
       return curCol
     },
     onSubmit: async (e) => {
@@ -87,12 +86,12 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
         col: curCol,
         type: 'variables'
       })
-      console.log("form data")
       // console.log(typeof(formData))
       let data = JSON.stringify(formData);
+      setCurImg(placeholderImg)
       let res = await fetchWithRefresh(API_URL+'/visualization', {method:'POST', body:data, headers:authHeader()});
       let json_data = await res.json()
-      console.log(json_data['code'])
+      // console.log(json_data['code'])
       setCode(json_data['code'])
       return json_data
 
@@ -111,14 +110,10 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
   }, [tabpanel])
 
   useEffect(() => {
-    console.log(tabpanel);
     if(tabpanel!==0) return
-    console.log(curCol);
     form.onSubmit()
   },[curCol, tabpanel])
 
-  // console.log(dataset.num_lists, curCol);
-  // console.log(form.getData());
 
   return (<div className={`container mx-auto bg-gray-100 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
 
@@ -173,8 +168,7 @@ const Variables = ({ tabpanelIndex, tabpanel }) => {
 
         {Object.keys(dataset.col_lists).map(col => {
           let cur = dataset.col_lists[col]
-          {/* console.log(" sub-div "+cur.name) */}
-          return (<div key={cur.name} className="p-2 lg:w-1/3 md:w-1/2 w-full lg:h-1/3 md:h-1/2 h-full">
+          return (<div key={cur.name} className={`${location?.state?.guide && cur.name=='price'?'btn-blink':''} p-2 lg:w-1/3 md:w-1/2 w-full lg:h-1/3 md:h-1/2 h-full`}>
             <div className={`${curCol === cur.name ? 'box-active' : 'box'} flex items-start border-gray-200 border p-4 cursor-pointer hover:shadow-lg rounded-lg`} onClick={() => {
               if (formDisabledRef.current) return
               setCurCol(cur.name)
@@ -290,7 +284,7 @@ const TabPanels = [
   // { name: 'Correlations' }
 ]
 
-const Visualization = () => {
+const Summary = ({location}) => {
   useCachedData()
 
   let [tabpanel, setTabpanel] = useState(0)
@@ -311,11 +305,11 @@ const Visualization = () => {
       {dataset.loaded ?
         <>
           {/* <Help url={"menu/data_visualization/display_correlations.html"}/> */}
-          <Variables tabpanelIndex={0} tabpanel={tabpanel} />
+          <Variables location={location} tabpanelIndex={0} tabpanel={tabpanel} />
           <Interactions tabpanelIndex={1} tabpanel={tabpanel} />
           {/* <Correlations tabpanelIndex={2} tabpanel={tabpanel} /> */}
         </> : <NoData />}
     </div>)
 }
 
-export default Visualization;
+export default Summary;

@@ -4,7 +4,7 @@ import { InlineTip } from '../common/tip'
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
 
-export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
+export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
     let [activeTab, setActiveTab] = useState(0)
 
     return <>
@@ -18,9 +18,15 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
                 <Label text='X Axis:'><InlineTip info={`*Required\nThe data on X Axis`} /></Label>
-                <DropDown defaultText='Select X Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e => result.x = e} />
+                <DropDown defaultText='Select X Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e => {
+                    result.x = e
+                    if(guideStep == 4) setGuideStep(5)
+                }} />
                 <Label text='Y Axis:'><InlineTip info={`*Required\nThe data on Y Axis`} /></Label>
-                <DropDown defaultText='Select Y Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e => result.y = e} />
+                <DropDown defaultText='Select Y Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e => {
+                    result.y = e
+                    if(guideStep == 5) setGuideStep(6)
+                }} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? 'hidden' : 'hidden'}`} style={{
                 gridTemplateColumns: '5vw 1fr 10vw 1fr'
@@ -32,8 +38,9 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <CommonOption dataset={dataset} result={result} />
             </div>
             <div className='flex justify-end'>
-                <Button onClick={e => {
+                <Button id="scatterPlotConfirm" onClick={e => {
                     showOptions(0)
+                    if (guideStep == 6) setGuideStep(7)
                     // confirmOption()
                     setCode(config.getCode({ ...defaultResult, ...result }, dataset))
                 }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`} />

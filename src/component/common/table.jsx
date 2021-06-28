@@ -6,7 +6,13 @@ import './jqueryDataTable.css'
 
 const PaginationRange = 5
 
-export default function ({PageSize, styleText = '', style = {}}) {
+export default function ({PageSize, styleText = '', style = {
+    width:'fit-content',
+    height: 'fit-content',
+    padding: '30px',
+    boxSizing: 'border-box',
+    margin:'0 auto'
+}}) {
     let dataset = useSelector(state => state.dataset)
 
     const tableInstance = useTable({
@@ -17,7 +23,6 @@ export default function ({PageSize, styleText = '', style = {}}) {
     useEffect(() => {
         setPageSize(PageSize)
     }, [dataset.tableData])
-
 
     const {
         getTableProps,
@@ -39,7 +44,7 @@ export default function ({PageSize, styleText = '', style = {}}) {
     // console.log(dataset.tableData);
     const pageRange = [...Array(PaginationRange).keys()].map(i => pageIndex + i - (PaginationRange >> 1)).filter(i => i > -1 && i < pageCount)
 
-    return (<div className={`flex flex-col w-full items-center justify-center h-full bg-gray-100 mt-2 ${styleText}`} style={style}>
+    return (<div className="flex flex-row " style={{minWidth:'100%'}}><div className={`flex flex-col w-full items-center justify-center h-full bg-gray-100 mt-2 ${styleText}`} style={style}>
         {dataset.data && page ?
             <div className='bg-white shadow-2xl rounded-lg p-10 tracking-wide'>
                 <div className="inline-block float-left text-lg py-3 px-6 text-gray-600">
@@ -49,6 +54,7 @@ export default function ({PageSize, styleText = '', style = {}}) {
                         <option value="20">20</option>
                         <option value="50">50</option>
                     </select></label>
+                    <label>Total data: </label><label className="bg-gray-100 rounded p-2">{dataset.tableData?.data?.length}</label>
                 </div>
                 {/* <div className="inline-block float-right text-lg py-3 px-6">
                     <label>Search:<input type="search" className="ml-5 outline-none bg-gray-100 border-gray-200 rounded leading-3 p-2 text-gray-600" placeholder="" />
@@ -103,6 +109,6 @@ export default function ({PageSize, styleText = '', style = {}}) {
             </div>
             : <NoData />
         }
-    </div>
+    </div></div>
     )
 }

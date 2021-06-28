@@ -39,6 +39,23 @@
     opacity: 0.6;
     min-height: 28vh;
 }
+
+.btn-blink {
+    animation: glowing 1500ms infinite;
+  }
+  
+  @keyframes glowing {
+    0% {
+      box-shadow: 0 0 3px #b20000;
+    }
+    50% {
+      box-shadow: 0 0 40px #ff0000;
+    }
+    100% {
+      box-shadow: 0 0 3px #b20000;
+    }
+  }
+  
 /* 
 .grid {
     display: grid;
