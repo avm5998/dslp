@@ -93,10 +93,10 @@ const Page = () => {
 
     return (<>
         <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 0rem)'}}>
-            <div className="flex flex-row h-auto w-full items-end justify-start shadow-sm bg-gray-100">
+            <div className="flex flex-row h-auto w-full items-end justify-between shadow-sm bg-gray-100">
 
-                <div className='mx-5 my-4 w-2/12'>
-                    <DropDown width={'w-60'} defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
+                <div className='mx-5 my-4'>
+                    <DropDown width={'w-72'} defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
                         name,
                         onClick(e) {
                             setSearchColumn(name)
@@ -106,7 +106,7 @@ const Page = () => {
                     })) : []} />
                 </div>
 
-                <div className='mx-5 mb-4 w-3/12 text-center'>
+                <div className='mx-5 mb-4 text-center'>
                     {queryType === QueryType.Numerical && dataset.num_lists[searchColumn].max && dataset.num_lists[searchColumn].min ?
                         <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
                             Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
@@ -118,14 +118,11 @@ const Page = () => {
                             : ''}
                 </div>
 
-                <div className='mb-4 w-64'>
-                    <Button text="Add filter" onClick={addFilter}/>
-                </div>
-
-                <div className='mx-5 mb-4 w-5/12'>
-                    <MultiSelect allowDelete={true} passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
+                <div className='mb-4 w-auto flex flex-row gap-8'>
+                    <MultiSelect width="w-72" allowDelete={true} passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
                         dispatch(DataSetActions.setFilters(filters))
                     }} />
+                    <Button text="Add filter" width='w-48 mx-8' onClick={addFilter}/>
                 </div>
 
             </div>

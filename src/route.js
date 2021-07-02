@@ -21,6 +21,7 @@ import FeatureEngineering from "./component/featureEngineering";
 import Preprocessing from "./component/preprocessing";
 import FeatureSelection from "./component/featureSelection";
 import Analysis from "./component/analysis";
+import Guide from "./component/guide";
 // testing dummy
 import { login } from "./actions/auth";
 
@@ -49,7 +50,8 @@ library.add(far);
 const Menu = {
   User: [{ text: "Profile", icon: "home", to: "/profile" }],
   Main: [
-    { text: "Upload Data", icon: "home", to: "/" },
+    { text: "Data", icon: "home", to: "/" },
+    { text: "Guide", icon: "book-reader", to: "/guide" },
     { text: "Summary", icon: "chart-area", to: "/summary" },
     { text: "Visualization", icon: "chart-pie", to: "/visualization" },
     // { text: 'Sandbox', icon: 'chart-area', to: '/sandbox' },
@@ -351,6 +353,7 @@ const Routes = (props) => {
               {/* <div className='block w-full h-16'>&nbsp;</div> */}
               <Switch>
                 <Route path="/login" component={Login} />
+                <Route path="/guide" component={Guide} />
                 <Route path="/register" component={Register} />
                 <Route path="/profile" component={Profile} />
                 <Route exact path={["/home", "/"]} component={Home} />

@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, Modal,Checkbox, DropDownInput, Input } from '../../util/ui'
-import { MultiSelect , DropDown } from '../../util/ui_components'
+import { Label, Button, Modal, Checkbox, DropDownInput, Input } from '../../util/ui'
+import { MultiSelect, DropDown } from '../../util/ui_components'
 
 import { useDispatch, useSelector } from 'react-redux';
-import { loadScript, useSimpleForm, useToggleGroup,fetchByJSON,useCachedData, toUnicode } from '../../util/util'
+import { loadScript, useSimpleForm, useToggleGroup, fetchByJSON, useCachedData, toUnicode } from '../../util/util'
 // import {TooltipComponent} from 'echarts/components';
 
 import AreaGraph from './areaGraph'
@@ -60,7 +60,7 @@ for (let e of Graphs) {
     GraphOptionViews[e.config.name] = e.view
 }
 
-const initialCode = data=>`import pandas as pd
+const initialCode = data => `import pandas as pd
 from io import StringIO
 import matplotlib.pyplot as plt
 import numpy as np
@@ -74,43 +74,93 @@ df = pd.read_json(data_json)
 `
 
 
-export default function(){
+export default function ({ location }) {
     useCachedData()
     const [plots, setPlots] = useState(Object.keys(PLOTS))
     const [optionsVisible, showOptions] = useState(0)
     let { ref, hide: hideSelections } = useToggleGroup()
     const [currentPlot, setCurrentPlot] = useState('')
-    const [code,setCode] = useState('')
-    const [activateStatus,setActivateStatus] = useState('Loading...')
-    let [dfJSON,setDfJSON] = useState('')//dataframe json
+    const [code, setCode] = useState('')
+    const [activateStatus, setActivateStatus] = useState('Loading...')
+    let [dfJSON, setDfJSON] = useState('')//dataframe json
     let dataset = useSelector(state => state.dataset)
     let { result, getData } = useSimpleForm()
     let codeParent = useRef()
     let kernelRef = useRef()
-    
+    let [guideStep, setGuideStep] = useState(0)
+
+    useEffect(() => {
+        switch (guideStep) {
+            case 0:
+                if (location?.state?.guide) {
+                    setGuideStep(1)
+                }
+                break
+            case 1:
+                document.querySelector('#functionSelection')?.classList.add('btn-blink')
+                document.querySelector('#functionSelection+div div:nth-child(5)')?.classList.add('btn-inner-blink')
+                break
+            case 2:
+                document.querySelector('#functionSelection')?.classList.remove('btn-blink')
+                document.querySelector('#functionSelection+div div:nth-child(5)')?.classList.remove('btn-blink')
+                document.querySelector('#graphTypeSelection')?.classList.add('btn-blink')
+                document.querySelector('#graphTypeSelection+div div:nth-child(5)')?.classList.add('btn-inner-blink')
+                break
+            case 3:
+                document.querySelector('#graphTypeSelection')?.classList.remove('btn-blink')
+                document.querySelector('#graphTypeSelection+div div:nth-child(5)')?.classList.remove('btn-inner-blink')
+                document.querySelector('#optionsButton')?.classList.add('btn-blink')
+                break
+            case 4:
+                document.querySelector('#optionsButton')?.classList.remove('btn-blink')
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown button')[0]?.classList.add('btn-blink')
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown ul li:nth-child(3)')[0]?.classList.add('btn-inner-blink')
+                break
+            case 5:
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown button')[0]?.classList.remove('btn-blink')
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown ul li:nth-child(3)')[0]?.classList.remove('btn-inner-blink')
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown button')[1]?.classList.add('btn-blink')
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown ul li:nth-child(2)')[1]?.classList.add('btn-inner-blink')
+                break
+            case 6:
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown button')[1]?.classList.remove('btn-blink')
+                document.querySelectorAll('#visModal>div>div:nth-child(2) .dropdown ul li:nth-child(2)')[1]?.classList.remove('btn-inner-blink')
+                document.querySelector('#scatterPlotConfirm')?.classList.add('btn-blink')
+                break
+            case 7:
+                document.querySelector('#scatterPlotConfirm')?.classList.remove('btn-blink')
+                document.querySelector('#runButton')?.classList.add('btn-blink')
+                break
+            case 8:
+                document.querySelector('#runButton')?.classList.remove('btn-blink')
+                break
+        }
+    }, [guideStep])
+
     //Not just rerun the current code
     //It's reinject the data and rerun the current code
-    const runCode = async (e)=>{
-        let res = await kernelRef.current.requestExecute({code:initialCode(dfJSON)}).done
+    const runCode = async (e) => {
+        let res = await kernelRef.current.requestExecute({ code: initialCode(dfJSON) }).done
+        if(guideStep == 7) setGuideStep(8)
         // console.log(res);
         document.querySelector('.thebelab-run-button').click()
     }
 
-    useEffect(()=>{
-        if(!code) return
+    useEffect(() => {
+        if (!code) return
         codeParent.current.innerHTML = ''
         let pre = document.createElement('pre')
-        pre.setAttribute('data-executable','true')
-        pre.setAttribute('data-language','python')
+        pre.setAttribute('data-executable', 'true')
+        pre.setAttribute('data-language', 'python')
         codeParent.current.appendChild(pre)
         pre.innerHTML = code
         thebelab.bootstrap();
-    },[code])
+    }, [code])
 
     //start thebelab automatically
     //load current dataframe
-    useEffect(()=>{
-        if(!dataset.filename){
+    useEffect(() => {
+        if (!dataset.filename) {
             setActivateStatus('No data')
             return
         }
@@ -119,22 +169,22 @@ export default function(){
 
         //excute code in advance on thebelab to import libraries and set dataframe variable
         thebelab.on("status", async function (evt, data) {
-            if(data.status === 'ready' && dataset.filename){
-                let res = await fetchByJSON('current_data_json',{
-                    filename:dataset.filename
+            if (data.status === 'ready' && dataset.filename) {
+                let res = await fetchByJSON('current_data_json', {
+                    filename: dataset.filename
                 })
 
                 let g = await res.json()
                 kernelRef.current = data.kernel
                 // alert('X')
-                data.kernel.requestExecute({code:initialCode(g.data)})
+                data.kernel.requestExecute({ code: initialCode(g.data) })
                 setDfJSON(g.data)
                 setActivateStatus('Ready')
             }
             // console.log("Status changed:", data.status, data.message);
         })
 
-    },[dataset.filename])
+    }, [dataset.filename])
 
     const setPlotsByFunctions = useCallback((functions) => {
         if (!functions || functions.length === 0) {
@@ -164,40 +214,49 @@ export default function(){
     let OptionView = GraphOptionViews[currentPlot]
 
     return (<div className='flex flex-col items-center w-full bg-gray-100' style={{ height: 'calc(100% - 0rem)' }}>
-        <Modal fixedModalPosition={{
-            left:'20vw',
-            top:'10vh',
-            width:'fit-content'
+        <Modal id="visModal" fixedModalPosition={{
+            left: '20vw',
+            top: '10vh',
+            width: 'fit-content'
         }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
             // setCode(GraphConfigs[currentPlot].getCode(result), dataset)
         }}>
             {
-                GraphOptionViews[currentPlot] ? <OptionView setCode={setCode} dataset={dataset} result={result} showOptions={showOptions}/> : ''
+                GraphOptionViews[currentPlot] ? <OptionView guideStep={guideStep} setGuideStep={setGuideStep} setCode={setCode} dataset={dataset} result={result} showOptions={showOptions} /> : ''
             }
         </Modal>
 
-        <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4' style={{zIndex:10}}>
+        <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4' style={{ zIndex: 10 }}>
             <div className='w-72 px-1'>
-                <MultiSelect ref={ref} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => setPlotsByFunctions(e)} customStyle={{fontSize:'medium'}} />
+                <MultiSelect id="functionSelection" ref={ref} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => {
+                    setPlotsByFunctions(e)
+                    if (guideStep == 1) setGuideStep(2)
+                }} customStyle={{ fontSize: 'medium' }} />
             </div>
             <div className='w-72 px-1'>
-                <DropDown ref={ref} defaultText={'Select Graph Type'} width={'w-72'} items={plots} onSelect={e => setCurrentPlot(e)} />
+                <DropDown id="graphTypeSelection" ref={ref} defaultText={'Select Graph Type'} width={'w-72'} items={plots} onSelect={e => {
+                    setCurrentPlot(e)
+                    if (guideStep == 2) setGuideStep(3)
+                }} />
             </div>
             <div className='w-auto flex justify-center items-center px-1'>
                 <div className={``}>{activateStatus}</div>
-                <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.'/>
+                <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
             </div>
             <div className='w-72 px-1'>
-                <Button hasPadding={false} disabled={!currentPlot} text="Options" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10  ${!currentPlot ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={e => { if (currentPlot) showOptions(1) }} hoverAnimation={false} />
+                <Button id="optionsButton" hasPadding={false} disabled={!currentPlot} text="Options" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10  ${!currentPlot ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={e => { 
+                    if (currentPlot) showOptions(1) 
+                    if (guideStep == 3) setGuideStep(4)
+                }} hoverAnimation={false} />
             </div>
             <div className='w-72 px-1'>
-                <Button hasPadding={false} disabled={!code} text="Run" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
-                     ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
+                <Button id="runButton" hasPadding={false} disabled={!code} text="Run" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
+                    ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
             </div>
         </div>
         <div className='flex-grow-1 w-full' ref={codeParent}>
-            {code?'':<div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+            {code ? '' : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
                 Select a plot type to see the corresponding code
             </div>}
         </div>

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { fetch, fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { Modal } from '../../util/ui'
-import {DropDown,Button} from '../../util/ui_components'
+import { DropDown, Button } from '../../util/ui_components'
 
 import './index.css'
 import { push } from 'connected-react-router'
@@ -85,7 +85,6 @@ const Method = {
   "Unsupervised": ['Clustering']
 }
 
-
 const Filter = ({ dataItems, selectFileOption, showOptions }) => {
   const [dataList, setDataList] = useState(dataItems);
   const [dataListType, setDataListType] = useState(dataList);
@@ -112,9 +111,9 @@ const Filter = ({ dataItems, selectFileOption, showOptions }) => {
   }
 
   return (
-    <div className='data-items'>
+    <div className='data-items p-4'>
 
-      <div className="filters">
+      <div className="filters mb-4">
         <DropDown className="selectMethod" customStyle='w-72' height='h-10' text={methodSelected} items={Object.keys(Method).map(name => ({
           name,
           onClick(e) {
@@ -139,14 +138,14 @@ const Filter = ({ dataItems, selectFileOption, showOptions }) => {
               filterByType(name);
             }
           }))} />
-        <FontAwesomeIcon className="icon" icon='times' onClick={() => { showOptions(0) }} />
+        <FontAwesomeIcon className="icon cursor-pointer" icon='times' onClick={() => { showOptions(0) }} />
 
       </div>
 
 
       {
         dataListType.length ?
-          dataListType.map(dataItem => <DataItem key={dataItem.id} item={dataItem} selectFileOption={selectFileOption} />)
+          dataListType.map((dataItem,i) => <DataItem isLast={i===dataListType.length-1} key={dataItem.id} item={dataItem} selectFileOption={selectFileOption} />)
           :
           <span className='empty-message'>No files with the combination</span>
       }
@@ -155,10 +154,26 @@ const Filter = ({ dataItems, selectFileOption, showOptions }) => {
 }
 
 
-const DataItem = ({ item: { filename, description }, selectFileOption }) => (
-  <div className='data-item'>
+const DataItem = ({ item: { filename, description, extraClass }, selectFileOption, isLast }) => (
+  <div onClick={e => {
+    e.preventDefault();
+    selectFileOption(filename, true)
+  }} className={`${extraClass} flex justify-between hover:bg-gray-300 cursor-pointer`} style={{ width: '50vw', borderBottom:isLast?'':'1px solid #ddd'}}>
+    <div className='flex flex-row my-4 mx-8 items-end'>
+      <div className='text-xl'>{filename}</div>
+      <div className='ml-2 text-sm text-gray-500'>{description}</div>
+    </div>
+
+
+    <div className='flex items-center justify-center'>
+      {/* For buttons, do not delete,
+      Here we don't need a button to select the item, because "selection" is the only one operation
+      if there are more than one operations, 
+      for example, to show details of the dataset, here should be a button or some buttons */}
+    </div>
+
     {/* <img src={imageUrl} alt='item'/> */}
-    <div className='item-details'>
+    {/* <div className='item-details'>
       <span className='filename'>{filename}</span>
       <span className='description'>
         {description}
@@ -169,12 +184,12 @@ const DataItem = ({ item: { filename, description }, selectFileOption }) => (
         e.preventDefault();
         selectFileOption(filename, true)
       }}/>
-    </div>
+    </div> */}
 
   </div>
 )
 
-const Home = (props) => {
+const Home = ({location}) => {
   useCachedData()
 
   const { user: currentUser } = useSelector((state) => state.auth);
@@ -192,9 +207,14 @@ const Home = (props) => {
 
   useEffect(async () => {
     await updateFilesDropdown();
-    // console.log(data.files_list);
+    if(location.state?.guide){
+      document.querySelector('#use_recommended').checked = true
+      setUseRecommended(1)
+      document.querySelector('#select_data_btn').classList.add('btn-blink')
+      filenames[2].extraClass = 'btn-blink'
+    }
 
-  }, []);
+    }, []);
 
   async function updateFilesDropdown() {
     const response = await fetch('/user_files', {
@@ -285,7 +305,7 @@ const Home = (props) => {
     <Modal fixedModalPosition={{
       left: '20vw',
       top: '10vh',
-      width: '60vw'
+      width: 'fit-content'
     }} zIndex={11} isOpen={optionsVisible} setIsOpen={showOptions} onClose={() => {
       showOptions(0)
       // setCode(GraphConfigs[currentPlot].getCode(result), dataset)
@@ -307,14 +327,14 @@ const Home = (props) => {
           <InlineTip infoPosition={'right'} info={'When this is checked, the file you updated with the same filename will be overwritten. Otherwise it will use the previous one you updated.'} customStyle={'ml-2'} />
         </label>
 
-        <DropDown className="fileSelect" disabled={!files_list.length} width='w-72 mt-2 mb-4' height='h-10' defaultText={files_list.length?selectFile:'No dataset uploaded'} items={files_list.map(name => ({
+        <DropDown className="fileSelect" disabled={!files_list.length} width='w-72 mt-2 mb-4' height='h-10' defaultText={files_list.length ? selectFile : 'No dataset uploaded'} items={files_list.map(name => ({
           name,
           onClick(e) {
             selectFileOption(name, false);
           }
         }))} />
 
-        <label className="w-64 flex flex-col items-center px-4 py-6 rounded-lg shadow-md tracking-wide uppercase border border-blue cursor-pointer upload"
+        <label id="select_data_btn" className="w-64 flex flex-col items-center px-4 py-6 rounded-lg shadow-md tracking-wide uppercase border border-blue cursor-pointer upload"
           onClick={e => {
             if (useRecommended) {
               showOptions(1)
@@ -340,7 +360,7 @@ const Home = (props) => {
               selectFileOption(dataset.filename, false)
             }
           }
-        }}/>
+        }} />
 
         {/* <label>
           <h2 className="text-gray-500"> OR </h2>

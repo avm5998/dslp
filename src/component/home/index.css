@@ -1,27 +1,27 @@
-.upload{ 
-    background-color: #276678;
-    color:#f6f5f5;
+.upload {
+  background-color: #276678;
+  color: #f6f5f5;
 }
 
 .upload:hover {
-    background-color: #d3e0ea;
-    color:#276678;
+  background-color: #d3e0ea;
+  color: #276678;
 }
 
-.data-style{
-    background-color:#d3e0ea;
-    color: #276678;
-    max-height: 75vw;
-    overflow-y: auto;
-    height: 70vw;
+.data-style {
+  background-color: #d3e0ea;
+  color: #276678;
+  max-height: 75vw;
+  overflow-y: auto;
+  height: 70vw;
 }
-.revert{ 
-    background-color: #276678;
-    color:#f6f5f5;
+.revert {
+  background-color: #276678;
+  color: #f6f5f5;
 }
-.revert:hover{
-    background-color: #d3e0ea;
-    color:#276678;
+.revert:hover {
+  background-color: #d3e0ea;
+  color: #276678;
 }
 
 /* .data-items{
@@ -30,49 +30,63 @@
 
 } */
 
-.data-item{
-
-    background-color: #d3e0ea;
-    margin: 12px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+.data-item {
+  background-color: #d3e0ea;
+  margin: 12px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
-.item-details{
-    display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
-    padding: 16px;
+.item-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  padding: 16px;
 }
-.filename{
-    margin: auto 16px;
-    color:#276678;
-    font-weight: 700;
-    font-size: 20px;
+.filename {
+  margin: auto 16px;
+  color: #276678;
+  font-weight: 700;
+  font-size: 20px;
 }
-.description{
-    margin: auto 16px;
-    color:#1687a7;
-    font-size: 16px;
-}
-
-.filters{
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    margin: 16px 16px 96px 16px;
+.description {
+  margin: auto 16px;
+  color: #1687a7;
+  font-size: 16px;
 }
 
-.use-file{
-    margin-right: 16px;
-    align-self: center;
+.filters {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 20px;
 }
 
-.icon{
-    color: black;
-    height: 24px;
-    width: 24px;
-    margin-right: 8px;
+.use-file {
+  margin-right: 16px;
+  align-self: center;
 }
 
+.icon {
+  color: black;
+  height: 24px;
+  width: 24px;
+  margin-right: 8px;
+}
+
+.btn-blink {
+  animation: glowing 1500ms infinite;
+}
+
+@keyframes glowing {
+  0% {
+    box-shadow: 0 0 3px #b20000;
+  }
+  50% {
+    box-shadow: 0 0 40px #ff0000;
+  }
+  100% {
+    box-shadow: 0 0 3px #b20000;
+  }
+}

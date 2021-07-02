@@ -1,7 +1,42 @@
-.thebelab-button{
-    display:none;
+.thebelab-button {
+  display: none;
 }
 
-.thebelab-cell{
-    margin:auto 3rem;
+.thebelab-cell {
+  margin: auto 3rem;
+}
+
+.btn-blink {
+  animation: glowing 1500ms infinite;
+}
+.btn-inner-blink {
+  animation: glowing-bg 1500ms infinite;
+}
+
+@keyframes glowing {
+  0% {
+    box-shadow: 0 0 3px #b20000;
+  }
+  50% {
+    box-shadow: 0 0 40px #ff0000;
+  }
+  100% {
+    box-shadow: 0 0 3px #b20000;
+  }
+}
+
+.btn-blink {
+  animation: glowing 1500ms infinite;
+}
+
+@keyframes glowing-bg {
+  0% {
+    background: rgba(240,0,0, 0);
+  }
+  50% {
+    background: rgba(240,0,0, 0.5);
+  }
+  100% {
+    background: rgba(240,0,0, 0);
+  }
 }

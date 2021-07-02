@@ -103,12 +103,17 @@ const Tip = ({ info, styleText = '' }) => {
  * 
  * | fadein | show | fadeout | hidden
  */
-export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 'bottom', customStyle = '' }, ref) => {
+export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 'bottom', customStyle = '', minHoverInterval = 100 }, ref) => {
     let [showInfo, setShowInfo] = useState(false)
     let [phase, setPhase] = useState('start') //start or end
     let timeoutRef = useRef()
     let enterCounter = useRef(0)
     let elements = useRef([])
+
+    // used for delay execute anything
+    // do not trigger any event if the time of mouse moving over the element is less than minHoverInterval
+    let delayExecuteTimeout = useRef(-1)
+    let delayExecuteStart = useRef(-1)
 
     const closeTip = useCallback(e => {
         setPhase('end')
@@ -123,15 +128,24 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
     },[])
 
     const readyToLeave = useCallback((e)=>{
-        enterCounter.current--;
-        if(!enterCounter.current && elements.current.indexOf(e.relatedTarget)==-1){
-            closeTip(e)
+        let passedTime = new Date().getTime() - delayExecuteStart.current
+        if(passedTime<minHoverInterval - 50){
+            if(delayExecuteTimeout.current!=-1){
+                clearTimeout(delayExecuteTimeout.current)
+                delayExecuteTimeout.current = -1
+            }
+        }else if(delayExecuteTimeout.current == -1){
+            //to ensure the start callback is executed
+            enterCounter.current--;
+            if(!enterCounter.current && elements.current.indexOf(e.relatedTarget)==-1){
+                closeTip(e)
+            }
         }
     },[])
 
     const countEntry = useCallback((e)=>{
         e.preventDefault()
-        enterCounter.current++
+        enterCounter.current = 1
     },[])
 
     return <div className='relative'>
@@ -141,15 +155,21 @@ export const InlineTip = forwardRef(({ zIndex = 1000, info = '', infoPosition = 
         {/* hover layer */}
         <div ref={addRef} style={{zIndex:zIndex}} className='absolute ml-2' onMouseLeave={readyToLeave} onMouseEnter={(e) => {
             e.preventDefault()
-            countEntry(e)
 
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current)
-                timeoutRef.current = null
-            }
+            delayExecuteStart.current = new Date().getTime()
+            delayExecuteTimeout.current = setTimeout(()=>{
+                countEntry(e)
 
-            setShowInfo(true)
-            setPhase('start')
+                if (timeoutRef.current) {
+                    clearTimeout(timeoutRef.current)
+                    timeoutRef.current = null
+                }
+    
+                setShowInfo(true)
+                setPhase('start')
+
+                delayExecuteTimeout.current = -1
+            },minHoverInterval)
         }} style={{width:'1.5rem',height:'1.5rem',top:0,right:0}}></div>
             {infoPosition == 'top' ?
                 <svg ref={addRef} className={`${showInfo ? '' : 'hidden'} ${phase == 'start' ? 'animation-popin-' : 'animation-popout-'} ml-2 top-0 left-0 absolute text-white`} style={{ zIndex:zIndex+2, width:'1em',transform: 'translate(0,-1.1em)' }} x="0px" y="0px" viewBox="0 0 255 255">

@@ -186,6 +186,7 @@ export function Button({
 
   return (
     <button
+    id={id}
       type="button"
       className={
         overrideClass
