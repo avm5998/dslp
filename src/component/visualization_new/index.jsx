@@ -62,7 +62,6 @@ for (let e of Graphs) {
 
 const initialCode = data => `import pandas as pd
 from io import StringIO
-import matplotlib.pyplot as plt
 import numpy as np
 import math
 import matplotlib.pyplot as plt

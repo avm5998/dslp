@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo, getProp, useCachedData, useSimpleForm, useToggleGroup, toUnicode} from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo, getProp, useCachedData, useSimpleForm, useToggleGroup, toUnicode } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -49,43 +49,46 @@ const OptionModels = {
 // `
 
 const MethodSampleFile = {
-    'regression':'house_price_prediction_regression.csv',
-    'classification':'credit_card_default_classification.csv',
-    'clustering':'Mall_Customers_clustering.csv'
+    'regression': 'house_price_prediction_regression.csv',
+    'classification': 'credit_card_default_classification.csv',
+    'clustering': 'Mall_Customers_clustering.csv'
 }
 
 async function getSampleCodeData(filename, existing) {
 
 
 }
-const GetDisplayCode = (method)=>{
+const GetDisplayCode = (method) => {
     return optionCode[method]``
 }
 
+const getCodeFromResult = (option, model, result) => {
+    return DisplayCode[model](result)
+}
 const InitialCode = {
-    regression:code=>`
+    regression: code => `
 import pandas as pd
 from io import StringIO
 data_io = StringIO(r"""${code}""")
 df = pd.read_json(data_io)
 `,
 
-classification:code=>`
+    classification: code => `
 import pandas as pd
 from io import StringIO
 data_io = StringIO(r"""${code}""")
 df = pd.read_json(data_io)
 `
-,
+    ,
 
-clustering:code=>`
+    clustering: code => `
 import pandas as pd
 from io import StringIO
 data_io = StringIO(r"""${code}""")
 df = pd.read_json(data_io)
 `,
 
-associate_rule:code=>`
+    associate_rule: code => `
 import pandas as pd
 from io import StringIO
 data_io = StringIO(r"""${code}""")
@@ -100,8 +103,9 @@ df = df.groupby(['Transaction','Item'])['Quantity'].sum().unstack().fillna(0)
 df = df.applymap(transform_transaction)
 `
 }
+
 const DisplayCode = {
-    'Linear Regression':code=>`
+    'Linear Regression': code => (`
 # example code for Linear Regression
 
 # import libraries
@@ -110,12 +114,11 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.linear_model import LinearRegression
 
 # read sample dataset 'house_price_prediction_regression.csv'
-print(df.head(3))
 
 # multiple independent variales
-X = ['bedrooms','sqft_lot','yr_built']
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
-Y = 'price'
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -128,9 +131,9 @@ print("Print predicted results of testing dataset: ", Y_pred)
 
 # measure performance of model with metric
 print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
-`,
+`),
 
-'Decision Tree Regression':code=>`
+    'Decision Tree Regression': code => `
 # example code for Decision Tree Regression
 
 # import libraries
@@ -159,7 +162,7 @@ print("Print predicted results of testing dataset: ", Y_pred)
 print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
 `,
 
-'Random Forests Regression':code=>`
+    'Random Forests Regression': code => `
 # example code for Random Forests Regression
 
 # import libraries
@@ -188,7 +191,7 @@ print("Print predicted results of testing dataset: ", Y_pred)
 print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
 `,
 
-'SVM Regression':code=>`
+    'SVM Regression': code => `
 # example code for SVM Regression
 
 # import libraries
@@ -217,7 +220,7 @@ print("Print predicted results of testing dataset: ", Y_pred)
 print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
 `,
 
-'Logistic Regression':code=>`
+    'Logistic Regression': code => `
 
 # example code for Logistic Regression
 
@@ -247,9 +250,9 @@ print("Print predicted results of testing dataset: ", Y_pred)
 report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
-,
+    ,
 
-'Decision Tree Classifier':code=>`
+    'Decision Tree Classifier': code => `
 
 # example code for Decision Tree Classifier
 
@@ -279,8 +282,8 @@ print("Print predicted results of testing dataset: ", Y_pred)
 report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
-,
-'Random Forests Classifier':code=>`
+    ,
+    'Random Forests Classifier': code => `
 
 # example code for Random Forests Classifier
 
@@ -310,8 +313,8 @@ print("Print predicted results of testing dataset: ", Y_pred)
 report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
-,
-'SVM Classifier':code=>`
+    ,
+    'SVM Classifier': code => `
 
 # example code for SVM Classifier
 
@@ -341,8 +344,8 @@ print("Print predicted results of testing dataset: ", Y_pred)
 report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
-,
-'Naive Bayes Classifier':code=>`
+    ,
+    'Naive Bayes Classifier': code => `
 
 # example code for Naive Bayes Classifier
 
@@ -371,9 +374,9 @@ print("Print predicted results of testing dataset: ", Y_pred)
 report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
-,
+    ,
 
-'K-means':code=>`
+    'K-means': code => `
 # example code for K-means
 
 # import libraries
@@ -402,9 +405,9 @@ labeledData = pd.concat((df[X], df['Clusters']), axis=1)
 # plot clusters
 sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
 `
-,
+    ,
 
-'Apriori':code=>`
+    'Apriori': code => `
 # example code for Apriori
 
 # import libraries
@@ -445,7 +448,7 @@ print(rules)
 //     from sklearn.metrics import classification_report
 
 
-    
+
 //     # independent variales
 //     X = df[['Age']]
 //     # dependent variable, our target variable
@@ -524,7 +527,7 @@ print(rules)
 //     rules = rules[ ((rules['confidence'] > 0.1) & (rules['lift'] > 1) ]
 //     print(rules)
 //     `
-    
+
 // }
 
 const Analysis = () => {
@@ -537,7 +540,7 @@ const Analysis = () => {
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let [visibleModalTabs, setVisibleModalTabs] = useState([0, 1])
     let [currentPresetIndex, setCurrentPresetIndex] = useState(-1)
-    let [dfJSON,setDfJSON] = useState('')//dataframe json
+    let [dfJSON, setDfJSON] = useState('')//dataframe json
     let dataset = useSelector(state => state.dataset)
     let preset = useSelector(state => state.preset)
     let kernelRef = useRef()
@@ -547,7 +550,7 @@ const Analysis = () => {
     let { getData, result, input } = useSimpleForm({
         default_key: 'default_value'
     })
- 
+
 
     let user = useSelector(state => state.auth).user
     let identifier = option + '#' + model
@@ -556,36 +559,42 @@ const Analysis = () => {
 
     let codeParent = useRef()
     let { ref, hide: hideSelections } = useToggleGroup()
-    const [code,setCode] = useState('')
+    const [code, setCode] = useState('')
 
-    useEffect(()=>{
+    useEffect(() => {
         if(!code) return
+
         codeParent.current.innerHTML = ''
         let pre = document.createElement('pre')
-        pre.setAttribute('data-executable','true')
-        pre.setAttribute('data-language','python')
+        pre.setAttribute('data-executable', 'true')
+        pre.setAttribute('data-language', 'python')
         codeParent.current.appendChild(pre)
         pre.innerHTML = code
         thebelab.bootstrap();
 
         thebelab.on("status", async function (evt, data) {
-            if(data.status === 'ready'){
+            if (data.status === 'ready') {
                 kernelRef.current = data.kernel
+                console.log('kernel ready');
                 // alert('Ready')
                 // setActivateStatus('Ready')
             }
         })
-    },[code])
+    }, [code])
 
-    const runCode = async (e)=>{
-        let res = await fetch('/file/?filename=' + MethodSampleFile[option]+'&default='+'true', {
-            method: 'GET',
-            headers: authHeader()
+    const runCode = async (e) => {
+        let res = await fetchByJSON('current_data_json', {
+            filename: dataset.filename
         })
+
+        // let res = await fetch('/file/?filename=' + MethodSampleFile[option] + '&default=' + 'true', {
+        //     method: 'GET',
+        //     headers: authHeader()
+        // })
 
         let json = await res.json();
 
-        let res2 = await kernelRef.current.requestExecute({code:InitialCode[option](json.data)}).done
+        let res2 = await kernelRef.current.requestExecute({ code: InitialCode[option](json.data) }).done
 
         document.querySelector('.thebelab-run-button').click()
     }
@@ -597,13 +606,12 @@ const Analysis = () => {
         //when option and model changes, set default preset
         // console.log(presetsArr.length ? presetsArr[presetsArr.length-1] : null);
         // setCurrentPreset(presetsArr.length ? presetsArr[presetsArr.length-1] : null)
-    }, [option, model,preset])
-
+    }, [option, model, preset])
     let submit = useCallback(async () => {
         dispatch(OptionActions.setOption(['analysis', option, model, { ...result }]))
         let res = await fetchByJSON(`analysis/${option}`, { ...result, filename: dataset.filename })   //send request
         let json = await res.json()     // receive request
-
+        setCode(getCodeFromResult(option, model, result))
         // json.cond.replace(/&/g, ",  ")
         $('#display_query').text(json.cond)
         $('#display_results').html(json.para_result)
@@ -613,14 +621,14 @@ const Analysis = () => {
     }, [result, option, model])
 
     let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model) ? OptionModels[option][model] : e => <div></div>
-    let currentPreset = currentPresetIndex>-1 && currentPresetIndex<presetsArr.length?presetsArr[currentPresetIndex]:null;
+    let currentPreset = currentPresetIndex > -1 && currentPresetIndex < presetsArr.length ? presetsArr[currentPresetIndex] : null;
 
-    const selectPreset = (presetIndex,currentResult) => {
+    const selectPreset = (presetIndex, currentResult) => {
         setCurrentPresetIndex(presetIndex)
         dispatch(OptionActions.setOption(['analysis', option, model, { ...currentResult }]))
     }
 
-    const updatePreset = () => dispatch(PresetActions.updatePreset({ userId: user.id, filename: dataset.filename, identifier, presetName:currentPreset,result }))
+    const updatePreset = () => dispatch(PresetActions.updatePreset({ userId: user.id, filename: dataset.filename, identifier, presetName: currentPreset, result }))
 
     const addPreset = () => {
         dispatch(PresetActions.addPreset({ userId: user.id, filename: dataset.filename, identifier, result }))
@@ -632,9 +640,9 @@ const Analysis = () => {
         setCurrentPresetIndex(-1)
     }
 
-    const deletePreset = (presetName)=>{
+    const deletePreset = (presetName) => {
         dispatch(PresetActions.deletePreset({ userId: user.id, filename: dataset.filename, identifier, presetName }))
-        if(currentPresetIndex >= presetsArr.length) setCurrentPresetIndex(presetsArr.length - 1)
+        if (currentPresetIndex >= presetsArr.length) setCurrentPresetIndex(presetsArr.length - 1)
     }
 
     return (
@@ -647,9 +655,9 @@ const Analysis = () => {
                 // let data = getData()
                 // console.log(data)
             }} setIsOpen={setShowSubOptionModal}>
-                <div style={{zIndex:1000}} className="float-right flex justify-end items-center relative right-2 top-2 gap-4">
+                <div style={{ zIndex: 1000 }} className="float-right flex justify-end items-center relative right-2 top-2 gap-4">
                     <div>
-                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No models'} defaultValue={currentPreset} onSelect={(e,i) => selectPreset(i,presets[e])} deletable={true} onDelete={(e)=>{
+                        <DropDown zIndex={1000} items={presetsArr} defaultText={'No models'} defaultValue={currentPreset} onSelect={(e, i) => selectPreset(i, presets[e])} deletable={true} onDelete={(e) => {
                             deletePreset(e)
                         }} />
                     </div>
@@ -709,28 +717,23 @@ const Analysis = () => {
                         }
                     }} />
 
-                    <Button text={'Display Sandbox Code'} width='w-65' onClick={async () =>  {
-                        // setCode(DisplayCode[option](''))
-                        setCode(DisplayCode[model](''))
+                    <Button text={'Display Sandbox Code'} width='w-65' onClick={async () => {
 
                     }} />
 
-                    <Button onClick={()=>{
+                    <Button onClick={() => {
                         runCode()
                     }} hasPadding={false} disabled={!code} text="SandBox Run" overrideClass={`w-40 rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
                         ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
 
                 </div>
             </div>
-            
-          
 
             <div className='flex-grow-1 w-full' ref={codeParent}>
-                {code?code:<div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
                     Select a model to see the corresponding code
                 </div>}
             </div>
-
 
             <div className=" w-full">
                 <div className='mx-5 w-12 w-full justify-start'>
@@ -757,7 +760,7 @@ const Analysis = () => {
             </div>
 
         </div>
-      
+
 
     )
 }
