@@ -83,27 +83,34 @@ import pandas as pd
 from io import StringIO
 data_io = StringIO(r"""${code}""")
 df = pd.read_json(data_io)
+`,
+
+associate_rule:code=>`
+import pandas as pd
+from io import StringIO
+data_io = StringIO(r"""${code}""")
+df = pd.read_json(data_io)
+def transform_transaction(val):
+    if val <= 0:
+        return 0
+    if val >= 1:
+        return 1
+df['Quantity']= 1
+df = df.groupby(['Transaction','Item'])['Quantity'].sum().unstack().fillna(0)
+df = df.applymap(transform_transaction)
 `
 }
 const DisplayCode = {
-    regression:code=>`
-# example code for regression
+    'Linear Regression':code=>`
+# example code for Linear Regression
 
 # import libraries
-from sklearn.model_selection import train_test_split, cross_val_score, KFold
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
 from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
 
 # read sample dataset 'house_price_prediction_regression.csv'
-print(df.head(5))
-#      date      price      bedrooms  bathrooms  sqft_living  sqft_lot  floors  ...
-#0 2014-05-02   313000.0         3       1.50         1340      7912     1.5   
-#1 2014-05-02  2384000.0         5       2.50         3650      9050     2.0   
-#2 2014-05-02   342000.0         3       2.00         1930     11947     1.0   
-#3 2014-05-02   420000.0         3       2.25         2000      8030     1.0   
-#4 2014-05-02   550000.0         4       2.50         1940     10500     1.0   
+print(df.head(3))
 
 # multiple independent variales
 X = ['bedrooms','sqft_lot','yr_built']
@@ -111,109 +118,309 @@ X = ['bedrooms','sqft_lot','yr_built']
 Y = 'price'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
 # build a model, users can modify parameters
-# model 1: Linear Regression
 model = LinearRegression(fit_intercept=True, normalize=False) 
-# model 2: Decision Tree Regression, remove "#" to check
-# model = DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=3, max_features=None, max_leaf_nodes=None, random_state=None)
-# model 3: Random Forests Regression, remove "#" to check
-# model = RandomForestRegressor(n_estimators=100, criterion='mse, max_depth=3, max_features='auto', max_leaf_nodes=None, random_state=None)
-# model 4: SVM Regression, remove "#" to check
-# model = SVR(kernel='rbf', gamma=0.01, C=1.0)
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-# print predicted results
-print(Y_pred)
-# run kfold to validate dataset
-kfold = KFold(n_splits=10, random_state=7, shuffle=True)
+print("Print predicted results of testing dataset: ", Y_pred)
+
 # measure performance of model with metric
-metric = "neg_mean_absolute_error" 
-metric_res = cross_val_score(model, df[X], df[Y], cv=kfold, scoring=metric)
-# print related statistics of metric
-print("Metric:  " + metric + " mean=" + str(metric_res.mean()) + "; standard deviation=" + str(metric_res.std()))
+print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
 `,
 
-classification:code=>`
-
-# example code for classification
+'Decision Tree Regression':code=>`
+# example code for Decision Tree Regression
 
 # import libraries
-from sklearn.model_selection import train_test_split, cross_val_score, KFold
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+from sklearn.tree import DecisionTreeRegressor
+
+# read sample dataset 'house_price_prediction_regression.csv'
+print(df.head(3))
+
+# multiple independent variales
+X = ['bedrooms','sqft_lot','yr_built']
+# one dependent variable, our target variable
+Y = 'price'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
+# build a model, users can modify parameters
+model = DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=3, max_features=None, max_leaf_nodes=None, random_state=None)
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
+print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
+`,
+
+'Random Forests Regression':code=>`
+# example code for Random Forests Regression
+
+# import libraries
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+from sklearn.ensemble import RandomForestRegressor
+
+# read sample dataset 'house_price_prediction_regression.csv'
+print(df.head(3))
+
+# multiple independent variales
+X = ['bedrooms','sqft_lot','yr_built']
+# one dependent variable, our target variable
+Y = 'price'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
+# build a model, users can modify parameters
+model = RandomForestRegressor(n_estimators=100, criterion='mse', max_depth=3, max_features='auto', max_leaf_nodes=None, random_state=None)
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
+print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
+`,
+
+'SVM Regression':code=>`
+# example code for SVM Regression
+
+# import libraries
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+from sklearn.svm import SVR
+
+# read sample dataset 'house_price_prediction_regression.csv'
+print(df.head(3))
+
+# multiple independent variales
+X = ['bedrooms','sqft_lot','yr_built']
+# one dependent variable, our target variable
+Y = 'price'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
+# build a model, users can modify parameters
+model = SVR(kernel='rbf', gamma=0.01, C=1.0)
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
+print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
+`,
+
+'Logistic Regression':code=>`
+
+# example code for Logistic Regression
+
+# import libraries
+from sklearn.model_selection import train_test_split 
 from sklearn.metrics import classification_report
+from sklearn.linear_model import LogisticRegression
 
 # read sample dataset 'credit_card_default_classification.csv'
-print(df.head(5))
+print(df.head(3))
+
 # multiple independent variales
 X = ['X1']
 # dependent variable, our target variable
 Y = 'Y'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
 # build a model, users can modify parameters
-# model 1: Logistic Regression
 model = LogisticRegression(solver='lbfgs', C=1.0)
-# model 2: Decision Tree Classifier, remove "#" to check
-# model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
-# model 3: Random Forests Classifier, remove "#" to check
-# model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
-# model 4: SVM Classifier, remove "#" to check
-# model = SVC(kernel='rbf', gamma=0.01, C=1.0)
-# model 5: Naive Bayes Classifier, remove "#" to check
-# model = GaussianNB()
+
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-# print predicted results
-print(Y_pred)
-# measure performance of model with 'Classification Report'
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
 report = classification_report(Y_test, Y_pred)
-# print Classification Report
-print(report)
+print("Measure performance of model with Classification Report: ", report)
 `
 ,
-clustering:code=>`
-# example code for clustering
+
+'Decision Tree Classifier':code=>`
+
+# example code for Decision Tree Classifier
 
 # import libraries
-import pandas as pd
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import classification_report
+from sklearn.tree import DecisionTreeClassifier
+
+# read sample dataset 'credit_card_default_classification.csv'
+print(df.head(3))
+
+# multiple independent variales
+X = ['X1']
+# dependent variable, our target variable
+Y = 'Y'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
+# build a model, users can modify parameters
+model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
+report = classification_report(Y_test, Y_pred)
+print("Measure performance of model with Classification Report: ", report)
+`
+,
+'Random Forests Classifier':code=>`
+
+# example code for Random Forests Classifier
+
+# import libraries
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import classification_report
+from sklearn.ensemble import RandomForestClassifier
+
+# read sample dataset 'credit_card_default_classification.csv'
+print(df.head(3))
+
+# multiple independent variales
+X = ['X1']
+# dependent variable, our target variable
+Y = 'Y'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
+# build a model, users can modify parameters
+model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
+report = classification_report(Y_test, Y_pred)
+print("Measure performance of model with Classification Report: ", report)
+`
+,
+'SVM Classifier':code=>`
+
+# example code for SVM Classifier
+
+# import libraries
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import classification_report
+from sklearn.svm import SVC
+
+# read sample dataset 'credit_card_default_classification.csv'
+print(df.head(3))
+
+# multiple independent variales
+X = ['X1']
+# dependent variable, our target variable
+Y = 'Y'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
+# build a model, users can modify parameters
+model = SVC(kernel='rbf', gamma=0.01, C=1.0)
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
+report = classification_report(Y_test, Y_pred)
+print("Measure performance of model with Classification Report: ", report)
+`
+,
+'Naive Bayes Classifier':code=>`
+
+# example code for Naive Bayes Classifier
+
+# import libraries
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import classification_report
+from sklearn.naive_bayes import GaussianNB
+
+# read sample dataset 'credit_card_default_classification.csv'
+print(df.head(3))
+# multiple independent variales
+X = ['X1']
+# dependent variable, our target variable
+Y = 'Y'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+
+# build a model, users can modify parameters
+model = GaussianNB()
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+
+# measure performance of model with metric
+report = classification_report(Y_test, Y_pred)
+print("Measure performance of model with Classification Report: ", report)
+`
+,
+
+'K-means':code=>`
+# example code for K-means
+
+# import libraries
+from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 import seaborn as sns
 
 # read sample dataset "Mall_Customers.csv"
-print(df.head(5))
-#     CustomerID   Genre  Age  Annual Income (k$)  Spending Score (1-100)
-# 0           1    Male   19                  15                      39
-# 1           2    Male   21                  15                      81
-# 2           3  Female   20                  16                       6
-# 3           4  Female   23                  16                      77
-# 4           5  Female   31                  17                      40
+print(df.head(3))
 
 # independent variales
-X = ['Genre', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']
-# one hot code, use integer to represent categoriacl values
-label = LabelEncoder()
-df['Genre'] = label.fit_transform(df['Genre'])
-# convert column 'Genre' to numeric data type
-df['Genre'] = pd.to_numeric(df['Genre'], errors='coerce')
-# check data type
-# print(df.dtypes)
+X = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
 # normalize dataset
 scaled_data = StandardScaler().fit_transform(df[X]) 
-# print(scaled_data)
+
 # build a model, users can modify parameters
 model = KMeans(n_clusters=3, init='k-means++', algorithm='auto', random_state=None)
+
+# fit model to train
 pred = model.fit(scaled_data)
+
+# put predicted clusters into dataset
 df['Clusters'] = pd.DataFrame(pred.labels_)
-count_val = df['Clusters'].value_counts()
-print("Number of Points in Each Cluster:")
-print(count_val)
+# concatenate clusters to original dataset
 labeledData = pd.concat((df[X], df['Clusters']), axis=1)
+# plot clusters
 sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
+`
+,
+
+'Apriori':code=>`
+# example code for Apriori
+
+# import libraries
+from mlxtend.frequent_patterns import apriori, association_rules 
+
+# read dataset "BreadBasket_DMS.csv"
+print(df.head(3))
+
+# call apriori to get frequent itemsets
+frequent_itemsets = apriori(df, min_support=0.01, use_colnames=True)
+print(frequent_itemsets)
+# get association rules of frequent itemsets
+rules = association_rules(frequent_itemsets, metric='support', min_threshold=0.01)
+# filter rules based on conditions
+rules = rules[ ((rules['confidence'] > 0.1) & (rules['lift'] > 1) ]
+print(rules)
 `
 }
 
@@ -503,7 +710,9 @@ const Analysis = () => {
                     }} />
 
                     <Button text={'Display Sandbox Code'} width='w-65' onClick={async () =>  {
-                        setCode(DisplayCode[option](''))
+                        // setCode(DisplayCode[option](''))
+                        setCode(DisplayCode[model](''))
+
                     }} />
 
                     <Button onClick={()=>{
