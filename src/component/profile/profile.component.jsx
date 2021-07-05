@@ -9,7 +9,7 @@ import CheckButton from "react-validation/build/button";
 import Input from "react-validation/build/input";
 import { reset_password_confirm } from '../../actions/auth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {change_profile_pic, change_instructor} from '../../actions/profile';
+import {change_profile_pic, change_instructor, change_user_fields} from '../../actions/profile';
 import { LineChart, PieChart, AreaChart } from 'react-chartkick'
 import 'chartkick/chart.js'
 import authHeader from '../../services/auth-header';
@@ -17,7 +17,7 @@ import {  useJsonToCsv } from 'react-json-csv';
 import axios from "axios";
 import {config} from '../../config/client'
 
-const ProfileSection = ({currentUser}) => {
+const ProfileSection = ({currentUser, parentCallback}) => {
     const { avatar } = currentUser;
     const { user_bio } = currentUser;
     const {report_to} = currentUser;
@@ -26,20 +26,36 @@ const ProfileSection = ({currentUser}) => {
     const [bio, setBio] = useState(user_bio);
     const [editBio, setEditBio] = useState(false)
     const dispatch = useDispatch();
-  
-  const [instructors_list, setInstructorsList] = useState([])
-  let [selectInstructor, setInstructor] = useState('Select your instructor')
-    useEffect(() => {
-      fetchInstructor();
-      if(report_to !==''){
-        setInstructor(report_to);
-      }
-    }, []);
+    const [instructors_list, setInstructorsList] = useState([]);
+    
+    let [selectInstructor, setInstructor] = useState('Select your instructor')
+      useEffect(() => {
+        fetchInstructor();
+        if(report_to !==''){
+          setInstructor(report_to);
+        }
+      }, []);
 
     useEffect(async () => {
       
       setProfileImg('data:image/png;base64,' + avatar)
     }, [avatar]);
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      let fields = {};
+      if(bio !== user_bio){
+        fields['user_bio'] = bio
+      }
+      dispatch(change_user_fields(fields))
+      .then(() => {
+        console.log("fields change successful")
+      })
+      .catch((err) => {
+        console.log(err)
+      });
+      setEditBio(false);
+    };
+
     const fetchInstructor = async () => {
       const response = await fetch(config.endpoint+"/instructors", {
         method: 'GET',
@@ -54,7 +70,8 @@ const ProfileSection = ({currentUser}) => {
     };
     const handleChange = event => {
       const {name, value} = event.target;
-      setBio(value)
+      setBio(value);
+      parentCallback(value);
     };
 
     const handleImageUpload = async e => {
@@ -83,7 +100,7 @@ const ProfileSection = ({currentUser}) => {
           <div className="col-md-5 p-8 mt-16">
               <div className="row align-items-center">
                   <div className="col-md-7">
-                      <h4 className="mb-1 text-gray-900 text-4xl">{currentUser.name}</h4>
+                      <h4 className="mb-1 text-gray-900 text-4xl">{currentUser.fullname}</h4>
                   </div>
               </div>
               <div className="row mb-4">
@@ -128,26 +145,83 @@ const ProfileSection = ({currentUser}) => {
 }
 
 const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
+  const [bio, setBio] = useState(currentUser.user_bio);
   const { message } = useSelector(state => state.message);
   const parentRef = useRef();
+  const [isEditName, setIsEditName] = useState(false);
+  const [isEditEmail, setIsEditEmail] = useState(false);
+  const [fullname, setFullname] = useState(currentUser.fullname)
+  const [email, setEmail] = useState(currentUser.email)
+  const form = useRef();
+  const dispatch = useDispatch();
+
+ const eventhandler = data => {
+    setBio(data);
+ }
+
+  const handleChange = event => {
+    const {name, value} = event.target;
+    if(name==='fullname')
+      setFullname( value);
+    else
+      setEmail(value);
+  };
+
+  const handleSubmit = (e) => {
+        e.preventDefault();
+        let fields = {};
+        if(fullname !== currentUser.fullname){
+          fields['fullname'] = fullname
+        }
+        if(email !== currentUser.email){
+          fields['email'] = email
+        }
+        if(bio !== currentUser.user_bio){
+          fields['user_bio'] = bio
+        }
+        dispatch(change_user_fields(fields))
+        .then(() => {
+          console.log("fields change successful")
+        })
+        .catch((err) => {
+          console.log(err)
+        });
+        setIsEditEmail(false);
+        setIsEditName(false);
+  };
+
   useEffect(() => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
   }, [tabpanel]);
 
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
-                <Form name="uploadFileForm" method="POST">
-                      <ProfileSection currentUser={currentUser}/>
+                <Form name="uploadFileForm" method="POST" ref={form} onSubmit={handleSubmit}>
+                      <ProfileSection currentUser={currentUser} parentCallback={eventhandler}/>
 
                       <hr className="my-16" />
                       <div className="form-row">
                           <div className="form-group my-2">
                               <label>Full name</label>
-                              <input type="text" id="fullname" className="form-control-profile" placeholder={currentUser.name} disabled/>
+                              <div className="flex flex-row items-center">
+
+                                {isEditName?
+                                  <input type="text" name='fullname' id="fullname" className="form-control-profile"  onChange={handleChange} />:
+                                  <input type="text" id="fullname" className="form-control-profile" placeholder={fullname} disabled />
+                                }
+                                
+                                <FontAwesomeIcon className="pl-4" icon="edit" onClick={()=>setIsEditName(!isEditName)} />
+                              </div>
                           </div>
                       </div>
                       <div className="form-group my-2">
                           <label >Email</label>
-                          <input type="email" className="form-control-profile" id="inputEmail4" placeholder={currentUser.email} disabled/>
+                          <div className="flex flex-row items-center">
+                            {isEditEmail?
+                              <input type="email" name='email' className="form-control-profile" id="inputEmail4" onChange={handleChange}/>:
+                              <input type="email" className="form-control-profile" id="inputEmail4" placeholder={email} disabled/>
+                                }
+                            <FontAwesomeIcon className="pl-4" icon="edit" onClick={()=>setIsEditEmail(!isEditEmail)} />
+                          </div>
                       </div>
                       <hr className="my-16" /> 
 
@@ -485,7 +559,6 @@ const ChangePassword = ({ tabpanelIndex, tabpanel, currentUser }) => {
 
     form.current.validateAll();
     if (checkBtn.current.context._errors.length === 0) {
-        console.log(userCredentials);
         let token = currentUser.accessToken;
         token = token.replaceAll("$", ".")
         dispatch(reset_password_confirm(token, newPassword))

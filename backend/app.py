@@ -420,7 +420,7 @@ def login():
         last_logged_in = user.last_logged_in.astimezone(to_zone)
         if user.username == 'admin':
             role = "admin"
-        return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'name':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
+        return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'fullname':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
             'progress':progress, 'last_logged':str(last_logged_in), "user_bio":str(user.user_bio), "report_to":user.report_to, "role":role}, 200
     except UnauthorizedRole:
         raise UnauthorizedRole('User with '+role+' permission not allowed')
@@ -609,6 +609,9 @@ def reset_link():
         raise InternalServerError('Something went wrong')
 
 
+
+
+
 @app.route("/list_files_json",methods=['POST'])
 def file_list():
     files = mongo_collection.find({}, {"_id": 0, "logo_name": 1, "desc": 1, "file_name": 1, "source_link": 1})
@@ -749,6 +752,22 @@ def report_instructor():
     update_instructor(user_id, ins_email)
     return jsonify(success=True)
 
+@app.route('/change_user_fields',methods=['PATCH'])
+@cross_origin(origin="*")
+@jwt_required()
+def change_user_fields():
+    user_id = get_jwt_identity()
+    user = User.objects(id=user_id)[0]
+    fields = json.loads(request.data)
+    for field in fields:
+        
+        if field == 'email':
+            students = user_collection.find({"email":user[field]}) 
+            for student in students:
+                user_collection.update_one({"email":student["email"]}, {'$set':{'report_to':fields[field]}})
+        user[field] = fields[field] 
+    user.save()
+    return jsonify(success=True)
 
 def update_instructor(user_id, new_instructor_email):
     old_instructor_email = None

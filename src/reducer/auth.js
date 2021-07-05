@@ -13,6 +13,13 @@ import {
   CHANGE_PROFILE_PIC_FAILURE,
   CHANGE_INSTRUCTOR_SUCCESS,
   CHANGE_INSTRUCTOR_FAILURE,
+
+  CHANGE_EMAIL_SUCCESS,
+  CHANGE_FULLNAME_SUCCESS,
+  CHANGE_EMAIL_FAILURE,
+  CHANGE_FULLNAME_FAILURE,
+  CHANGE_USER_BIO_SUCCESS,
+  CHANGE_USER_BIO_FAILURE,
 } from "../actions/types";
 
 let user = JSON.parse(localStorage.getItem("user"));
@@ -61,6 +68,10 @@ export default function (state = initialState, action) {
     case CHANGE_PROFILE_PIC_FAILURE:
     case LOGOUT_FAIL:
     case CHANGE_INSTRUCTOR_FAILURE:
+    case CHANGE_EMAIL_FAILURE:
+    case CHANGE_USER_BIO_FAILURE:
+    case CHANGE_FULLNAME_FAILURE:
+
         return {
             ...state
         };
@@ -78,6 +89,30 @@ export default function (state = initialState, action) {
           user:{
             ...state.user,
             report_to : payload.email
+          }
+        }
+    case CHANGE_EMAIL_SUCCESS:
+      return {
+        ...state,
+        user:{
+          ...state.user,
+          email:payload.email
+        }
+      }
+      case CHANGE_USER_BIO_SUCCESS:
+        return {
+          ...state,
+          user:{
+            ...state.user,
+            user_bio:payload.user_bio
+          }
+        }
+      case CHANGE_FULLNAME_SUCCESS:
+        return {
+          ...state,
+          user:{
+            ...state.user,
+            fullname:payload.fullname,
           }
         }
     default:

@@ -42,11 +42,34 @@ const change_profile_pic = async (data) => {
     }
     return false;
   }
+  const change_user_fields = async(fields) => {
+    let res = await fetch(config.endpoint+'/change_user_fields', {
+      method: 'PATCH',
+      body:JSON.stringify(fields),
+      headers: authHeader()
+    })
+    let json = await res.json()
+
+    if (json.success) {
+      let user = JSON.parse(localStorage.getItem("user"));
+      for(let field in fields){
+        user[field] = fields[field];
+      }
+      // user.report_to = email;
+      // // console.log(user.avatar);
+      localStorage.setItem("user", JSON.stringify(user));
+      return true;
+    }
+    return false;
+  }
   // const getInstructorsList = async () => {
   //   return await fetch(config.endpoint + 'instructors')
   //     .then(data => data.json())
   // }
   export default {
     change_profile_pic,
-    change_instructor
+    change_instructor,
+    change_user_fields
   };
+
+  

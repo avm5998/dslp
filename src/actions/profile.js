@@ -4,6 +4,14 @@ CHANGE_PROFILE_PIC_SUCCESS,
 CHANGE_PROFILE_PIC_FAILURE, 
 CHANGE_INSTRUCTOR_SUCCESS,
 CHANGE_INSTRUCTOR_FAILURE,
+CHANGE_EMAIL_SUCCESS,
+CHANGE_FULLNAME_SUCCESS,
+CHANGE_EMAIL_FAILURE,
+CHANGE_FULLNAME_FAILURE,
+CHANGE_USER_BIO_SUCCESS,
+CHANGE_USER_BIO_FAILURE,
+
+
 SET_MESSAGE
   } from "./types";
 
@@ -61,3 +69,52 @@ SET_MESSAGE
           }
         );
   };
+
+  export const change_user_fields = (fields) => (dispatch) => {
+    return ProfileService.change_user_fields(fields).then(
+      (response) => {
+        console.log("fields",fields);
+          if("fullname" in fields){
+            console.log(fields["fullname"])
+            dispatch({
+              type: CHANGE_FULLNAME_SUCCESS,
+              payload:{"fullname":fields["fullname"]}
+            });
+          }
+          if("email" in fields){
+            dispatch({
+              type: CHANGE_EMAIL_SUCCESS,
+              payload:{"email":fields["email"]}
+            });
+          }
+          if("user_bio" in fields){
+            dispatch({
+              type: CHANGE_USER_BIO_SUCCESS,
+              payload:{"user_bio":fields["user_bio"]}
+            });
+          }
+          
+          return Promise.resolve();
+        },
+        (error) => {
+          const message = error.message;  
+          if("fullname" in fields){
+            console.log(fields["fullname"])
+            dispatch({
+              type: CHANGE_FULLNAME_FAILURE
+            });
+          }
+          if("email" in fields){
+            dispatch({
+              type: CHANGE_EMAIL_FAILURE
+            });
+          }
+          if("user_bio" in fields){
+            dispatch({
+              type: CHANGE_USER_BIO_FAILURE
+            });
+          }
+          return Promise.reject();
+        }
+      );
+  }
