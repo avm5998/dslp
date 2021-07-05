@@ -762,7 +762,7 @@ def change_user_fields():
     for field in fields:
         
         if field == 'email':
-            students = user_collection.find({"email":user[field]}) 
+            students = user_collection.find({"report_to":user[field]}) 
             for student in students:
                 user_collection.update_one({"email":student["email"]}, {'$set':{'report_to':fields[field]}})
         user[field] = fields[field] 
