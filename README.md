@@ -78,10 +78,7 @@ Here Pm2 is suggested for managing applications in Linux.
     - Show applications status ```pm2 ls```
 
 - Backend
-    - ```export ENV_FILE_LOCATION=./.env```
-    - ```export FLASK_APP=backend/app.py```
-    - If application does not exist in pm2 ```pm2 start "flask run --host=0.0.0.0"```
-    - If application exists in pm2 ```pm2 restart "flask run --host=0.0.0.```
+```pm2 start "export ENV_FILE_LOCATION=./.env;export FLASK_APP=backend/app.py;flask run --host=0.0.0.0"```
 ### Re-deploy
 - Enter this folder
 ```bash

@@ -54,7 +54,7 @@ const Menu = {
     { text: "Guide", icon: "book-reader", to: "/guide" },
     { text: "Summary", icon: "chart-area", to: "/summary" },
     { text: "Visualization", icon: "chart-pie", to: "/visualization" },
-    // { text: 'Sandbox', icon: 'chart-area', to: '/sandbox' },
+    { text: 'Sandbox', icon: 'chart-area', to: '/sandbox' },
     { text: "Query", icon: "search", to: "/query" },
     { text: "Clean", icon: "broom", to: "/clean" },
     { text: "Feature Engineering", icon: "cog", to: "/featureEngineering" },
@@ -359,7 +359,7 @@ const Routes = (props) => {
                 <Route exact path={["/home", "/"]} component={Home} />
                 <Route path="/summary" component={Summary} />
                 <Route path="/visualization" component={Visualization} />
-                {/* <Route path='/sandbox' component={Sandbox} /> */}
+                <Route path='/sandbox' component={Sandbox} />
                 <Route path="/query" component={Query} />
                 <Route path="/clean" component={Cleaning} />
                 <Route
