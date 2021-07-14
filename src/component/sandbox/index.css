@@ -1,0 +1,12 @@
+.run{
+    background-color: #8bd3dd;
+    color: #001858;
+    padding:0.5rem 2rem;
+    cursor: pointer;
+}
+
+.thebelab-cell{
+    margin-left: 1px;
+    margin-right: 1px;
+    border:0px solid #aaa!important;
+}
