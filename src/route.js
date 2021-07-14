@@ -41,8 +41,9 @@ import avatar from "./assets/images/avatar.png";
 import arrow from "./assets/images/arrow.svg";
 
 import { history } from "./store";
-
 import "./route.css";
+import logo from './assets/images/logo.png'
+
 //add all solid icon-fonts
 library.add(fas);
 library.add(far);
@@ -65,15 +66,18 @@ const Menu = {
 };
 
 const DATA_MINING_SVG = () => (
-  <svg
-    fill="#ffffff"
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 50 50"
-    width="25px"
-    height="25px"
-  >
-    <path d="M 7 2 C 4.199219 2 2 4.199219 2 7 L 2 34 C 2 36.800781 4.199219 39 7 39 L 34 39 C 36.800781 39 39 36.800781 39 34 L 39 7 C 39 4.199219 36.800781 2 34 2 Z M 7 4 L 34 4 C 35.699219 4 37 5.300781 37 7 L 37 34 C 37 35.699219 35.699219 37 34 37 L 7 37 C 5.300781 37 4 35.699219 4 34 L 4 7 C 4 5.300781 5.300781 4 7 4 Z M 41 11 L 41 13 L 43 13 C 44.699219 13 46 14.300781 46 16 L 46 43 C 46 44.699219 44.699219 46 43 46 L 16 46 C 14.300781 46 13 44.699219 13 43 L 13 41 L 11 41 L 11 43 C 11 45.800781 13.199219 48 16 48 L 43 48 C 45.800781 48 48 45.800781 48 43 L 48 16 C 48 13.199219 45.800781 11 43 11 Z" />
-  </svg>
+  <>
+  <img src={logo}/>
+  </>
+  // <svg
+  //   fill="#ffffff"
+  //   xmlns="http://www.w3.org/2000/svg"
+  //   viewBox="0 0 50 50"
+  //   width="25px"
+  //   height="25px"
+  // >
+  //   <path d="M 7 2 C 4.199219 2 2 4.199219 2 7 L 2 34 C 2 36.800781 4.199219 39 7 39 L 34 39 C 36.800781 39 39 36.800781 39 34 L 39 7 C 39 4.199219 36.800781 2 34 2 Z M 7 4 L 34 4 C 35.699219 4 37 5.300781 37 7 L 37 34 C 37 35.699219 35.699219 37 34 37 L 7 37 C 5.300781 37 4 35.699219 4 34 L 4 7 C 4 5.300781 5.300781 4 7 4 Z M 41 11 L 41 13 L 43 13 C 44.699219 13 46 14.300781 46 16 L 46 43 C 46 44.699219 44.699219 46 43 46 L 16 46 C 14.300781 46 13 44.699219 13 43 L 13 41 L 11 41 L 11 43 C 11 45.800781 13.199219 48 16 48 L 43 48 C 45.800781 48 48 45.800781 48 43 L 48 16 C 48 13.199219 45.800781 11 43 11 Z" />
+  // </svg>
 );
 
 const LogoutSVG = () => (
@@ -175,7 +179,7 @@ const Routes = (props) => {
                 <Link to={"/"}>
                   <div className="flex justify-center items-center">
                     <DATA_MINING_SVG />
-                    <div className="pl-2">Data Mining</div>
+                    <div className="pl-2">Data Sience Learning Platform</div>
                   </div>
                 </Link>
               </div>
@@ -214,7 +218,7 @@ const Routes = (props) => {
               <div className="fixed flex flex-col left-0 w-2/12 h-full border-r">
                 <div className="flex items-center justify-center h-14 heading">
                 <DATA_MINING_SVG/>
-                  <div className="ml-2">Data mining</div>
+                  <div className="ml-2">Data Sience Mining Platform</div>
                 </div>
 
                 <div className="overflow-y-auto overflow-x-hidden flex-grow sidebar">
