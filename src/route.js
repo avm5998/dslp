@@ -67,7 +67,7 @@ const Menu = {
 
 const DATA_MINING_SVG = () => (
   <>
-  <img src={logo}/>
+  {/* <img src={logo}/> */}
   </>
   // <svg
   //   fill="#ffffff"
@@ -179,7 +179,7 @@ const Routes = (props) => {
                 <Link to={"/"}>
                   <div className="flex justify-center items-center">
                     <DATA_MINING_SVG />
-                    <div className="pl-2">Data Sience Learning Platform</div>
+                    <div className="pl-2">Data Science Learning Platform</div>
                   </div>
                 </Link>
               </div>
@@ -218,7 +218,7 @@ const Routes = (props) => {
               <div className="fixed flex flex-col left-0 w-2/12 h-full border-r">
                 <div className="flex items-center justify-center h-14 heading">
                 <DATA_MINING_SVG/>
-                  <div className="ml-2">Data Sience Mining Platform</div>
+                  <div className="ml-2">Data Science Mining Platform</div>
                 </div>
 
                 <div className="overflow-y-auto overflow-x-hidden flex-grow sidebar">
