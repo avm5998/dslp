@@ -55,25 +55,25 @@ const filenames = [
   },
   {
     id: 3,
-    filename: "Mall_Customers_clustering.csv",
+    filename: "titanic.csv",
     type: "Clustering",
     description: "Clustering dataset",
     method: "Unsupervised"
   },
-  {
-    id: 4,
-    filename: "credit_card_default_classification.csv",
-    type: "Classification",
-    description: "Classification dataset",
-    method: "Supervised"
-  },
-  {
-    id: 5,
-    filename: "house_price_prediction_regression.csv",
-    type: "Regression",
-    description: "Regression dataset",
-    method: "Supervised"
-  }
+  // {
+  //   id: 4,
+  //   filename: "credit_card_default_classification.csv",
+  //   type: "Classification",
+  //   description: "Classification dataset",
+  //   method: "Supervised"
+  // },
+  // {
+  //   id: 5,
+  //   filename: "house_price_prediction_regression.csv",
+  //   type: "Regression",
+  //   description: "Regression dataset",
+  //   method: "Supervised"
+  // }
 ]
 
 const Method = {
