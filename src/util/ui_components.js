@@ -183,6 +183,11 @@ export function Button({
   overrideClass = "",
 }) {
   let style = ButtonTypeStyleText[buttonType];
+  
+  if (typeof customStyle == 'string'){
+    customStyle = {}
+    customStyleText = customStyle
+  }
 
   return (
     <button

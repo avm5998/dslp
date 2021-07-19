@@ -230,7 +230,7 @@ const Cleaning = ({ location }) => {
                 {/* Remove Outliers, open a modal which contains col names and inputs */}
                 {(option === 4 || option === 5) ?
                     <>
-                        <Button onClick={() => setShowSubOptionModal(s => !s)} text={subOptionText} customStyle={'h-10 w-60 ml-10'} />
+                        <Button onClick={() => setShowSubOptionModal(s => !s)} text={subOptionText} customStyleText={'h-10 w-60 ml-10'} />
                     </>
                     : ''}
             </div>
