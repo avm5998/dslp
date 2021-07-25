@@ -35,30 +35,29 @@ npm install
 ### Mac OS
 
 - Clone the repository
-```
-cd ~ #replace with preferred directory
-git clone gitlab@git.cs.rit.edu:lz3519/awesome-data-mining.git
-cd awesome-data-mining
-```
+  ```
+  cd ~ #replace with preferred directory
+  git clone gitlab@git.cs.rit.edu:lz3519/awesome-data-mining.git
+  cd awesome-data-mining
+  ```
 
 - Install Homebrew
-```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+  ```
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
 
 - Install Homebrew for x86 on M1
-```
-arch -x86_64 zsh
-cd /usr/local && mkdir homebrew
-sudo curl -L https://github.com/Homebrew/brew/tarball/master | sudo tar xz --strip 1 -C homebrew
-sudo chown -R <your user> homebrew # replace <your user>
-```
+  ```
+  arch -x86_64 zsh
+  cd /usr/local && mkdir homebrew
+  sudo curl -L https://github.com/Homebrew/brew/tarball/master | sudo tar xz --strip 1 -C homebrew
+  sudo chown -R <your user> homebrew # replace <your user>
+  ```
 
 - Install Nodejs 14 (LTS)
-  ? 12.20.0 [Windows 64](https://nodejs.org/download/release/v12.20.0/node-v12.20.0-win-x64.zip), [Windows 32](https://nodejs.org/download/release/v12.20.0/node-v12.20.0-win-x86.zip), [Mac](https://nodejs.org/download/release/v12.20.0/node-v12.20.0.pkg), [Linux](node-v12.20.0-linux-x64.tar.gz), [Using Package Manager](https://nodejs.org/en/download/package-manager/#nvm)
-```
-brew install node@14
-```
+  ```
+  brew install node@14
+  ```
 
 - Install Mongodb 5 # on x86_64
   ```
@@ -76,33 +75,33 @@ brew install node@14
   ```
   
 - Create a virtualenv environment and install required python packages
-```
-python3 -m venv venv/
-source env/bin/activate
-pip install --upgrade pip
-pip install -r requirements.mac.txt
-```
+  ```
+  python3 -m venv venv/
+  source env/bin/activate
+  pip install --upgrade pip
+  pip install -r requirements.mac.txt
+  ```
 
 - Store credentials for flask
-```
-cp backend/.env.template backend/.env
-# fill up this file with your credentialss
-```
+  ```
+  cp backend/.env.template backend/.env
+  # fill up this file with your credentialss
+  ```
 
 - Launch Flask
-```
-export ENV_FILE_LOCATION=./.env
-export FLASK_APP=backend/app.py
-npm install pm2
-pm2 start "flask run --host=0.0.0.0 --port=9000"
-```
+  ```
+  export ENV_FILE_LOCATION=./.env
+  export FLASK_APP=backend/app.py
+  npm install pm2
+  pm2 start "flask run --host=0.0.0.0 --port=9000"
+  ```
 
 - Compile and start React App
-```
-npm install
-npm run build
-npm start
-```
+  ```
+  npm install
+  npm run build
+  npm start
+  ```
 
 
 ### How to start backend development environment (flask)
