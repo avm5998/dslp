@@ -100,7 +100,8 @@ npm install
   ```
   npm install
   npm run build
-  npm start
+  pm2 serve build 8000 --spa
+  # npm start # non-pm2 alternative
   ```
 
 
