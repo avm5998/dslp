@@ -5,7 +5,7 @@
    "description": "",
    "main": "index.js",
    "scripts": {
-      "start": "webpack-dev-server --port 9001 --history-api-fallback --mode=development",
+      "start": "webpack-dev-server --port 8000 --history-api-fallback --mode=development",
       "start-default": "webpack-dev-server --port 9001 --history-api-fallback --mode=development",
       "build": "webpack --config webpack.config.js --mode=production",
       "compress": "webpack --config webpack.config.js --mode=production",
@@ -38,6 +38,7 @@
       "history": "4.10.1",
       "isomorphic-fetch": "^3.0.0",
       "json2xls": "^0.1.2",
+      "pm2": "^5.1.0",
       "postcss": "^8.2.4",
       "react": "^17.0.1",
       "react-chartkick": "^0.5.1",
