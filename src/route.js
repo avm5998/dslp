@@ -179,7 +179,7 @@ const Routes = (props) => {
                 <Link to={"/"}>
                   <div className="flex justify-center items-center">
                     <DATA_MINING_SVG />
-                    <div className="pl-2">Data Science Learning Platform</div>
+                    <div className="pl-2">Data Science<br/>Learning Platform</div>
                   </div>
                 </Link>
               </div>
@@ -216,7 +216,7 @@ const Routes = (props) => {
             } */}
             {currentUser && (
               <div className="fixed flex flex-col left-0 w-2/12 h-full border-r">
-                <div className="flex items-center justify-center h-14 heading">
+                <div className="flex items-center justify-center h-20 heading">
                 <DATA_MINING_SVG/>
                   <div className="ml-2">Data Science Learning Platform</div>
                 </div>
