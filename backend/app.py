@@ -1198,6 +1198,7 @@ def cond_eng_json():
     df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
     para_result = ''
+    
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     img = BytesIO()
     plt.figure(figsize=(20,20))
