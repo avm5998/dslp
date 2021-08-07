@@ -113,8 +113,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.linear_model import LinearRegression
 
-# read sample dataset 'house_price_prediction_regression.csv'
-
 # multiple independent variales
 X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
@@ -141,13 +139,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.tree import DecisionTreeRegressor
 
-# read sample dataset 'house_price_prediction_regression.csv'
-print(df.head(3))
-
 # multiple independent variales
-X = ['bedrooms','sqft_lot','yr_built']
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
-Y = 'price'
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -170,13 +165,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.ensemble import RandomForestRegressor
 
-# read sample dataset 'house_price_prediction_regression.csv'
-print(df.head(3))
-
 # multiple independent variales
-X = ['bedrooms','sqft_lot','yr_built']
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
-Y = 'price'
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -199,13 +191,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.svm import SVR
 
-# read sample dataset 'house_price_prediction_regression.csv'
-print(df.head(3))
-
-# multiple independent variales
-X = ['bedrooms','sqft_lot','yr_built']
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
-Y = 'price'
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -229,13 +217,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.linear_model import LogisticRegression
 
-# read sample dataset 'credit_card_default_classification.csv'
-print(df.head(3))
-
-# multiple independent variales
-X = ['X1']
-# dependent variable, our target variable
-Y = 'Y'
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -261,13 +245,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.tree import DecisionTreeClassifier
 
-# read sample dataset 'credit_card_default_classification.csv'
-print(df.head(3))
-
-# multiple independent variales
-X = ['X1']
-# dependent variable, our target variable
-Y = 'Y'
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -292,13 +272,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestClassifier
 
-# read sample dataset 'credit_card_default_classification.csv'
-print(df.head(3))
-
-# multiple independent variales
-X = ['X1']
-# dependent variable, our target variable
-Y = 'Y'
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -323,13 +299,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.svm import SVC
 
-# read sample dataset 'credit_card_default_classification.csv'
-print(df.head(3))
-
-# multiple independent variales
-X = ['X1']
-# dependent variable, our target variable
-Y = 'Y'
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -354,12 +326,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.naive_bayes import GaussianNB
 
-# read sample dataset 'credit_card_default_classification.csv'
-print(df.head(3))
-# multiple independent variales
-X = ['X1']
-# dependent variable, our target variable
-Y = 'Y'
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
 X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
 
@@ -384,11 +353,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 import seaborn as sns
 
-# read sample dataset "Mall_Customers.csv"
-print(df.head(3))
-
 # independent variales
-X = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+X = [${code.variablesx.map(e => `'${e}'`).join(',')}]
+
 # normalize dataset
 scaled_data = StandardScaler().fit_transform(df[X]) 
 
@@ -413,8 +380,11 @@ sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
 # import libraries
 from mlxtend.frequent_patterns import apriori, association_rules 
 
-# read dataset "BreadBasket_DMS.csv"
-print(df.head(3))
+# one dependent variable, our target variable
+transid = '${code.trans_id}'
+transitem = '${code.trans_item}'
+basket_data = df.groupby([transid, transitem])['Quantity'].sum().unstack().fillna(0)
+df = basket_data.applymap(transform_transaction)
 
 # call apriori to get frequent itemsets
 frequent_itemsets = apriori(df, min_support=0.01, use_colnames=True)
@@ -422,7 +392,7 @@ print(frequent_itemsets)
 # get association rules of frequent itemsets
 rules = association_rules(frequent_itemsets, metric='support', min_threshold=0.01)
 # filter rules based on conditions
-rules = rules[ ((rules['confidence'] > 0.1) & (rules['lift'] > 1) ]
+rules = rules[((rules['confidence'] > 0.1) & (rules['lift'] > 1))]
 print(rules)
 `
 }
@@ -728,6 +698,16 @@ const Analysis = () => {
 
                 </div>
             </div>
+
+            
+             <br></br>          
+             <br></br>          
+             <br></br> 
+             <br></br>
+             <br></br>          
+             <br></br>          
+          
+         
 
             <div className='flex-grow-1 w-full' ref={codeParent}>
                 {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
