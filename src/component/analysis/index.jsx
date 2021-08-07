@@ -509,6 +509,7 @@ const Analysis = () => {
     let [model, setModel] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let [visibleModalTabs, setVisibleModalTabs] = useState([0, 1])
+    let [optionButtonVisibility, setOptionButtonVisibility] = useState([1, 1, 1])
     let [currentPresetIndex, setCurrentPresetIndex] = useState(-1)
     let [dfJSON, setDfJSON] = useState('')//dataframe json
     let dataset = useSelector(state => state.dataset)
@@ -532,7 +533,7 @@ const Analysis = () => {
     const [code, setCode] = useState('')
 
     useEffect(() => {
-        if(!code) return
+        if (!code) return
 
         codeParent.current.innerHTML = ''
         let pre = document.createElement('pre')
@@ -583,9 +584,10 @@ const Analysis = () => {
         let json = await res.json()     // receive request
         setCode(getCodeFromResult(option, model, result))
         // json.cond.replace(/&/g, ",  ")
-        $('#display_query').text(json.cond)
-        $('#display_results').html(json.para_result)
+        $('#display_query').text(json.cond.trim())
+        $('#display_results').html(json.para_result.trim())
         document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
+        document.querySelector('#model_img_placeholder').classList.add('hidden')
         setShowSubOptionModal(false)
         // console.log(json)   // print
     }, [result, option, model])
@@ -631,114 +633,102 @@ const Analysis = () => {
                             deletePreset(e)
                         }} />
                     </div>
-                    <div>
-                        <Button width="w-40" text={'Clear models'} onClick={clearPreset} />
-                    </div>
-                    <div>
-                        <Button width="w-40" text={'Update model'} onClick={updatePreset} />
-                    </div>
-                    <div>
-                        <Button width="w-40" text={'Add model'} onClick={addPreset} />
-                    </div>
+                    {optionButtonVisibility[0] ?
+                        <div>
+                            <Button width="w-40" text={'Clear models'} onClick={clearPreset} />
+                        </div>
+                        : null}
+                    {optionButtonVisibility[1] ?
+                        <div>
+                            <Button width="w-40" text={'Update models'} onClick={updatePreset} />
+                        </div>
+                        : null}
+                    {optionButtonVisibility[2] ?
+                        <div>
+                            <Button width="w-40" text={'Add model'} onClick={clearPreset} />
+                        </div>
+                        : null}
                 </div>
                 <OptionView visibleTabs={visibleModalTabs} dataset={dataset} result={result} submit={submit} />
             </Modal>
 
 
             <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-                <div className='mx-5 w-12/12 w-full flex justify-start'>
-                    <div className='w-72'>
-                        <DropDown ref={ref} text={optionText} width='w-72' items={
-                            Object.keys(OptionModels).map((item, i) => ({
-                                name: item, onClick(e) {
-                                    {/*   0                           1                            2                               3                 4    */ }
-                                    setOption(item)
-                                    setOptionText(item)
-                                    setPredictVisible(item != 'clustering' && item != 'associate_rule' && item != 'time_series_analysis')
-                                    return false
-                                }
-                            }))} />
+                <div className='mx-5 w-12/12 w-full flex justify-between'>
+                    <div className='flex flex-row'>
+                        <div className='w-72'>
+                            <DropDown ref={ref} text={optionText} width='w-72' items={
+                                Object.keys(OptionModels).map((item, i) => ({
+                                    name: item, onClick(e) {
+                                        {/*   0                           1                            2                               3                 4    */ }
+                                        setOption(item)
+                                        setOptionText(item)
+                                        setPredictVisible(item != 'clustering' && item != 'associate_rule' && item != 'time_series_analysis')
+                                        return false
+                                    }
+                                }))} />
+                        </div>
+                        <div className='w-72 mx-5'>
+                            <DropDown ref={ref} defaultText='Select model' width='w-72' items={
+                                (OptionModels.hasOwnProperty(option) ? Object.keys(OptionModels[option]) : []).map((item, i) => ({
+                                    name: item, onClick(e) {
+                                        setModel(item)
+                                        setModelText(item)
+                                        setShowSubOptionModal(true)
+                                        setVisibleModalTabs([0, 1])
+                                        return false
+                                    }
+                                }))} />
+                        </div>
                     </div>
-                    <div className='w-72 mx-5'>
-                        <DropDown ref={ref} defaultText='Select model' width='w-72' items={
-                            (OptionModels.hasOwnProperty(option) ? Object.keys(OptionModels[option]) : []).map((item, i) => ({
-                                name: item, onClick(e) {
-                                    setModel(item)
-                                    setModelText(item)
-                                    setShowSubOptionModal(true)
-                                    setVisibleModalTabs([0, 1])
-                                    return false
-                                }
-                            }))} />
+                    <div>
+                        <Button text={'Training Model'} width='w-32' onClick={() => {
+                            if (model) {
+                                setOptionButtonVisibility([1, 1, 1])
+                                setShowSubOptionModal(true)
+                                setVisibleModalTabs([0, 1])
+                            }
+                        }} />
+
+                        <Button text={'Predict'} width='w-32' customStyleText={`ml-5 ${predictVisible ? '' : 'hidden'}`} onClick={() => {
+                            if (model) {
+                                setOptionButtonVisibility([0, 0, 0])
+                                setShowSubOptionModal(true)
+                                setVisibleModalTabs([2]);
+                            }
+                        }} />
+
+                        {/* <Button text={'Display Sandbox Code'} width='w-65' onClick={async () => {
+
+                    }} /> */}
+
+                        <Button onClick={() => {
+                            runCode()
+                        }} disabled={!code} width='w-32' text="SandBox Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
+                            ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{backgroundColor:!!code?'#4bd699':'inherit'}} onClick={runCode} hoverAnimation={false} />
                     </div>
-                    <Button text={'Training Model'} width='w-65' onClick={() => {
-
-                        if (model) {
-                            setShowSubOptionModal(true)
-                            setVisibleModalTabs([0, 1])
-                        }
-                    }} />
-
-                    <Button text={'Predict'} width='w-60' customStyleText={`ml-5 ${predictVisible ? '' : 'hidden'}`} onClick={() => {
-                        if (model) {
-
-                            setShowSubOptionModal(true)
-                            setVisibleModalTabs([2]);
-                        }
-                    }} />
-
-                    <Button text={'Display Sandbox Code'} width='w-65' onClick={async () => {
-
-                    }} />
-
-                    <Button onClick={() => {
-                        runCode()
-                    }} hasPadding={false} disabled={!code} text="SandBox Run" overrideClass={`w-40 rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
-                        ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
-
                 </div>
             </div>
+            <div className="w-full flex flex-nowrap">
+                <div className='w-1/2 text-gray-500 font-semibold'>
+                    <Label customStyle="p-4 gap-8" itemPos="start" text="Model Conditions:" className='w-300'>
+                        <div id="display_query" style={{ whiteSpace: 'pre-wrap' }} >Select a model to see the model conditions</div>
+                    </Label>
+                    <Label customStyle="p-4 gap-8" itemPos="start" text="Model Results:">
+                        <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} >Select a model to see the model results</div>
+                    </Label>
 
-            
-             <br></br>          
-             <br></br>          
-             <br></br> 
-             <br></br>
-             <br></br>          
-             <br></br>          
-          
-         
-
-            <div className='flex-grow-1 w-full' ref={codeParent}>
-                {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
-                    Select a model to see the corresponding code
-                </div>}
-            </div>
-
-            <div className=" w-full">
-                <div className='mx-5 w-12 w-full justify-start'>
-                    <Label text="Model Conditions:" className='w-300'>
-                        <div id="display_query" style={{ whiteSpace: 'pre-wrap' }} ></div>
+                    <Label customStyle="p-4 gap-8" itemPos="start" text="Model Plot:">
+                        <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" />
+                        <div id="model_img_placeholder">Select a model to see the model plot</div>
                     </Label>
                 </div>
-            </div>
-
-            <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-                <div className='mx-5 w-12 w-full justify-start'>
-                    <Label text="Model Results:">
-                        <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} ></div>
-                    </Label>
+                <div className='flex-grow-1 w-1/2' ref={codeParent}>
+                    {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                        Select a model to see the corresponding code
+                    </div>}
                 </div>
             </div>
-
-            <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-                <div className='mx-5 w-12 w-full justify-start'>
-                    <Label text="Model Plot:">
-                        <img id="img" src="" />
-                    </Label>
-                </div>
-            </div>
-
         </div>
 
 

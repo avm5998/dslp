@@ -17,6 +17,18 @@ const Options = [
     {name:'Category',value:'category'},
 ]
 
+const NumericalOptions = [
+    {name:'Convert to',value:''},
+    {name:'Integer',value:'int64'},
+    {name:'Float',value:'float64'},
+    {name:'Datetime',value:'datetime'},
+]
+
+const CategoricalOptions = [
+    {name:'Convert to',value:''},
+    {name:'String',value:'string'},
+    {name:'Category',value:'category'},
+]
 
 const setSubOption = (option, subOption, condition) => {
     console.log(condition);
@@ -96,7 +108,7 @@ const Preprocessing = () => {
                     {dataset.cols.map((col,i)=><React.Fragment key={i}>
                         <div className='m-3 flex items-center'>{col}</div>
                         <select {...select1} className='text-gray-500 m-3 px-5 py-2 focus:outline-none rounded-full' name={col}>
-                            {Options.map(o=><option key={o.value} value={o.value}>{o.name}</option>)}
+                            {(dataset.cate_cols.indexOf(col)!=-1?CategoricalOptions:dataset.num_cols.indexOf(col)!=-1?NumericalOptions:Options).map(o=><option key={o.value} value={o.value}>{o.name}</option>)}
                         </select>
                     </React.Fragment>)}
                 </div> : ''}

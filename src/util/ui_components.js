@@ -75,7 +75,7 @@ const ArrowSVG = ({ directionDown = true }) => (
 
 const ButtonTypeStyleText = {
   disabled: {
-    default: "cursor-default text-gray-400 border-gray-300",
+    default: "cursor-default px-4 py-1 text-gray-400 border-gray-300",
     hover: [""],
   },
   normal: {

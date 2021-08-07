@@ -119,8 +119,8 @@ export const DropDownInput = forwardRef(({
     </div>)
 })
 
-export function Label({ pos = 'left', text = '', customStyle = '', children = '' }) {
-    return (<div className={`${customStyle} flex items-center${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
+export function Label({ pos = 'left', itemPos='center',text = '', customStyle = '', children = '' }) {
+    return (<div className={`${customStyle} flex items-${itemPos} ${pos === 'mid' ? 'justify-center' : pos === 'right' ? 'justify-end' : ''}`}><p>{text}</p>{children}</div>)
 }
 
 export function Button({
