@@ -11,6 +11,7 @@ import re
 import ast
 import json
 import numpy as np
+import random
 from numpy import unique, where
 from dateutil.parser import parse
 from sklearn.feature_selection import SelectKBest, chi2, f_classif, f_regression, RFE, mutual_info_classif, VarianceThreshold
@@ -46,7 +47,7 @@ from database.db import initialize_db
 from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt
 from resources.errors import InternalServerError, SchemaValidationError, EmailAlreadyExistsError, UnauthorizedError, \
-    EmailDoesnotExistsError, BadTokenError, UnauthorizedRole, AlreadyRequested, UserDoesNotExistsError
+    EmailDoesnotExistsError, BadTokenError, UnauthorizedRole, AlreadyRequested, UserDoesNotExistsError, OTPExpiredError, OTPMismatchError
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist, ValidationError
 from flask_jwt_extended import create_access_token, decode_token, get_jwt_identity, JWTManager, get_current_user, \
     jwt_required, create_refresh_token, get_jwt, get_jti
@@ -125,9 +126,11 @@ mongo_db = mongo_client["data_science_learning_platform_database"]
 mongo_collection = mongo_db["files"]
 user_collection = mongo_db["user"]
 pending_requests_collection = mongo_db["pending_requests"]
+otp_collection = mongo_db["otp_for_users"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
-DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv', 'amazon_alexa_text.csv']
+DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv', 'amazon_alexa_text.csv', \
+ 'BreadBasket_DMS.csv', 'titanic_clean.csv', 'titanic.csv']
 # DEFAULT_FILES = []
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
@@ -200,6 +203,15 @@ def already_requested(e):
 def bad_token(e):
     return {"status":e.status, "message":e.message}, 403
 
+
+@app.errorhandler(OTPExpiredError)
+def otp_expired(e):
+    return {"status":e.status, "message":e.message}, 403
+
+@app.errorhandler(OTPMismatchError)
+def otp_mismatch(e):
+    return {"status":e.status, "message":e.message}, 403
+
 @app.errorhandler(InternalServerError)
 def internal_server_error(e):
     return {"status":e.status, "message":e.message}, 500
@@ -221,6 +233,40 @@ def send_email(subject, sender, recipients, text_body, html_body):
     msg.html = html_body
     Thread(target=send_async_email, args=(app, msg)).start()
 
+
+def get_sec_between_dates(now, prev_date):
+    if now.date() > prev_date.date():   
+        my_date = prev_date.date()
+        my_time = datetime.min.time()
+        my_datetime = datetime.combine(my_date, my_time, timezone.utc)
+        seconds = (my_datetime - prev_date).seconds
+    else:
+        seconds = (now - prev_date).seconds
+    return seconds
+
+def set_otp(user):
+    otp = random.randrange(100000, 999999)
+    otp_expiry = datetime.now(timezone.utc)
+    otp_collection.update_one({"email": user['email']}, {"$set":{"otp":otp, "otp_expiry":
+        otp_expiry}}, upsert=True)
+
+def save_details_and_send_otp(user, update_otp):
+    user_db = pending_requests_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
+    if user_db and not update_otp:
+        raise AlreadyRequested('Already requested with same username/email and role')
+    elif update_otp:  
+        otp_collection.update_one({"email": user['email']}, {"$set":{"otp":random.randrange(100000, 999999), "otp_expiry":
+        datetime.now(timezone.utc)}}, upsert=True)
+    else:
+        pending_requests_collection.insert_one(user.to_mongo())
+    otp_details = otp_collection.find_one({"email":user['email']})
+    send_email('[Awesome data mining] Please verify your email by entering One Time Password (OTP)',
+        sender='awesomedatamining@gmail.com',
+        recipients=[user['email']],
+        text_body=render_template('otp/otp.txt',
+                                        otp=otp_details['otp'], email=user['email']),
+        html_body=render_template('otp/otp.html',
+                                        otp=otp_details['otp'], email=user['email']))
 
 def instructorRegister(user):
     user_db = pending_requests_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
@@ -253,7 +299,7 @@ def pending_requests():
             raise UnauthorizedError('err')
         # reqs = pending_requests_collection.find({})
         data = []
-        for count, req in enumerate(pending_requests_collection.find()):
+        for count, req in enumerate(pending_requests_collection.find({"roles":{"$in":["Instructor"]}})):
             entry = {'id':count, 'fullname':req['fullname'], 'email':req['email']}
             data.append(entry)
         return jsonify(pending_requests=data), 200
@@ -263,18 +309,47 @@ def pending_requests():
         raise InternalServerError('Something went wrong')
 
 
-@app.route("/api/auth/grant_intructor_access", methods=["POST"])
+@app.route("/api/auth/resend_otp", methods=["POST"])
 @cross_origin(origin="*")
-@jwt_required()
-def grant_intructor_access():
-    url =  str(request.origin)+'/login'
-    user_id = get_jwt_identity()
-    is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
+def reset_otp():
+    body = request.get_json()
+    email = body['email']
     try:
-        if not is_admin_username or is_admin_username != 'admin':
-            raise UnauthorizedError('err') 
-        body = request.get_json()
-        email = body['email']
+        user_db = pending_requests_collection.find_one({"email": email})
+        if not user_db:
+            raise UserDoesNotExistsError("Couldn't find the user")
+        else:
+            save_details_and_send_otp(user_db, True)
+    except UserDoesNotExistsError:
+        raise UserDoesNotExistsError("Couldn't find the user")
+
+
+def verify_otp(email, user_otp):
+    try:
+        user_db = pending_requests_collection.find_one({"email": email})
+        if not user_db:
+            raise UserDoesNotExistsError("Couldn't find the user")
+        else:
+            otp_details = otp_collection.find_one({"email": email})
+            otp_expiry = otp_details['otp_expiry']
+            otp_expiry = datetime.combine(otp_expiry.date(), otp_expiry.time(), timezone.utc)
+            if int(user_otp) != otp_details['otp']:
+                raise OTPMismatchError("otp mismatch")
+            elif get_sec_between_dates(datetime.now(timezone.utc), otp_expiry) > 300:
+                raise OTPExpiredError("otp expired")
+            else:
+                return True
+    except UserDoesNotExistsError:
+        raise UserDoesNotExistsError("Couldn't find the user")
+    except OTPMismatchError:
+        raise OTPMismatchError("Invalid OTP provided")
+    except OTPExpiredError:
+        raise OTPExpiredError("OTP has expired")
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
+
+def register_user_from_pending(email, login_url, by_admin=False):
+    try:
         user_db = pending_requests_collection.find_one({"email": email})
         if not user_db:
             raise UserDoesNotExistsError("Couldn't find the user")
@@ -291,15 +366,74 @@ def grant_intructor_access():
 
             # user_data = User(**user_db)
             # user = User.objects.get(username=body.get('username'))
-            user.save()
-            pending_requests_collection.remove({"email":email})
-            send_email('[Awesome data mining] New Instructor Login request',
-                        sender='awesomedatamining@gmail.com',
-                        recipients=[email],
-                        text_body=render_template('register/register.txt',
-                                                        role=user['roles'][0], url=url),
-                        html_body=render_template('register/register.html',
-                                                        role=user['roles'][0], url=url))
+            if (user['roles'] and user['roles'][0] == 'Student') or by_admin:
+                user.save()
+                pending_requests_collection.remove({"email":email})
+                send_email('[Awesome data mining] Register Successfull',
+                            sender='awesomedatamining@gmail.com',
+                            recipients=[email],
+                            text_body=render_template('register/register.txt',
+                                                            role=user['roles'][0], url=login_url),
+                            html_body=render_template('register/register.html',
+                                                            role=user['roles'][0], url=login_url))
+    except UnauthorizedError:
+        raise UnauthorizedError('Invalid role to grant instructor access')
+    except UserDoesNotExistsError:
+        raise UserDoesNotExistsError("Couldn't find the user")
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
+
+
+@app.route("/api/auth/verify_otp", methods=["POST"])
+@cross_origin(origin="*")
+def verify_otp_and_register():
+    login_url =  str(request.origin)+'/login'
+    body = request.get_json()
+    email = body['email']
+    otp = body['otp']
+    verify_otp(email, otp)
+    register_user_from_pending(email, login_url)
+    otp_collection.remove({"email":email})
+    return {"message":"OTP verified"}, 200
+
+@app.route("/api/auth/grant_intructor_access", methods=["POST"])
+@cross_origin(origin="*")
+@jwt_required()
+def grant_intructor_access():
+    url =  str(request.origin)+'/login'
+    user_id = get_jwt_identity()
+    is_admin_username = user_collection.find_one({"_id":ObjectId(user_id)})['username']
+    try:
+        if not is_admin_username or is_admin_username != 'admin':
+            raise UnauthorizedError('err') 
+        body = request.get_json()
+        email = body['email']
+        # user_db = pending_requests_collection.find_one({"email": email})
+        # if not user_db:
+        #     raise UserDoesNotExistsError("Couldn't find the user")
+        # else:
+        #     try:
+        #         user = User.objects.get(email=email)
+        #         user['roles'].extend(['Instructor'])
+        #     except (DoesNotExist):
+        #         del user_db['_id']
+        #         user = User(**user_db)
+        #         user_avatar = open('backend/assets/images/avatar.png','rb')
+        #         user.profile_image.put(user_avatar, filename='avatar.png')
+        #     # try:
+
+        #     # user_data = User(**user_db)
+        #     # user = User.objects.get(username=body.get('username'))
+        #     user.save()
+        #     pending_requests_collection.remove({"email":email})
+        #     send_email('[Awesome data mining] New Instructor Login request',
+        #                 sender='awesomedatamining@gmail.com',
+        #                 recipients=[email],
+        #                 text_body=render_template('register/register.txt',
+        #                                                 role=user['roles'][0], url=url),
+        #                 html_body=render_template('register/register.html',
+        #                                                 role=user['roles'][0], url=url))
+        register_user_from_pending(email, url, True)
         return jsonify(success=True), 200
     except UnauthorizedError:
         raise UnauthorizedError('Invalid role to grant instructor access')
@@ -341,27 +475,15 @@ def register():
         # except DoesNotExist:
         
         user =  User(**body)
+        # user['roles'].extend([role[0]])
         user_db = user_collection.find_one({ '$or': [{"username": user['username']}, {"email": user['email']}]})
         if user_db:
             raise NotUniqueError
         user.hash_password()   
         # user.save()
         id = user.id
-        if role[0] == 'Instructor':
-            instructorRegister(user)
-            # send_email('[Awesome data mining] New Instructor Login request',
-            #         sender='awesomedatamining@gmail.com',
-            #         recipients=['datasciencelearningplatform1@gmail.com'],
-            #         text_body=render_template('instructor_Access/instructor.txt',
-            #                                         username=user['username'], email=user['email']),
-            #         html_body=render_template('instructor_Access/instructor.html',
-            #                                         username=user['username'], email=user['email']))
-            return {'id': str(user.id), "message":"Request sent to admin for Instructor verification. This can take upto two business days."}, 200                                                 
-            
-        else:          
-            user_avatar = open('backend/assets/images/avatar.png','rb')
-            user.profile_image.put(user_avatar, filename='avatar.png')
-            user.save()
+        set_otp(user)
+        save_details_and_send_otp(user, False)
         return {'id': str(id), "message":"Registered successfully"}, 200
     except AlreadyRequested:
         raise AlreadyRequested('Already requested with same username, email and role' )
@@ -462,17 +584,6 @@ def extract_report(dates):
 
     progress = {"days":days, "weeks":weeks, "months":months}
     return progress
-    # line = sns.lineplot(data = df, x = 'date', y = 'sec')
-    # line.set_xticklabels(df.date, rotation=90)
-    # line = sns.lineplot(data = new, x = 'date', y = 'sec')
-    # line.set_xticklabels(z, rotation=90)
-    # plt.suptitle('Your activity', fontsize='25')
-    # plt.xlabel('Date', fontsize=20)
-    # plt.ylabel('Seconds', fontsize=20)
-    # plt.savefig(img, format='png') 
-    # plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-    # img.close()
-    # return plotUrl
 
 
 # Endpoint for revoking the current users access token. Save the JWTs unique
@@ -487,15 +598,7 @@ def logout():
     now = datetime.now(timezone.utc)
     last_logged_in = user_collection.find_one({"_id":ObjectId(user_id)})['last_logged_in']
     last_logged_in = datetime.combine(last_logged_in.date(), last_logged_in.time(), timezone.utc)
-    next_day_sec = 0
-    if now.date() > last_logged_in.date():   
-        my_date = last_logged_in.date()
-        my_time = datetime.min.time()
-        my_datetime = datetime.combine(my_date, my_time, timezone.utc)
-        seconds = (my_datetime - last_logged_in).seconds
-        next_day_sec = (now - my_datetime)
-    else:
-        seconds = (now - last_logged_in).seconds
+    seconds = get_sec_between_dates(now, last_logged_in)
     user = User.objects(id=user_id)[0]
     user_act = user['user_activity']
     if str(now.date()) in user_act:
@@ -550,18 +653,20 @@ def forgot():
         # if not user:
         #     raise EmailDoesnotExistsError("Couldn't find the user with given email address")
 
-        expires = timedelta(hours=24)
-        reset_token = create_access_token(str(user.id), expires_delta=expires)
-        print("token:"+str(reset_token))
-        reset_token = reset_token.replace(".", "$")
-        send_email('[Awesome data mining] Reset Your Password',
-                            sender='awesomedatamining@gmail.com',
-                            recipients=[user.email],
-                            text_body=render_template('email/reset_password.txt',
-                                                    url=url + reset_token),
-                            html_body=render_template('email/reset_password.html',
-                                                    url=url + reset_token))
-        return {'id': str(user.id), "message":"Reset link has been sent to your email"}, 200
+        # expires = timedelta(hours=24)
+        # reset_token = create_access_token(str(user.id), expires_delta=expires)
+        # print("token:"+str(reset_token))
+        # reset_token = reset_token.replace(".", "$")
+        set_otp(user)
+        otp_details = otp_collection.find_one({"email":user['email']})
+        send_email('[Awesome data mining] Please verify your account by entering One Time Password (OTP)',
+            sender='awesomedatamining@gmail.com',
+            recipients=[user['email']],
+            text_body=render_template('otp/otp.txt',
+                                            otp=otp_details['otp'], email=user['email']),
+            html_body=render_template('otp/otp.html',
+                                            otp=otp_details['otp'], email=user['email']))
+        return {'id': str(user.id), "message":"OTP has been sent to your email"}, 200
     except SchemaValidationError:
         raise SchemaValidationError('Request is missing required fields')
     except DoesNotExist:

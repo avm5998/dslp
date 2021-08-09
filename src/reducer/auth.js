@@ -13,20 +13,23 @@ import {
   CHANGE_PROFILE_PIC_FAILURE,
   CHANGE_INSTRUCTOR_SUCCESS,
   CHANGE_INSTRUCTOR_FAILURE,
-
   CHANGE_EMAIL_SUCCESS,
   CHANGE_FULLNAME_SUCCESS,
   CHANGE_EMAIL_FAILURE,
   CHANGE_FULLNAME_FAILURE,
   CHANGE_USER_BIO_SUCCESS,
   CHANGE_USER_BIO_FAILURE,
+  VERIFY_OTP_SUCCESS,
+  VERIFY_OTP_FAILURE,
+  RESEND_OTP_SUCCESS,
+  RESEND_OTP_FAILURE
 } from "../actions/types";
 
 let user = JSON.parse(localStorage.getItem("user"));
-
+let emailToBeRegistered = localStorage.getItem("emailToBeRegistered");
 const initialState = user
-  ? { isLoggedIn: true, user}
-  : { isLoggedIn: false, user: null };
+  ? { isLoggedIn: true, user, emailToBeRegistered: ""}
+  : { isLoggedIn: false, user: null, emailToBeRegistered:emailToBeRegistered };
   
 
 export default function (state = initialState, action) {
@@ -36,12 +39,15 @@ export default function (state = initialState, action) {
     case REGISTER_SUCCESS:
       return {
         ...state,
-        isLoggedIn: false
+        isLoggedIn: false,
+        emailToBeRegistered : payload.email
       };
     case REGISTER_FAIL:
+    case VERIFY_OTP_SUCCESS:
       return {
         ...state,
-        isLoggedIn: false
+        isLoggedIn: false,
+        emailToBeRegistered : ""
       };
     case LOGIN_SUCCESS:
       return {
@@ -71,7 +77,9 @@ export default function (state = initialState, action) {
     case CHANGE_EMAIL_FAILURE:
     case CHANGE_USER_BIO_FAILURE:
     case CHANGE_FULLNAME_FAILURE:
-
+    case VERIFY_OTP_FAILURE:
+    case RESEND_OTP_SUCCESS:
+    case RESEND_OTP_FAILURE:
         return {
             ...state
         };

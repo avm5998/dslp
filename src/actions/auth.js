@@ -11,6 +11,8 @@ import {
   PASSWORD_RESET_FAIL,
   PASSWORD_RESET_CONFIRM_SUCCESS,
   PASSWORD_RESET_CONFIRM_FAIL,
+  VERIFY_OTP_SUCCESS,
+  VERIFY_OTP_FAILURE
 } from "./types";
 
 import axios from "axios";
@@ -21,8 +23,10 @@ import authHeader from "../services/auth-header";
 export const register = (fullname, username, email, password, role) => (dispatch) => {
   return AuthService.register(fullname, username, email, password, role).then(
     (response) => {
+      console.log("reg em", email);
       dispatch({
         type: REGISTER_SUCCESS,
+        payload:{email:email}
       });
 
       dispatch({
@@ -182,6 +186,77 @@ export const reset_password_confirm = (  reset_token, new_password) => dispatch 
 
       dispatch({
         type: PASSWORD_RESET_CONFIRM_FAIL,
+      });
+
+      dispatch({
+        type: SET_MESSAGE,
+        payload: message,
+      });
+
+      return Promise.reject();
+    }
+  );
+};
+
+export const verify_otp = (  otp, email) => dispatch => {
+  console.log("a e",email)
+  return AuthService.verify_otp(otp, email).then(
+    (response) => {
+      dispatch({
+        type: VERIFY_OTP_SUCCESS
+      });
+      dispatch({
+        type: SET_MESSAGE,
+        payload: response.data.message,
+      });  
+      localStorage.setItem("emailToBeRegistered", JSON.stringify(""));  
+      return Promise.resolve();
+    },
+    (error) => {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+
+      dispatch({
+        type: VERIFY_OTP_FAILURE
+      });
+
+      dispatch({
+        type: SET_MESSAGE,
+        payload: message,
+      });
+
+      return Promise.reject();
+    }
+  );
+};
+
+export const resend_otp = (email) => dispatch => {
+  console.log("a e",email)
+  return AuthService.resend_otp(email).then(
+    (response) => {
+      dispatch({
+        type: RESEND_OTP_SUCCESS
+      });
+      dispatch({
+        type: SET_MESSAGE,
+        payload: response.data.message,
+      });    
+      return Promise.resolve();
+    },
+    (error) => {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+
+      dispatch({
+        type: RESEND_OTP_FAILURE
       });
 
       dispatch({

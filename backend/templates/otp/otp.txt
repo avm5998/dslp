@@ -1,0 +1,9 @@
+Dear user,
+
+Please enter the below One Time Password (OTP) to confirm your
+{{otp}}
+
+Your OTP will expire in 5 minutes
+
+Sincerely,
+Awesome Datamining Support Team

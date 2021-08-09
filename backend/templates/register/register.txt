@@ -1,4 +1,4 @@
-Dear, {{role}}
+Dear user,
 
 You have been successfully registered.
 
