@@ -50,6 +50,18 @@ class BadTokenError(Exception):
         self.status = status
         self.payload = payload
 
+class OTPExpiredError(Exception):
+    def __init__(self, message, status=403, payload=None):
+        self.message = message
+        self.status = status
+        self.payload = payload
+
+class OTPMismatchError(Exception):
+    def __init__(self, message, status=403, payload=None):
+        self.message = message
+        self.status = status
+        self.payload = payload
+
 
 # errors = {
 #     "InternalServerError": {

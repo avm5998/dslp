@@ -22,6 +22,7 @@ import Preprocessing from "./component/preprocessing";
 import FeatureSelection from "./component/featureSelection";
 import Analysis from "./component/analysis";
 import Guide from "./component/guide";
+import EnterOtp from "./component/enter-otp/enter-otp"
 // testing dummy
 import { login } from "./actions/auth";
 
@@ -374,6 +375,7 @@ const Routes = (props) => {
                 <Route path="/featureSelection" component={FeatureSelection} />
                 <Route path="/analysis" component={Analysis} />
                 <Route exact path="/forgot" component={ForgotPassword} />
+                <Route path="/enterOtp" component={EnterOtp}/>
                 <Route
                   exact
                   path="/reset/:token"

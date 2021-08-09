@@ -6,6 +6,7 @@ import authHeader from "./auth-header";
 const API_URL = config.endpoint + "api/auth/";
 
 const register = (fullname, username, email, password, role) => {
+  localStorage.setItem("emailToBeRegistered", JSON.stringify(email));
   return axios.post(API_URL + "signup", {
     fullname,
     username,
@@ -63,10 +64,22 @@ const reset_password_confirm = (reset_token, new_password) => {
 };
 
 
+const verify_otp = (otp, email) => {
+  console.log("s e",email)
+  return axios.post(API_URL+'verify_otp', { otp, email });
+}
+
+const resend_otp = (email) => {
+  console.log("s e",email)
+  return axios.post(API_URL+'resend_otp', { email });
+}
+
 export default {
   register,
   login,
   logout,
   forgot_password,
-  reset_password_confirm
+  reset_password_confirm,
+  verify_otp,
+  resend_otp
 };

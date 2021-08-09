@@ -113,8 +113,8 @@ const Register = (props) => {
     if (checkBtn.current.context._errors.length === 0) {
       dispatch(register(fullname, username, email, password, selectedOption))
         .then(() => {
-          props.history.push("/login");
           setSuccessful(true);
+          props.history.push("/enterOtp");
         })
         .catch(() => {
           setSuccessful(false);

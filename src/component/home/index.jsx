@@ -60,6 +60,20 @@ const filenames = [
     description: "Clustering dataset",
     method: "Unsupervised"
   },
+  {
+    id: 4,
+    filename: "BreadBasket_DMS.csv",
+    type: "Association rule",
+    description: "Association rule dataset",
+    method: "Unsupervised"
+  },
+  {
+    id: 5,
+    filename: "titanic_clean.csv",
+    type: "Classification",
+    description: "Cleaned titanic dataset",
+    method: "Supervised"
+  },
   // {
   //   id: 4,
   //   filename: "credit_card_default_classification.csv",
@@ -79,10 +93,11 @@ const filenames = [
 const Method = {
   "All": ['Classification',
     'Regression',
-    'Clustering'],
+    'Clustering',
+  'Association rule'],
   "Supervised": ['Classification',
     'Regression'],
-  "Unsupervised": ['Clustering']
+  "Unsupervised": ['Clustering', 'Association rule']
 }
 
 const Filter = ({ dataItems, selectFileOption, showOptions }) => {
