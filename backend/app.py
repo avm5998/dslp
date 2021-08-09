@@ -1158,13 +1158,16 @@ def cond_clean_json():
             condition = cleaner['condition']
             for item in condition['items']:
                 ndf[item['col']].fillna(item['val'], inplace=True)
-        if option == 5:
-            condition = cleaner['condition']
-            for item in condition['items']:
-                ndf[item['col']] =  ndf[item['col']].astype(float)
-                q_low = ndf[item['col']].quantile(float(item['below'].strip('%'))/100) if 'below' in item else 0
-                q_hi = ndf[item['col']].quantile(float(item['above'].strip('%'))/100) if 'above' in item else 1
-                ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]
+        # if option == 5:
+        #     condition = cleaner['condition']
+        #     for item in condition['items']:
+        #         print("item= ", item)
+        #         ndf[item['col']] =  ndf[item['col']].astype(float)
+        #         q_low = ndf[item['col']].quantile(float(item['below'].strip('%'))/100) if 'below' in item else ndf[item['col']].quantile(0)
+        #         q_hi = ndf[item['col']].quantile(float(item['above'].strip('%'))/100) if 'above' in item else ndf[item['col']].quantile(1)
+        #         print(q_low, q_hi)
+
+        #         ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]
                 
        
     _setCache(user_id,filename,ndf)
@@ -1221,7 +1224,7 @@ def cond_eng_json():
         print("cols1-=", cols)
         for index, col in cols:
             label = LabelEncoder()
-            # ndf[col] = label.fit_transform(ndf[col].as
+            ndf[col] = label.fit_transform(ndf[col].astype(str))
     elif option == 2:
         suboption_checked = params['suboption_checked']
         print('suboption_checked 2= ', suboption_checked)
@@ -1515,6 +1518,13 @@ def cond_preprocess_json():
             target_col.append(key)
             target_operation.append(val)
     print('target_col, target_operation', target_col, target_operation)
+    # 0: Convert All Data Types Automatically
+    # 1: Convert Data Type One by One Manually
+    # 2: Remove Columns
+    # 3: Remove Useless Characters in Columns
+    # 4: Remove Rows Containing Specific Values
+    # 5: Remove Specific Words in Columns
+    # 6: Remove Outliers
     if option == 0:
         ndf = ndf.apply(pd.to_numeric, errors='ignore')
         for i,k in zip(list(ndf.columns), ndf.dtypes):
@@ -1555,7 +1565,26 @@ def cond_preprocess_json():
                 for each_word in temp:
                     ndf[index1] = ndf[index1].str.replace(each_word, '')   
             else:
-                ndf[index1] = ndf[index1].str.replace(temp, '')    
+                ndf[index1] = ndf[index1].str.replace(temp, '')  
+    elif option == 6:
+        for index1, index2 in zip(target_col, target_operation):
+
+            print("idex1, idex2 = ", index1, index2)
+            ndf[index1] =  ndf[index1].astype(float)
+            q_low = ndf[index1].quantile(float(index2['below'].strip('%'))/100) if 'below' in index2 else ndf[index1].quantile(0)
+            q_hi = ndf[index1].quantile(float(index2['above'].strip('%'))/100) if 'above' in index2 else ndf[index1].quantile(1)
+            print(q_low, q_hi)
+
+            #     ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)] 
+            # condition = cleaner['condition']
+            # for item in condition['items']:
+            #     print("item= ", item)
+            #     ndf[item['col']] =  ndf[item['col']].astype(float)
+            #     q_low = ndf[item['col']].quantile(float(item['below'].strip('%'))/100) if 'below' in item else ndf[item['col']].quantile(0)
+            #     q_hi = ndf[item['col']].quantile(float(item['above'].strip('%'))/100) if 'above' in item else ndf[item['col']].quantile(1)
+            #     print(q_low, q_hi)
+
+            #     ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]  
         
     print(ndf.head(20))
     print("cond = ", cond)
@@ -1867,6 +1896,18 @@ def cond_Classification_json():
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
+        elif metric == 'Visualize Tree: Text Graph':
+            para_result = '\n' + tree.export_text(model) + '\n'
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        elif metric == 'Visualize Tree: Flowchart':
+            img = BytesIO()
+            plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+            tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
         cond += "\nModel: Decision Tree Classifier \nSet Parameters:  max_depth=" + str(param_max_depth) + ", criterion=" + str(param_criterion)  + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1880,23 +1921,23 @@ def cond_Classification_json():
                 Y_true, Y_pred = Y_test, grid_model.predict(X_test)
                 para_result = 'The best hyper-parameters for Decision Tree Classifier are: ' + str(grid_model.best_params_)
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-        if 'visual_tree' in params:
-            visual_type = params['visual_tree']
-            cond += "\nVisualize Tree:" + visual_type
-            if  visual_type == 'Text Graph':
-                para_result = '\n' + tree.export_text(model) + '\n'
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-            elif visual_type == 'Flowchart':
-                img = BytesIO()
-                plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
-                tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            else:
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        # if 'visual_tree' in params:
+        #     visual_type = params['visual_tree']
+        #     cond += "\nVisualize Tree:" + visual_type
+        #     if  visual_type == 'Text Graph':
+        #         para_result = '\n' + tree.export_text(model) + '\n'
+        #         plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        #     elif visual_type == 'Flowchart':
+        #         img = BytesIO()
+        #         plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+        #         tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+        #         plt.savefig(img, format='png') 
+        #         plt.clf()
+        #         img.seek(0)
+        #         plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        #         img.close()
+        #     else:
+        #         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
 
     elif analysis_model == 'Random Forests Classifier':
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
@@ -2253,6 +2294,71 @@ def cond_associateRule_json():
         para_result += rules.to_html()
    
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+
+
+
+# @app.route('/analysis/time_series_analysis', methods=['POST']) # regression
+# @cross_origin()
+# @jwt_required()
+# def cond_timeSeries_json():
+#     cond, para_result, fig_len, fig_wid = '', '', 5,5
+#     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+#     user_id = get_jwt_identity()
+#     params = request.json
+#     filename = params['filename']
+#     print(params)
+#     df = _getCache(user_id, filename)
+#     ndf = df.replace(MISSING_VALUES, np.nan)
+#     analysis_model = params['analysis_model']
+#     metric = params['metric'] if 'metric' in params else 'Classification Report'
+    
+#     if analysis_model == "SARIMA":
+#     params_support_min_thresh = 0.1 if params['params_support_min_thresh']=='None' or (not params['params_support_min_thresh'].strip()) else float(params['params_support_min_thresh'])
+#     params_lift_min_thresh = 1.0 if params['params_lift_min_thresh']=='None' or (not params['params_lift_min_thresh'].strip()) else float(params['params_lift_min_thresh'])
+#     params_confidence_min_thresh = 0.5 if params['params_confidence_min_thresh']=='None' or (not params['params_confidence_min_thresh'].strip()) else float(params['params_confidence_min_thresh'])
+#     params_antecedent_len = 1 if params['params_antecedent_len']=='None' or (not params['params_antecedent_len'].strip()) else int(params['params_antecedent_len'])
+#     params_use_colnames = bool(params['params_use_colnames']) if 'params_use_colnames' in params else True
+#     params_max_len = None if params['params_max_len']=='None' or (not params['params_max_len'].strip()) else int(params['params_max_len'])
+#     param_specific_item = params['param_specific_item'] if 'param_specific_item' in params else None
+#     metrics_apriori = params['metrics_apriori'] if 'metrics_apriori' in params else '5.Association Rules: list all items'
+#     cond += "\n\nAssociation Rules:\nSet Parameters: support_min_threshold=" + str(params_support_min_thresh) + ", lift_min_threshold=" + str(params_lift_min_thresh) + ", confidence_min_threshold=" + str(params_confidence_min_thresh)
+#     ndf['Quantity']= 1
+#     basket_data = ndf.groupby([transid, transitem])['Quantity'].sum().unstack().fillna(0)
+
+#     def transform_transaction(val):
+#         if val <= 0:
+#             return 0
+#         if val >= 1:
+#             return 1
+#     basket_sets = basket_data.applymap(transform_transaction)
+#     print('basket_sets=', basket_sets)
+#     frequent_itemsets = apriori(basket_sets, min_support=params_support_min_thresh, use_colnames=params_use_colnames)
+#     print(frequent_itemsets)
+#     rules = association_rules(frequent_itemsets, metric='support', min_threshold=params_support_min_thresh)
+#     rules["antecedent_length"] = rules["antecedents"].apply(lambda x: len(x))
+#     rules = rules[ (rules['antecedent_length'] >= params_antecedent_len) & (rules['confidence'] > params_confidence_min_thresh) & (rules['lift'] > params_lift_min_thresh) ]
+#     print(rules)
+#     if param_specific_item:
+#         para_result = "\nAssociate Rule for Specific Item"
+#         frequent_itemsets = frequent_itemsets[frequent_itemsets['itemsets'].astype(str).str.contains(param_specific_item)]
+#         rules = rules[(rules['consequents'].astype(str).str.contains(param_specific_item)) | (rules['antecedents'].astype(str).str.contains(param_specific_item))]        
+
+#     if metrics_apriori == '1.Transaction Format Table':
+#         print("inside metrics_apriori")
+#         para_result = "\nConvert to Transaction Format:\n"
+#         para_result += basket_sets.to_html()
+#     elif metrics_apriori in ['2.Support Itemsets: list all items', '3.Support Itemsets: list specified items']:
+#         para_result = "\nSupport Itemsets:\n"
+#         para_result += frequent_itemsets.to_html()
+#     elif metrics_apriori == '4.Support Itemsets: list the most popular items':
+#         para_result = "\nThe Most Popular Items:\n"
+#         frequent_itemsets = frequent_itemsets.sort_values('support', ascending=False).head()
+#         para_result += frequent_itemsets.to_html()
+#     elif metrics_apriori in ['5.Association Rules: list all items', '6.Association Rules: list specified items']:
+#         para_result = "\nAssociation Rules:\n"
+#         para_result += rules.to_html()
+   
+#     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
 if __name__ == '__main__':

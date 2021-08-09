@@ -10,7 +10,7 @@ import Table from '../common/table'
 import { data } from 'autoprefixer';
 import Tip from '../common/tip'
 
-const CleanTypes = ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value', 'Remove Outliers'];
+const CleanTypes = ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value'];
 
 const CleanTypesStyles = ['', '', '', '', '', '', '']
 //                        0                    1                       2                     3                          4                             5                   
@@ -21,10 +21,10 @@ const Cleaning = ({ location }) => {
     let [optionText, setOptionText] = useState('Select cleaning type')
     let dataset = useSelector(state => state.dataset)
     const getDefaultSubOptions = useCallback(() => {
-        let res = [...Array(6).keys()].map(e => ({ condition: {} }))
+        let res = [...Array(5).keys()].map(e => ({ condition: {} }))
         res[4].refs = {}
-        res[5].aboveRefs = {}
-        res[5].belowRefs = {}
+        // res[5].aboveRefs = {}
+        // res[5].belowRefs = {}
         return res
     }, [])
     let cleaningCondition = useRef(getDefaultSubOptions())
@@ -92,42 +92,44 @@ const Cleaning = ({ location }) => {
             }
             cleaningCondition.current[4].condition.items = items
             if (items.length) setSubOptionText('Edit values')
-        } else if (option === 5) {
-            let itemObj = {}
-            let belowRefs = cleaningCondition.current[5].belowRefs
-            let aboveRefs = cleaningCondition.current[5].aboveRefs
+        } 
+        
+        // else if (option === 5) {
+        //     let itemObj = {}
+        //     let belowRefs = cleaningCondition.current[5].belowRefs
+        //     let aboveRefs = cleaningCondition.current[5].aboveRefs
 
-            for (let p in belowRefs) {
-                let value = belowRefs[p].value
+        //     for (let p in belowRefs) {
+        //         let value = belowRefs[p].value
 
-                if (value) {
-                    itemObj[p] = itemObj[p] || {}
-                    itemObj[p].below = value
-                }
-            }
+        //         if (value) {
+        //             itemObj[p] = itemObj[p] || {}
+        //             itemObj[p].below = value
+        //         }
+        //     }
 
-            for (let p in aboveRefs) {
-                let value = aboveRefs[p].value
+        //     for (let p in aboveRefs) {
+        //         let value = aboveRefs[p].value
 
-                if (value) {
-                    itemObj[p] = itemObj[p] || {}
-                    itemObj[p].above = value
-                }
-            }
+        //         if (value) {
+        //             itemObj[p] = itemObj[p] || {}
+        //             itemObj[p].above = value
+        //         }
+        //     }
 
-            if (Object.keys(itemObj).length) setSubOptionText('Edit values')
+        //     if (Object.keys(itemObj).length) setSubOptionText('Edit values')
 
-            let items = []
-            for (let key in itemObj) {
-                items.push({
-                    col: key,
-                    above: itemObj[key].above,
-                    below: itemObj[key].below,
-                })
-            }
+        //     let items = []
+        //     for (let key in itemObj) {
+        //         items.push({
+        //             col: key,
+        //             above: itemObj[key].above,
+        //             below: itemObj[key].below,
+        //         })
+        //     }
 
-            cleaningCondition.current[5].condition.items = items
-        }
+        //     cleaningCondition.current[5].condition.items = items
+        // }
 
         setShowSubOptionModal(false)
     }
@@ -172,7 +174,7 @@ const Cleaning = ({ location }) => {
                             </div>
                         </div>)}
                     </div>
-                    <div className={`${option === 5 ? '' : 'hidden'}`}>
+                    {/* <div className={`${option === 5 ? '' : 'hidden'}`}>
                         {dataset.num_cols.map(name => <div key={name} className="inline-block w-full">
                             <div className='py-3 px-10 inline-block float-left'>{name + ':'}</div>
                             <div className='py-3 inline-block float-right'>
@@ -186,7 +188,7 @@ const Cleaning = ({ location }) => {
                                 </select>
                             </div>
                         </div>)}
-                    </div>
+                    </div> */}
 
 
                 </div>

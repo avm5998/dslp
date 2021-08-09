@@ -39,6 +39,10 @@ const setSubOption = (option, subOption, condition) => {
     if (option === 2) {
         subOption.current[option] = condition
     }
+    // if (option === 6) {
+    //     subOption.current[option] = condition
+    // }
+
 }
 
 const Preprocessing = () => {
@@ -51,10 +55,53 @@ const Preprocessing = () => {
     let dataset = useSelector(state => state.dataset)
 
     const getDefaultSubOptions = useCallback(() => {
-        const res = [...Array(5).keys()].map(e => ({}))
+        const res = [...Array(7).keys()].map(e => ({}))
         res[1].cols = []
+        res[6].aboveRefs = {}
+        res[6].belowRefs = {}
         return res
     }, [])
+
+    const onConfirmSubOption = () => {
+        if (option === 6) {
+            let itemObj = {}
+            let belowRefs = subOption.current[6].belowRefs
+            let aboveRefs = subOption.current[6].aboveRefs
+
+            for (let p in belowRefs) {
+                let value = belowRefs[p].value
+
+                if (value) {
+                    itemObj[p] = itemObj[p] || {}
+                    itemObj[p].below = value
+                }
+            }
+
+            for (let p in aboveRefs) {
+                let value = aboveRefs[p].value
+
+                if (value) {
+                    itemObj[p] = itemObj[p] || {}
+                    itemObj[p].above = value
+                }
+            }
+
+            if (Object.keys(itemObj).length) setSubOptionText('Edit values')
+
+            let items = []
+            for (let key in itemObj) {
+                items.push({
+                    col: key,
+                    above: itemObj[key].above,
+                    below: itemObj[key].below,
+                })
+            }
+
+            subOption.current[6].condition.items = items
+        }
+
+        setShowSubOptionModal(false)
+    }
 
     const onConfirm = async (e) => {
         let requestData = {}
@@ -78,6 +125,10 @@ const Preprocessing = () => {
     let {input : input3,getData: getData3} = useSimpleForm()
     let {input : input4,getData: getData4} = useSimpleForm()
     let {input : input5,getData: getData5} = useSimpleForm()
+    let {input : input6,getData: getData6} = useSimpleForm()
+    let {input : input7,getData: getData7} = useSimpleForm()
+
+
 
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
@@ -98,9 +149,6 @@ const Preprocessing = () => {
             if (option === 5){
                 setSubOption(option, subOption, getData5())
             }
-            // if (option === 6){
-            //     setSubOption(option, subOption, getData5())
-            // }
 
         }} setIsOpen={setShowSubOptionModal} contentStyleText="mx-auto mt-20">
             <div className='p-5 flex flex-col'>
@@ -141,36 +189,49 @@ const Preprocessing = () => {
                     </React.Fragment>)}
                 </div> : ''}
 
-                {/* {option === 5 ? <div className='grid grid-cols-2'>
-                    {dataset.cols.map((col,i)=><React.Fragment key={i}>
-                        <div className='m-3 flex items-center'>{col}</div>
-                        <select {...select2} className='text-gray-500 m-3 px-5 py-2 focus:outline-none rounded-full' name={col+'_CheckNewFeat'}>
-                            {TextDataCheckFeatOptions.map(o=><option key={o.value} value={o.value}>{o.name}</option>)}
-                        </select>
-                    </React.Fragment>)}
-                </div> : ''}
-
-                {option === 6 ? <div className='grid grid-cols-2'>
-                    {dataset.cols.map((col,i)=><React.Fragment key={i}>
-                        <div className='m-3 flex items-center'>{col}</div>
-                        <select {...select3} className='text-gray-500 m-3 px-5 py-2 focus:outline-none rounded-full' name={col+'_Preprocess'}>
-                            {TextDataPreprocessOptions.map(o=><option key={o.value} value={o.value}>{o.name}</option>)}
-                        </select>
-                    </React.Fragment>)}
-                </div> : ''} */}
+               
                 <div>
                 <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={onConfirm}/>
                 </div>
             </div>
         </Modal>
+
+        <Modal isOpen={showSubOptionModal} setIsOpen={setShowSubOptionModal} onClose={onConfirmSubOption} contentStyleText="mx-auto mt-20" style={{ maxWidth: '35%' }}>
+            <div className='p-5 flex flex-col'>
+                <div className="flex flex-col">
+        
+                    <div className={`${option === 6 ? '' : 'hidden'}`}>
+                        {dataset.num_cols.map(name => <div key={name} className="inline-block w-full">
+                            <div className='py-3 px-10 inline-block float-left'>{name + ':'}</div>
+                            <div className='py-3 inline-block float-right'>
+                                <select ref={ref => subOption.current[6].belowRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Below">
+                                    <option value="">-</option><option value="5%">5%</option><option value="10%">10%</option><option value="15%">15%</option>
+                                </select>
+                            </div>
+                            <div className='py-3 inline-block float-right'>
+                                <select ref={ref => subOption.current[6].aboveRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Above">
+                                    <option value="">-</option><option value="85%">85%</option><option value="90%">90%</option><option value="95%">95%</option>
+                                </select>
+                            </div>
+                        </div>)}
+                    </div>
+
+
+                </div>
+                <div className="flex justify-end m-3 mt-10">
+                    <Button text='Confirm' customStyleText='bordered-light' onClick={onConfirmSubOption} />
+                </div>
+            </div>
+        </Modal>
+
         <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
             <div className='mx-5 my-10 w-8/12 flex justify-start'>
                 <div className='w-96'>
                     <DropDown text={optionText} customStyle='h-10 w-96' customUlStyle={'w-96'} items={
                         // , 'Text Data: Check New Features', 'Text Data: Preprocessing'
-                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in Columns'].map((item, i) => ({
+                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in Columns', 'Remove Outliers'].map((item, i) => ({
                             name: item, onClick(e) {
-                                {/*   0                                              1                            2                               3                                4                                       5*/ }
+                                {/*   0                                              1                            2                               3                                4                                       5                            6*/ }
                                 setOption(i)
                                 setOptionText(item)
                                 if(i===0 || i === 1 ||i === 2 ||i === 3 ||i === 4 || i===5 ||i===6){
