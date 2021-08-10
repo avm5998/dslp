@@ -573,7 +573,7 @@ export function useSimpleForm(initialResult = {}) {
             let { name, element } = input
             res[name] = element.value || ''
         }
-
+        
         for (let select of selectRefs.current) {
             let { name, element } = select
             res[name] = element.value || ''

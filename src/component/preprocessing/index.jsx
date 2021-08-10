@@ -110,9 +110,11 @@ const Preprocessing = () => {
         console.log(requestData)
         let res = await fetchByJSON('preprocessing', {...requestData,option, filename:dataset.filename})
         let json = await res.json()
+        console.log(json.data)
         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
         $('#display_cond').text(json.cond)
         $('#display_para_result').html(json.para_result)
+        setShowSubOptionModal(false)
     }
 
     let dispatch = useDispatch()
@@ -125,7 +127,7 @@ const Preprocessing = () => {
     let {input : input3,getData: getData3} = useSimpleForm()
     let {input : input4,getData: getData4} = useSimpleForm()
     let {input : input5,getData: getData5} = useSimpleForm()
-    let {input : input6,getData: getData6} = useSimpleForm()
+    let {select : input6,getData: getData6} = useSimpleForm()
     let {input : input7,getData: getData7} = useSimpleForm()
 
 
@@ -189,6 +191,22 @@ const Preprocessing = () => {
                     </React.Fragment>)}
                 </div> : ''}
 
+                {option === 6 ? <div className='grid grid-cols-2'>
+                {dataset.num_cols.map(name => <div key={name} className="inline-block w-full">
+                            <div className='py-3 px-10 inline-block float-left'>{name + ':'}</div>
+                            <div className='py-3 inline-block float-right'>
+                                <select {...input6} name={name+'_below'} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Above">
+                                    <option value="">-</option><option value="85%">85%</option><option value="90%">90%</option><option value="95%">95%</option>
+                                </select>
+                            </div>
+                            <div className='py-3 inline-block float-right'>
+                                <select {...input6} name={name+'_above'} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Below">
+                                    <option value="">-</option><option value="5%">5%</option><option value="10%">10%</option><option value="15%">15%</option>
+                                </select>
+                            </div>
+                        </div>)}
+                </div> : ''}
+
                
                 <div>
                 <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={onConfirm}/>
@@ -196,36 +214,8 @@ const Preprocessing = () => {
             </div>
         </Modal>
 
-        <Modal isOpen={showSubOptionModal} setIsOpen={setShowSubOptionModal} onClose={onConfirmSubOption} contentStyleText="mx-auto mt-20" style={{ maxWidth: '35%' }}>
-            <div className='p-5 flex flex-col'>
-                <div className="flex flex-col">
-        
-                    <div className={`${option === 6 ? '' : 'hidden'}`}>
-                        {dataset.num_cols.map(name => <div key={name} className="inline-block w-full">
-                            <div className='py-3 px-10 inline-block float-left'>{name + ':'}</div>
-                            <div className='py-3 inline-block float-right'>
-                                <select ref={ref => subOption.current[6].belowRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Below">
-                                    <option value="">-</option><option value="5%">5%</option><option value="10%">10%</option><option value="15%">15%</option>
-                                </select>
-                            </div>
-                            <div className='py-3 inline-block float-right'>
-                                <select ref={ref => subOption.current[6].aboveRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Above">
-                                    <option value="">-</option><option value="85%">85%</option><option value="90%">90%</option><option value="95%">95%</option>
-                                </select>
-                            </div>
-                        </div>)}
-                    </div>
-
-
-                </div>
-                <div className="flex justify-end m-3 mt-10">
-                    <Button text='Confirm' customStyleText='bordered-light' onClick={onConfirmSubOption} />
-                </div>
-            </div>
-        </Modal>
-
-        <div className="flex flex-row h-40 w-full items-start justify-start bg-gray-100 shadow-lg">
-            <div className='mx-5 my-10 w-8/12 flex justify-start'>
+        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-lg">
+            <div className='mx-5 my-5 w-8/12 flex justify-start'>
                 <div className='w-96'>
                     <DropDown text={optionText} customStyle='h-10 w-96' customUlStyle={'w-96'} items={
                         // , 'Text Data: Check New Features', 'Text Data: Preprocessing'

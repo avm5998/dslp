@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { RangeSelector } from '../../util/ui'
-import { Button, DropDown, MultiSelect } from '../../util/ui_components'
+import { Button, DropDown, MultiSelect,ButtonGroup } from '../../util/ui_components'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { actions as DataSetActions } from '../../reducer/dataset'
@@ -93,9 +93,9 @@ const Page = () => {
 
     return (<>
         <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 0rem)'}}>
-            <div className="flex flex-row h-auto w-full items-end justify-between shadow-sm bg-gray-100">
+            <div className="flex my-2 py-4 flex-row h-auto w-full items-center justify-between shadow-sm bg-gray-100">
 
-                <div className='mx-5 my-4'>
+                <div className='mx-5'>
                     <DropDown width={'w-72'} defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
                         name,
                         onClick(e) {
@@ -106,7 +106,7 @@ const Page = () => {
                     })) : []} />
                 </div>
 
-                <div className='mx-5 mb-4 text-center'>
+                <div className='mx-5 text-center'>
                     {queryType === QueryType.Numerical && dataset.num_lists[searchColumn].max && dataset.num_lists[searchColumn].min ?
                         <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
                             Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
@@ -118,11 +118,15 @@ const Page = () => {
                             : ''}
                 </div>
 
-                <div className='mb-4 w-auto flex flex-row gap-8'>
+                <div className='w-auto flex flex-row items-center gap-8 mx-5'>
                     <MultiSelect width="w-72" allowDelete={true} passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
                         dispatch(DataSetActions.setFilters(filters))
                     }} />
-                    <Button text="Add filter" width='w-48 mx-8' onClick={addFilter}/>
+                    <ButtonGroup buttons={[{
+                        text:'Add filter',
+                        onClick:addFilter
+                    }]}/>
+                    {/* <Button text="Add filter" width='w-48 mx-8' onClick={addFilter}/> */}
                 </div>
 
             </div>

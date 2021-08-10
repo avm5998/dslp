@@ -7,7 +7,7 @@ import { actions as DataSetActions } from '../../reducer/dataset'
 import { actions as OptionActions } from '../../reducer/option'
 import { actions as PresetActions } from '../../reducer/preset'
 import { Checkbox, Modal, MultiSelect, Label, Input } from '../../util/ui'
-import { DropDown, Button } from '../../util/ui_components';
+import { DropDown, Button, ButtonGroup } from '../../util/ui_components';
 import Table from '../common/table'
 import Tip from '../common/tip'
 import LinearRegressionOptions from './option/regression/linearRegression'
@@ -682,30 +682,38 @@ const Analysis = () => {
                         </div>
                     </div>
                     <div>
-                        <Button text={'Training Model'} width='w-32' onClick={() => {
-                            if (model) {
-                                setOptionButtonVisibility([1, 1, 1])
-                                setShowSubOptionModal(true)
-                                setVisibleModalTabs([0, 1])
-                            }
-                        }} />
+                        <ButtonGroup buttons={[
+                            {
+                                text: 'Training Model',
+                                onClick: () => {
+                                    if (model) {
+                                        setOptionButtonVisibility([1, 1, 1])
+                                        setShowSubOptionModal(true)
+                                        setVisibleModalTabs([0, 1])
+                                    }
+                                }
+                            },
+                            {
+                                text: 'Predict',
+                                onClick: () => {
+                                    if (model) {
+                                        setOptionButtonVisibility([0, 0, 0])
+                                        setShowSubOptionModal(true)
+                                        setVisibleModalTabs([2]);
+                                    }
+                                },
+                            },
+                            {   
+                                disabled:!code,
+                                text: 'SandBox Run',
+                                onClick: runCode,
+                            },
+                        ]} />
 
-                        <Button text={'Predict'} width='w-32' customStyleText={`ml-5 ${predictVisible ? '' : 'hidden'}`} onClick={() => {
-                            if (model) {
-                                setOptionButtonVisibility([0, 0, 0])
-                                setShowSubOptionModal(true)
-                                setVisibleModalTabs([2]);
-                            }
-                        }} />
-
-                        {/* <Button text={'Display Sandbox Code'} width='w-65' onClick={async () => {
-
-                    }} /> */}
-
-                        <Button onClick={() => {
+                        {/* <Button onClick={() => {
                             runCode()
                         }} disabled={!code} width='w-32' text="SandBox Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
-                            ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{backgroundColor:!!code?'#4bd699':'inherit'}} onClick={runCode} hoverAnimation={false} />
+                            ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} /> */}
                     </div>
                 </div>
             </div>

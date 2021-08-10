@@ -10,7 +10,10 @@ import { useThrottle } from "./util";
 import "./ui_component.css";
 import cn from "classnames";
 import { faSmileBeam } from "@fortawesome/free-regular-svg-icons";
+import { faBars,faTimes } from "@fortawesome/free-solid-svg-icons";
 import { text } from "@fortawesome/fontawesome-svg-core";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { noop } from "lodash";
 
 const EMPTY_O = {};
 const EMPTY_FUNCTION = () => {};
@@ -30,7 +33,7 @@ const handleBlur = (cb) => {
   };
 };
 
-const XSVG = ({customStyleText = 'ml-2'}) => (
+const XSVG = ({ customStyleText = "ml-2" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="100%"
@@ -41,7 +44,13 @@ const XSVG = ({customStyleText = 'ml-2'}) => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className={cn("cursor-pointer", "rounded-full", "w-4", "h-4", customStyleText)}
+    className={cn(
+      "cursor-pointer",
+      "rounded-full",
+      "w-4",
+      "h-4",
+      customStyleText
+    )}
   >
     <line x1="18" y1="6" x2="6" y2="18"></line>
     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -75,28 +84,33 @@ const ArrowSVG = ({ directionDown = true }) => (
 
 const ButtonTypeStyleText = {
   disabled: {
-    default: "cursor-default px-4 py-1 text-gray-400 border-gray-300",
+    default: "text-limited cursor-default px-4 py-1 text-gray-400 border-gray-300",
     hover: [""],
   },
   normal: {
-    default: "outline-none px-4 py-1 rounded-md text-blue-500 bg-gray-100 border-blue-500 border-2 cursor-pointer".split(
-      " "
-    ),
+    default:
+      "text-limited box-border outline-none px-4 py-1 rounded-md text-blue-500 bg-gray-100 border-blue-500 border-2 cursor-pointer".split(
+        " "
+      ),
     hover: "hover:text-white hover:bg-blue-500 hover:border-transparent".split(
       " "
     ),
   },
   static: {
-    default: "outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
-      " "
-    ),
+    default:
+      "text-limited outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+        " "
+      ),
     hover: [],
   },
   normal_r: {
-    default: "outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+    default:
+      "text-limited outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+        " "
+      ),
+    hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500".split(
       " "
     ),
-    hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500".split(" "),
   },
 };
 
@@ -108,7 +122,7 @@ export function Label({
 }) {
   return (
     <div
-      style={{...(customStyle instanceof Object?customStyle:{})}}
+      style={{ ...(customStyle instanceof Object ? customStyle : {}) }}
       className={cn(
         "flex",
         "items-center",
@@ -134,19 +148,18 @@ export const Input = forwardRef(
     },
     ref
   ) => {
+    let localRef = useRef();
 
-    let localRef = useRef()
-
-    useEffect(()=>{
-      (ref || localRef).current.value = defaultValue
-      onInput({target:{value:defaultValue}},defaultValue)
-    },[defaultValue])
+    useEffect(() => {
+      (ref || localRef).current.value = defaultValue;
+      onInput({ target: { value: defaultValue } }, defaultValue);
+    }, [defaultValue]);
 
     return (
       <input
         ref={ref || localRef}
         {...attrs}
-        style={{...(customStyle instanceof Object ? customStyle : {})}}
+        style={{ ...(customStyle instanceof Object ? customStyle : {}) }}
         className={cn(
           "box-border",
           "py-1",
@@ -166,16 +179,37 @@ export const Input = forwardRef(
   }
 );
 
+export function ButtonGroup({ buttons = [] }) {
+  let [showItem,setShowItem] = useState(false)
+
+  return (
+    <>
+      <div className="burger-menu">
+        <FontAwesomeIcon className={`${showItem?'hidden':''}`} icon={faBars} onClick={()=>setShowItem(s=>!s)}/>
+        <div className={cn('burger-menu-bg','rounded-md','px-4','py-2','absolute','top-0','right-0','flex','flex-col',showItem?'':'hidden')}>
+          <>
+          <div>
+            <FontAwesomeIcon className='cursor-pointer hover:text-gray-600 absolute right-2 top-1 text-gray-400' icon={faTimes} onClick={()=>setShowItem(s=>!s)}/>
+          </div>
+          {buttons.map(button=>(<div className='cursor-pointer text-gray-700 mr-4 burger-menu-sm-item border-gray-800' onClick={button.onClick || noop}>{button.text}</div>))}
+          </>
+        </div>
+      </div>
+      <div className='burger-menu-item flex-row gap-4 items-center'>{buttons.map(button=>(<Button {...button}/>))}</div>
+    </>
+  );
+}
+
 export function Button({
   //common property
   disabled = false,
   text,
   disabledText = text,
   id,
-  width='w-full',
+  width = "w-full",
   onClick = EMPTY_FUNCTION,
   customStyle = EMPTY_O,
-  customStyleText='',
+  customStyleText = "",
 
   //style property
   buttonType = disabled ? "disabled" : "normal", // currently only normal style, other styles can be added into ButtonTypeStyleText
@@ -183,20 +217,24 @@ export function Button({
   overrideClass = "",
 }) {
   let style = ButtonTypeStyleText[buttonType];
-  
-  if (typeof customStyle == 'string'){
-    customStyle = {}
-    customStyleText = customStyle
+
+  if (typeof customStyle == "string") {
+    customStyle = {};
+    customStyleText = customStyle;
   }
 
   return (
     <button
-    id={id}
+      id={id}
       type="button"
       className={
         overrideClass
           ? overrideClass
-          : cn(customStyleText,width,style.default.concat(hoverAnimation ? style.hover : []))
+          : cn(
+              customStyleText,
+              width,
+              style.default.concat(hoverAnimation ? style.hover : [])
+            )
       }
       onClick={onClick}
       style={customStyle}
@@ -228,7 +266,7 @@ export const MultiSelect = forwardRef(
       passiveMode = false, //when passive mode is set to true,
       allowDelete = !passiveMode, //do not allow deleting element in passive mode by default
       defaultText = "",
-      defaultValue = [], 
+      defaultValue = [],
       controlledOpen = false,
       openState = false,
     },
@@ -261,13 +299,13 @@ export const MultiSelect = forwardRef(
       }
     }, [controlledOpen, openState]);
 
-    useEffect(()=>{
-      if(defaultValue.length){
-        let values = [...defaultValue]
-        setSelected(values)
-        onSelect(values)
+    useEffect(() => {
+      if (defaultValue.length) {
+        let values = [...defaultValue];
+        setSelected(values);
+        onSelect(values);
       }
-    },[defaultValue])
+    }, [defaultValue]);
 
     return (
       <div
@@ -496,15 +534,15 @@ export const DropDown = forwardRef(
     allOptions = allOptions.concat(items);
 
     //set default value
-    useEffect(()=>{
-      let filtered = items.filter(item=>item.name === defaultValue)
-      if(filtered.length){
-        filtered[0].onClick()
-        setCurrentText(defaultValue)
-      }else{
-        setCurrentText(defaultText)
+    useEffect(() => {
+      let filtered = items.filter((item) => item.name === defaultValue);
+      if (filtered.length) {
+        filtered[0].onClick();
+        setCurrentText(defaultValue);
+      } else {
+        setCurrentText(defaultText);
       }
-    },[defaultValue])
+    }, [defaultValue]);
 
     let hasControl = text === undefined; //give control to DropDown component itself
     let AdditionalInput = (
@@ -522,7 +560,7 @@ export const DropDown = forwardRef(
           "items-center"
         )}
         onClick={(e) => {
-          if(disabled) return
+          if (disabled) return;
           if (e.target === inputParentRef.current) {
             if (hasControl && inputRef.current) {
               setCurrentText(inputRef.current.value);
@@ -537,7 +575,7 @@ export const DropDown = forwardRef(
           style={additionalInputStyle}
           ref={inputRef}
           onKeyDown={(e) => {
-            if(disabled) return
+            if (disabled) return;
 
             if (e.keyCode == 13) {
               if (hasControl) {
@@ -560,26 +598,29 @@ export const DropDown = forwardRef(
         tabIndex={tabIndex}
         onBlur={handleBlur(() => setMenuOpen(0))}
         onMouseLeave={() => {
-          if(disabled) return
-          
+          if (disabled) return;
+
           if (showOnHover) {
             setMenuOpen(0);
           }
         }}
         onMouseEnter={() => {
-          if(disabled) return
+          if (disabled) return;
 
           if (showOnHover) {
             setMenuOpen(1);
           }
         }}
-        style={{ zIndex, ...(customStyle instanceof Object ? customStyle : {}) }}
+        style={{
+          zIndex,
+          ...(customStyle instanceof Object ? customStyle : {}),
+        }}
       >
         <button
           type="button"
           id={id}
           onClick={() => {
-            if(disabled) return
+            if (disabled) return;
             setMenuOpen((s) => !s);
           }}
           ref={buttonRef}
@@ -662,10 +703,23 @@ export const DropDown = forwardRef(
                     }}
                   >
                     {getDesc(item.name)}
-                    {deletable?<div className={cn('w-auto','h-auto','rounded-full','hover:bg-white','hover:text-gray-700')} onClick={(e)=>{
-                      e.stopPropagation()
-                      onDelete(item.name)
-                    }}><XSVG customStyleText=''/></div>:null}
+                    {deletable ? (
+                      <div
+                        className={cn(
+                          "w-auto",
+                          "h-auto",
+                          "rounded-full",
+                          "hover:bg-white",
+                          "hover:text-gray-700"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(item.name);
+                        }}
+                      >
+                        <XSVG customStyleText="" />
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}

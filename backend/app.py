@@ -1672,12 +1672,18 @@ def cond_preprocess_json():
             else:
                 ndf[index1] = ndf[index1].str.replace(temp, '')  
     elif option == 6:
-        for index1, index2 in zip(target_col, target_operation):
-            print("idex1, idex2 = ", index1, index2)
-            ndf[index1] =  ndf[index1].astype(float)
-            q_low = ndf[index1].quantile(float(index2['below'].strip('%'))/100) if 'below' in index2 else ndf[index1].quantile(0)
-            q_hi = ndf[index1].quantile(float(index2['above'].strip('%'))/100) if 'above' in index2 else ndf[index1].quantile(1)
-            print(q_low, q_hi)
+        for column in ndf.columns:
+            if column+'_above' in params or column+'_below' in params:
+                q_low = ndf[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
+                q_hi = ndf[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
+                ndf = ndf[(ndf[column] <= q_hi) & (ndf[column] >= q_low)]  
+
+        # for index1, index2 in zip(target_col, target_operation):
+        #     print("idex1, idex2 = ", index1, index2)
+        #     ndf[index1] =  ndf[index1].astype(float)
+        #     q_low = ndf[index1].quantile(float(index2['below'].strip('%'))/100) if 'below' in index2 else ndf[index1].quantile(0)
+        #     q_hi = ndf[index1].quantile(float(index2['above'].strip('%'))/100) if 'above' in index2 else ndf[index1].quantile(1)
+        #     print(q_low, q_hi)
 
             #     ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)] 
             # condition = cleaner['condition']
