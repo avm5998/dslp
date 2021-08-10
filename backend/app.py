@@ -1673,7 +1673,6 @@ def cond_preprocess_json():
                 ndf[index1] = ndf[index1].str.replace(temp, '')  
     elif option == 6:
         for index1, index2 in zip(target_col, target_operation):
-
             print("idex1, idex2 = ", index1, index2)
             ndf[index1] =  ndf[index1].astype(float)
             q_low = ndf[index1].quantile(float(index2['below'].strip('%'))/100) if 'below' in index2 else ndf[index1].quantile(0)
@@ -1774,11 +1773,26 @@ def cond_Regression_json():
         model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-        metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+       
+        if metric == 'Visualize Tree: Text Graph':
+            para_result = '\n' + tree.export_text(model) + '\n'
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        elif metric == 'Visualize Tree: Flowchart':
+            img = BytesIO()
+            plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+            tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        else:
+            metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+            para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+
         cond += "\nModel: Decision Tree Regression \nSet Parameters: criterion=" + str(param_criterion) + ", splitter=" + str(param_splitter) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes="+ str(param_max_leaf_nodes)+ ", random_state=" + str(param_random_state) 
         cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
         cond += '\nMetric: ' + metric
-        para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
         if find_max_depth:
             tuned_para = [{'max_depth': find_max_depth}]
             cond = "\nFind Parameter for Decision Tree Regression" + str(tuned_para)
@@ -1789,23 +1803,23 @@ def cond_Regression_json():
                 Y_true, Y_pred = Y_test, reg_dtr.predict(X_test)
                 para_result = '\nThe best hyper-parameter for Decision Tree is: ' + str(reg_dtr.best_params_)
             plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-        if 'visual_tree' in params:
-            visual_type = params['visual_tree']
-            cond += "\nVisualize Tree:" + visual_type
-            if  visual_type == 'Text Graph':
-                para_result = '\n' + tree.export_text(model) + '\n'
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-            elif visual_type == 'Flowchart':
-                img = BytesIO()
-                plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
-                tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            else:
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        # if 'visual_tree' in params:
+        #     visual_type = params['visual_tree']
+        #     cond += "\nVisualize Tree:" + visual_type
+        #     if  visual_type == 'Text Graph':
+        #         para_result = '\n' + tree.export_text(model) + '\n'
+        #         plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        #     elif visual_type == 'Flowchart':
+        #         img = BytesIO()
+        #         plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+        #         tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+        #         plt.savefig(img, format='png') 
+        #         plt.clf()
+        #         img.seek(0)
+        #         plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        #         img.close()
+        #     else:
+        #         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
 
     elif analysis_model == 'Random Forests Regression':
         param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])

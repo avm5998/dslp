@@ -53,12 +53,12 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     result.param_max_depth = v 
                 }} customStyle={`w-64`} attrs={{ list: 'max_depth_dtr_list' }} />
 
-                <Label customStyle={``} text='Visualize Tree' ><InlineTip info="Plot decision tree"/></Label>
+                {/* <Label customStyle={``} text='Visualize Tree' ><InlineTip info="Plot decision tree"/></Label>
                 <DropDown defaultText={'Select tree type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Text Graph', 'Flowchart', "No Plot"]} 
                     onSelect={e => {
                         result.visual_tree = e
                     } 
-                }/>
+                }/> */}
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset. Note: Set 'Visualize Tree=No Plot'; Default:line"/></Label>
                 <DropDown defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
@@ -68,7 +68,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }/>
 
                 <Label text='Metrics of Model:'><InlineTip info="Assess model performance. 'explained variance' is used to measure the discrepancy between a model and actual data. 'neg_mean_absolute_error' measures the mean absolute error. 'neg_mean_squared_error' measures the mean squared error. 'r2' means proportion of the information in the data explained by the model. 'neg_mean_poisson_deviance' is equivalent to the Tweedie deviance with the power parameter power=1. 'neg_mean_gamma_deviance' is equivalent to the Tweedie deviance with the power parameter power=2."/></Label>
-                <DropDown defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
+                <DropDown defaultText={'neg_mean_squared_error'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['Visualize Tree: Text Graph', 'Visualize Tree: Flowchart', 'explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {
                         result.metric = name
                     }
