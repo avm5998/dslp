@@ -9,6 +9,7 @@ const DEFAULT_OPTION = {
         classification:{},
         clustering:{},
         associate_rule:{},
+        time_series:{},
     }
 }
 

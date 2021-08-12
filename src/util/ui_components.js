@@ -185,7 +185,7 @@ export function ButtonGroup({ buttons = [] }) {
   return (
     <>
       <div className="burger-menu">
-        <FontAwesomeIcon className={`${showItem?'hidden':''}`} icon={faBars} onClick={()=>setShowItem(s=>!s)}/>
+        <FontAwesomeIcon className={`${showItem?'hidden':''} cursor-pointer`} icon={faBars} onClick={()=>setShowItem(s=>!s)}/>
         <div className={cn('burger-menu-bg','rounded-md','px-4','py-2','absolute','top-0','right-0','flex','flex-col',showItem?'':'hidden')}>
           <>
           <div>
