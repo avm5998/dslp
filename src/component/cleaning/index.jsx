@@ -23,8 +23,6 @@ const Cleaning = ({ location }) => {
     const getDefaultSubOptions = useCallback(() => {
         let res = [...Array(5).keys()].map(e => ({ condition: {} }))
         res[4].refs = {}
-        // res[5].aboveRefs = {}
-        // res[5].belowRefs = {}
         return res
     }, [])
     let cleaningCondition = useRef(getDefaultSubOptions())
@@ -94,42 +92,6 @@ const Cleaning = ({ location }) => {
             if (items.length) setSubOptionText('Edit values')
         } 
         
-        // else if (option === 5) {
-        //     let itemObj = {}
-        //     let belowRefs = cleaningCondition.current[5].belowRefs
-        //     let aboveRefs = cleaningCondition.current[5].aboveRefs
-
-        //     for (let p in belowRefs) {
-        //         let value = belowRefs[p].value
-
-        //         if (value) {
-        //             itemObj[p] = itemObj[p] || {}
-        //             itemObj[p].below = value
-        //         }
-        //     }
-
-        //     for (let p in aboveRefs) {
-        //         let value = aboveRefs[p].value
-
-        //         if (value) {
-        //             itemObj[p] = itemObj[p] || {}
-        //             itemObj[p].above = value
-        //         }
-        //     }
-
-        //     if (Object.keys(itemObj).length) setSubOptionText('Edit values')
-
-        //     let items = []
-        //     for (let key in itemObj) {
-        //         items.push({
-        //             col: key,
-        //             above: itemObj[key].above,
-        //             below: itemObj[key].below,
-        //         })
-        //     }
-
-        //     cleaningCondition.current[5].condition.items = items
-        // }
 
         setShowSubOptionModal(false)
     }
@@ -173,24 +135,7 @@ const Cleaning = ({ location }) => {
                                 <input ref={ref => cleaningCondition.current[4].refs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Specified Value" />
                             </div>
                         </div>)}
-                    </div>
-                    {/* <div className={`${option === 5 ? '' : 'hidden'}`}>
-                        {dataset.num_cols.map(name => <div key={name} className="inline-block w-full">
-                            <div className='py-3 px-10 inline-block float-left'>{name + ':'}</div>
-                            <div className='py-3 inline-block float-right'>
-                                <select ref={ref => cleaningCondition.current[5].belowRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Below">
-                                    <option value="">-</option><option value="5%">5%</option><option value="10%">10%</option><option value="15%">15%</option>
-                                </select>
-                            </div>
-                            <div className='py-3 inline-block float-right'>
-                                <select ref={ref => cleaningCondition.current[5].aboveRefs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Remove Above">
-                                    <option value="">-</option><option value="85%">85%</option><option value="90%">90%</option><option value="95%">95%</option>
-                                </select>
-                            </div>
-                        </div>)}
-                    </div> */}
-
-
+                    </div>             
                 </div>
                 <div className="flex justify-end m-3 mt-10">
                     <Button text='Confirm' customStyleText='bordered-light' onClick={onConfirmSubOption} />
@@ -210,7 +155,7 @@ const Cleaning = ({ location }) => {
                             if (multiSelect23Ref.current) {
                                 multiSelect23Ref.current.clear()
                             }
-                            if (i === 4 || i === 5) {
+                            if (i === 4) {
                                 setShowSubOptionModal(true)
                             }
                             if (guideStep == 1) {
@@ -229,8 +174,7 @@ const Cleaning = ({ location }) => {
 
 
                 {/* Replace N/A By Specific Value, open a modal which contains col names and inputs */}
-                {/* Remove Outliers, open a modal which contains col names and inputs */}
-                {(option === 4 || option === 5) ?
+                {(option === 4) ?
                     <>
                         <Button onClick={() => setShowSubOptionModal(s => !s)} text={subOptionText} width='w-64' />
                     </>

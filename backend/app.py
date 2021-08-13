@@ -37,7 +37,13 @@ from nltk.corpus import stopwords
 from wordcloud import WordCloud
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
-
+# time series analysis packages:
+from pandas.tseries.offsets import DateOffset
+import statsmodels.api as sm 
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from pandas.plotting import autocorrelation_plot
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.seasonal import seasonal_decompose
 # import cv2
 
 
@@ -1263,17 +1269,6 @@ def cond_clean_json():
             condition = cleaner['condition']
             for item in condition['items']:
                 ndf[item['col']].fillna(item['val'], inplace=True)
-        # if option == 5:
-        #     condition = cleaner['condition']
-        #     for item in condition['items']:
-        #         print("item= ", item)
-        #         ndf[item['col']] =  ndf[item['col']].astype(float)
-        #         q_low = ndf[item['col']].quantile(float(item['below'].strip('%'))/100) if 'below' in item else ndf[item['col']].quantile(0)
-        #         q_hi = ndf[item['col']].quantile(float(item['above'].strip('%'))/100) if 'above' in item else ndf[item['col']].quantile(1)
-        #         print(q_low, q_hi)
-
-        #         ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]
-                
        
     _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
@@ -2357,7 +2352,7 @@ def cond_Clustering_json():
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
-@app.route('/analysis/associate_rule', methods=['POST']) # regression
+@app.route('/analysis/associate_rule', methods=['POST']) 
 @cross_origin()
 @jwt_required()
 def cond_associateRule_json():
@@ -2422,68 +2417,164 @@ def cond_associateRule_json():
 
 
 
-# @app.route('/analysis/time_series_analysis', methods=['POST']) # regression
-# @cross_origin()
-# @jwt_required()
-# def cond_timeSeries_json():
-#     cond, para_result, fig_len, fig_wid = '', '', 5,5
-#     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-#     user_id = get_jwt_identity()
-#     params = request.json
-#     filename = params['filename']
-#     print(params)
-#     df = _getCache(user_id, filename)
-#     ndf = df.replace(MISSING_VALUES, np.nan)
-#     analysis_model = params['analysis_model']
-#     metric = params['metric'] if 'metric' in params else 'Classification Report'
-    
-#     if analysis_model == "SARIMA":
-#     params_support_min_thresh = 0.1 if params['params_support_min_thresh']=='None' or (not params['params_support_min_thresh'].strip()) else float(params['params_support_min_thresh'])
-#     params_lift_min_thresh = 1.0 if params['params_lift_min_thresh']=='None' or (not params['params_lift_min_thresh'].strip()) else float(params['params_lift_min_thresh'])
-#     params_confidence_min_thresh = 0.5 if params['params_confidence_min_thresh']=='None' or (not params['params_confidence_min_thresh'].strip()) else float(params['params_confidence_min_thresh'])
-#     params_antecedent_len = 1 if params['params_antecedent_len']=='None' or (not params['params_antecedent_len'].strip()) else int(params['params_antecedent_len'])
-#     params_use_colnames = bool(params['params_use_colnames']) if 'params_use_colnames' in params else True
-#     params_max_len = None if params['params_max_len']=='None' or (not params['params_max_len'].strip()) else int(params['params_max_len'])
-#     param_specific_item = params['param_specific_item'] if 'param_specific_item' in params else None
-#     metrics_apriori = params['metrics_apriori'] if 'metrics_apriori' in params else '5.Association Rules: list all items'
-#     cond += "\n\nAssociation Rules:\nSet Parameters: support_min_threshold=" + str(params_support_min_thresh) + ", lift_min_threshold=" + str(params_lift_min_thresh) + ", confidence_min_threshold=" + str(params_confidence_min_thresh)
-#     ndf['Quantity']= 1
-#     basket_data = ndf.groupby([transid, transitem])['Quantity'].sum().unstack().fillna(0)
+@app.route('/analysis/time_series_analysis', methods=['POST']) 
+@cross_origin()
+@jwt_required()
+def cond_timeSeries_json():
+    cond, para_result, fig_len, fig_wid = '', '', 5,5
+    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    user_id = get_jwt_identity()
+    params = request.json
+    filename = params['filename']
+    print(params)
+    df = _getCache(user_id, filename)
+    ndf = df.replace(MISSING_VALUES, np.nan)
+    analysis_model = params['analysis_model']
+    date_col = params['finalX']
+    target_col = params['finalY']
+    time_series = ndf[target_col]
+    params_order_p = int(params['params_order_p']) if params['params_order_p'] else 1
+    params_order_d = int(params['params_order_d']) if params['params_order_d'] else 0
+    params_order_q = int(params['params_order_q']) if params['params_order_q'] else 0
+    params_seasonal_order_P = int(params['params_seasonal_order_P']) if params['params_seasonal_order_P'] else 0
+    params_seasonal_order_D = int(params['params_seasonal_order_D']) if params['params_seasonal_order_D'] else 0
+    params_seasonal_order_Q = int(params['params_seasonal_order_Q']) if params['params_seasonal_order_Q'] else 0
+    params_seasonal_order_m = int(params['params_seasonal_order_m']) if params['params_seasonal_order_m'] else 0
+    option = params['activeOption'] 
+    predict_period = int(params['predict_period']) if params['predict_period'] else 0
+    para_result += analysis_model
+    if analysis_model == 'Seasonal ARIMA':
+        if option in [-1, 0]:
+            order_param = (params_order_p,params_order_d,params_order_q)
+            seasonal_order_param = (params_seasonal_order_P,params_seasonal_order_D,params_seasonal_order_Q,params_seasonal_order_m)
+            metric = "check residual"
+            cond += 'Model Parameters: order=' + str(order_param) + ';  \nseasonal_order=' + str(seasonal_order_param) + "; \nMetric: " + metric
+            model = sm.tsa.statespace.SARIMAX(time_series, order=order_param, seasonal_order=seasonal_order_param).fit()
+            print(model.summary())
+            para_result += "\nSummary of Model -- " + analysis_model + ":\n" + str(model.summary())
+            if metric == 'check residual':
+                img = BytesIO()
+                model.resid.plot() # the close to 0, the better
+                model.resid.plot(kind='kde') # suggesting the errors are Gaussian
+                plt.title('Check Residual')
+                plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+        elif option == 1: # 'Plot Moving Average'
+            moving_avg_period = int(params['moving_avg_period']) if params['moving_avg_period'] else 12
+            cond += "\nMoving Average (Mean, Standard Deviation)\nPeriod(months):" + str(moving_avg_period)
+            img = BytesIO()
+            time_series.rolling(moving_avg_period).mean().plot(label=str(moving_avg_period) + ' months rolling mean')
+            time_series.rolling(moving_avg_period).std().plot(label=str(moving_avg_period) + ' months rolling standard deviation')
+            time_series.plot(figsize=(15,5))
+            plt.legend()
+            plt.savefig(img, format='png') #, bbox_inches='tight', plt.close(fig)
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif option == 2: # 'Decompose'
+            decompose_period = int(params['decompose_period']) if params['decompose_period'] else 12
+            cond += "\nDecompose \nPeriod(months):" + str(decompose_period)
+            img = BytesIO()
+            decomp = seasonal_decompose(time_series, period=decompose_period)
+            fig = decomp.plot()
+            fig.set_size_inches(15,5)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif option == 3: # 'Test Stationarity'
+            def adf_test(time_series, test_diff_metric_sarima):
+                result = ''
+                test = adfuller(time_series)
+                result += "\nAugmented Dicky-Fuller Test\n"
+                labels = ['ADF Test Statistic', 'p-value', ' # of lags', 'Num of Observations used']
+                for value, label in zip(test, labels):
+                    result += label + ":" + str(value) + "\n"
+                if test[1] <= 0.05:
+                    result += "\nStrong evidence against null hypothesis"
+                    result += "\nreject null hypothesis"
+                    result += "\n" + test_diff_metric_sarima + " Data is stationary"
+                else:
+                    result += "\nWeak evidence against null hypothesis"
+                    result += "\nfail to reject null hypothesis"
+                    result += "\n" + test_diff_metric_sarima + " Data is non-stationary"
+                return result
 
-#     def transform_transaction(val):
-#         if val <= 0:
-#             return 0
-#         if val >= 1:
-#             return 1
-#     basket_sets = basket_data.applymap(transform_transaction)
-#     print('basket_sets=', basket_sets)
-#     frequent_itemsets = apriori(basket_sets, min_support=params_support_min_thresh, use_colnames=params_use_colnames)
-#     print(frequent_itemsets)
-#     rules = association_rules(frequent_itemsets, metric='support', min_threshold=params_support_min_thresh)
-#     rules["antecedent_length"] = rules["antecedents"].apply(lambda x: len(x))
-#     rules = rules[ (rules['antecedent_length'] >= params_antecedent_len) & (rules['confidence'] > params_confidence_min_thresh) & (rules['lift'] > params_lift_min_thresh) ]
-#     print(rules)
-#     if param_specific_item:
-#         para_result = "\nAssociate Rule for Specific Item"
-#         frequent_itemsets = frequent_itemsets[frequent_itemsets['itemsets'].astype(str).str.contains(param_specific_item)]
-#         rules = rules[(rules['consequents'].astype(str).str.contains(param_specific_item)) | (rules['antecedents'].astype(str).str.contains(param_specific_item))]        
+            test_stationarity_option = params['test_stationarity_option'] if params['test_stationarity_option'] else 'Original Data'
+            cond += "\nTest Stationarity: ADF Test \nTest Difference Metric:" + test_stationarity_option
+            if test_stationarity_option == 'Original Data with No Difference':
+                result = adf_test(time_series, test_stationarity_option)
+            elif test_stationarity_option == "First Difference":
+                ndf['First Difference'] = time_series.diff()
+                ax = ndf['First Difference'].plot(figsize=(15,5))
+                ax.set_xlabel("data")
+                ax.set_ylabel(test_stationarity_option)
+                result = adf_test(ndf['First Difference'].dropna(), test_stationarity_option)
+            elif test_stationarity_option == "Second Difference":
+                ndf['Second Difference'] = time_series - time_series.shift(12)
+                ax = ndf['Second Difference'].plot(figsize=(15,5))
+                ax.set_xlabel("data")
+                ax.set_ylabel(test_stationarity_option)
+                result = adf_test(ndf['Second Difference'].dropna(), test_stationarity_option)
+            elif test_stationarity_option == "Seasonal First Difference":
+                ndf['First Difference'] = time_series.diff()
+                ndf['Seasonal First Difference'] = ndf['First Difference'] - ndf['First Difference'].shift(12)
+                ax = ndf['Seasonal First Difference'].plot(figsize=(15,5))
+                ax.set_xlabel("data")
+                ax.set_ylabel(test_stationarity_option)
+                result = adf_test(ndf['Seasonal First Difference'].dropna(), test_stationarity_option)
+            para_result += result
+            para_result += ndf.to_html()
+        elif option == 4: # 'Check Correlation'
+            lags_acf_sarima = int(params['corr_lags']) if params['corr_lags'] else 50
+            check_correlation_option = params['check_correlation_option']
+            if check_correlation_option == 'First Difference':
+                ndf['First Difference'] = time_series.diff()
+            elif check_correlation_option == 'Second Difference':
+                ndf['Second Difference'] = time_series - time_series.shift(12)
+            elif check_correlation_option == 'Seasonal First Difference':
+                ndf['First Difference'] = time_series.diff()
+                ndf['Seasonal First Difference'] = ndf['First Difference'] - ndf['First Difference'].shift(12)
+            corr_operation = params['corr_operation'] if params['corr_operation'] else 'acf'
+            cond += "\nCheck Correlation \nPeriod(months):" + "\nNumber of Lags:" + str(lags_acf_sarima) +  "\n" + check_correlation_option + "\n" + corr_operation
 
-#     if metrics_apriori == '1.Transaction Format Table':
-#         print("inside metrics_apriori")
-#         para_result = "\nConvert to Transaction Format:\n"
-#         para_result += basket_sets.to_html()
-#     elif metrics_apriori in ['2.Support Itemsets: list all items', '3.Support Itemsets: list specified items']:
-#         para_result = "\nSupport Itemsets:\n"
-#         para_result += frequent_itemsets.to_html()
-#     elif metrics_apriori == '4.Support Itemsets: list the most popular items':
-#         para_result = "\nThe Most Popular Items:\n"
-#         frequent_itemsets = frequent_itemsets.sort_values('support', ascending=False).head()
-#         para_result += frequent_itemsets.to_html()
-#     elif metrics_apriori in ['5.Association Rules: list all items', '6.Association Rules: list specified items']:
-#         para_result = "\nAssociation Rules:\n"
-#         para_result += rules.to_html()
-   
-#     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+            img = BytesIO()
+            if corr_operation == "acf":
+                plot_acf(ndf['Seasonal First Difference'].dropna(),lags=lags_acf_sarima)
+            elif corr_operation == "pacf":
+                plot_pacf(ndf['Seasonal First Difference'].dropna(), lags=lags_acf_sarima) # set method='ywm'
+            elif corr_operation == "auto":
+                autocorrelation_plot(ndf['Seasonal First Difference'].dropna())
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        
+        if predict_period != 0:
+            ndf[date_col] = pd.to_datetime(ndf[date_col]) # convert date type
+            future_dates = [ndf[date_col].iloc[-1] + DateOffset(months=x) for x in range(1,predict_period)]
+            ndf.set_index(date_col, inplace=True)  # set date column as index
+            future_df = pd.DataFrame(index=future_dates,columns=ndf.columns)
+            final_df = pd.concat([ndf,future_df])
+            model2 = sm.tsa.statespace.SARIMAX(final_df[target_col], order=order_param, seasonal_order=seasonal_order_param)
+            model2 = model2.fit()
+            final_df['SARIMA Forecast'] = model2.predict(start=final_df.shape[0]-24,end=final_df.shape[0]-1)
+            img = BytesIO()
+            final_df[[target_col,'SARIMA Forecast']].plot(figsize=(12,8)) # set interval of x
+            plt.title('Prediction for Future ' + str(predict_period) + ' Months')
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+
 
 
 if __name__ == '__main__':

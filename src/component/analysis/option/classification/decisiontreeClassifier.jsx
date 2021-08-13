@@ -57,12 +57,6 @@ export default function ({ dataset, result, submit, visibleTabs}) {
                     result.param_max_depth = v
                 }} customStyle={`w-64 `} attrs={{ list: 'max_depth_dtc_list' }} />
 
-                {/* <Label customStyle={``} text='Visualize Tree' ><InlineTip info="Clear 'Predict Options'. Plot decision tree"/></Label>
-                <DropDown defaultValue={''} defaultText={'Select tree type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Text Graph', 'Flowchart', "No Plot"]} 
-                    onSelect={e => {
-                        result.visual_tree = e
-                    } 
-                }/> */}
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Visualize prediction of testing dataset. Default: line"/></Label>
                 <DropDown defaultValue={''} defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap']} 
