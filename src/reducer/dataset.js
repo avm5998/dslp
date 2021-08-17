@@ -83,7 +83,7 @@ const slice = createSlice({
         },
 
         setFilters(state,action){
-            state.dataFilters = [...action.payload]
+            // state.dataFilters = [...action.payload]
         },
         
         setCleaners(state,action){

@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { RangeSelector } from '../../util/ui'
-import { Button, DropDown, MultiSelect,ButtonGroup } from '../../util/ui_components'
+import { Button, DropDown, MultiSelect, ButtonGroup } from '../../util/ui_components'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { actions as DataSetActions } from '../../reducer/dataset'
@@ -38,7 +38,8 @@ const Page = () => {
     useCachedData()
 
     let dataset = useSelector(state => state.dataset)
-
+    let [filters, setFilters] = useState([])
+    let loadRef = useRef(true)
     let [searchColumn, setSearchColumn] = useState('Select a Column')
 
     let [queryType, setQueryType] = useState(0)
@@ -47,9 +48,18 @@ const Page = () => {
     let categoricalRef = useRef([])
     let dispatch = useDispatch()
 
-    useEffect(() => {
-        queryFilter()
-    }, [dataset.dataFilters])
+    useEffect(async () => {
+        let res = await fetchByJSON('query', {
+            filters: JSON.stringify(filters),
+            filename: dataset.filename,
+            setSource:loadRef.current
+        })
+        
+        loadRef.current = false
+
+        let json = await res.json()
+        dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+    }, [filters])
 
     const setComparators = useCallback((name) => {
         if (dataset.num_cols.indexOf(name) !== -1) {
@@ -66,33 +76,16 @@ const Page = () => {
     const addFilter = () => {
         if (queryType === 0) return
         let qString = getQString(queryType, numericalRangeRef.current, categoricalRef.current, searchColumn)
-        let filters = [...dataset.dataFilters]
-        let exist = filters.some(f => f.queryType === queryType && f.qString === qString)
-        if (exist) return
-
-        filters.push({
+        setFilters([...filters, {
             queryType,
             qString,
             desc: queryType === QueryType.Numerical ? `Range of ${searchColumn}` :
                 queryType === QueryType.Categorical ? `Categories of ${searchColumn}` : ''
-        })
-
-        dispatch(DataSetActions.setFilters(filters))
-    }
-
-    const queryFilter = async () => {
-        let res = await fetchByJSON('query', {
-            filters: JSON.stringify(dataset.dataFilters),
-            filename: dataset.filename
-        })
-
-        let json = await res.json()
-
-        dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        }])
     }
 
     return (<>
-        <div className='flex flex-col bg-gray-100' style={{height:'calc(100% - 0rem)'}}>
+        <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 0rem)' }}>
             <div className="flex my-2 py-4 flex-row h-auto w-full items-center justify-between shadow-sm bg-gray-100">
 
                 <div className='mx-5'>
@@ -119,14 +112,13 @@ const Page = () => {
                 </div>
 
                 <div className='w-auto flex flex-row items-center gap-8 mx-5'>
-                    <MultiSelect width="w-72" allowDelete={true} passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} onSelect={filters => {
-                        dispatch(DataSetActions.setFilters(filters))
+                    <MultiSelect width="w-72" allowDelete={true} passiveMode={true} selections={filters} getDesc={e => e.desc} onSelect={filters => {
+                        setFilters([...filters])
                     }} />
                     <ButtonGroup buttons={[{
-                        text:'Add filter',
-                        onClick:addFilter
-                    }]}/>
-                    {/* <Button text="Add filter" width='w-48 mx-8' onClick={addFilter}/> */}
+                        text: 'Add filter',
+                        onClick: addFilter
+                    }]} />
                 </div>
 
             </div>
