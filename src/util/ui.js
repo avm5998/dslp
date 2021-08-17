@@ -566,7 +566,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
 }
 
 
-export function Modal({ id,fixedModalPosition=undefined,zIndex=1,isOpen, setIsOpen, duration = 300, children, onClose = () => { }, contentStyleText = '', style = {} }) {
+export function Modal({ clickBgToClose = true, id,fixedModalPosition=undefined,zIndex=1,isOpen, setIsOpen, duration = 300, children, onClose = () => { }, contentStyleText = '', style = {} }) {
     let modalBg = useRef()
     let [hidden, setHidden] = useState(true)
     let [realOpen, setIsRealOpen] = useState(false)//if hidden and opacity changed simontaneously, animation fails
@@ -583,12 +583,12 @@ export function Modal({ id,fixedModalPosition=undefined,zIndex=1,isOpen, setIsOp
     }, [isOpen])
 
     return (<div ref={modalBg} data-component-ancestor onClick={e => {
-        if (e.target === modalBg.current) {
+        if (e.target === modalBg.current && clickBgToClose) {
             onClose()
             setIsOpen(false)
         }
     }
-    } className={`modal-bg transition-opacity duration-${duration} pt-16 fixed w-full h-full left-0 top-0 m-auto overflow-auto ${fixedModalPosition?'':'flex justify-center items-center'} ${hidden ? 'hidden' : ''} ${realOpen ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,.3)', zIndex: zIndex }}>
+    } className={`modal-bg transition-opacity duration-${duration} fixed w-full h-full left-0 top-0 m-auto overflow-auto ${fixedModalPosition?'':'flex justify-center items-center'} ${hidden ? 'hidden' : ''} ${realOpen ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,.3)', zIndex: zIndex }}>
         <div id={id} className={`rounded-md modal-content relative ${fixedModalPosition?'':'m-auto w-auto'} bg-gray-100 ${contentStyleText} shadow-lg`} style={{...(fixedModalPosition||{}),...style}} >
             {children}
         </div>

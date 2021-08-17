@@ -45,63 +45,24 @@ const setSubOption = (option, subOption, condition) => {
 
 }
 
-const Preprocessing = () => {
-    useCachedData()
-
-    let [optionText, setOptionText] = useState('Select operation')
-    let [subOptionText, setSubOptionText] = useState('Options')
-    let [option, setOption] = useState(-1)
-    let [showSubOptionModal, setShowSubOptionModal] = useState(false)
-    let dataset = useSelector(state => state.dataset)
-
-
-    // Demo Code Begin
-    let kernelRef = useRef()
-    let codeParent = useRef()
-    const [code, setCode] = useState('')
-    let { getData, result, input } = useSimpleForm({
-        default_key: 'default_value'
-    })
-
-    useEffect(() => {
-        if (!code) return
-
-        codeParent.current.innerHTML = ''
-        let pre = document.createElement('pre')
-        pre.setAttribute('data-executable', 'true')
-        pre.setAttribute('data-language', 'python')
-        codeParent.current.appendChild(pre)
-        pre.innerHTML = code
-        thebelab.bootstrap();
-
-        thebelab.on("status", async function (evt, data) {
-            if (data.status === 'ready') {
-                kernelRef.current = data.kernel
-                console.log('kernel ready');
-                // alert('Ready')
-                // setActivateStatus('Ready')
-            }
-        })
-    }, [code])
-
-    const runCode = async (e) => {
-        let res = await fetchByJSON('current_data_json', {
-            filename: dataset.filename
-        })
-        let json = await res.json();
-        let res2 = await kernelRef.current.requestExecute({ code: InitialCode[option](json.data) }).done
-        document.querySelector('.thebelab-run-button').click()
-    }
-    const getCodeFromResult = (option, result) => {
-        return DisplayCode[option](result)
-    }
-    const InitialCode = {
-    0: code => `
+const InitialCode = (code,requestObj) => `
+import json
 import pandas as pd
 from io import StringIO
+import numpy as np
+MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 data_io = StringIO(r"""${code}""")
 df = pd.read_json(data_io)
-`,}
+ndf = df.replace(MISSING_VALUES, np.nan)
+params = json.loads('${JSON.stringify(requestObj)}')
+target_col = []
+target_operation = []
+option = int(params['option'])
+for key, val in params.items():
+    if val and key in ndf.columns:
+        target_col.append(key)
+        target_operation.append(val)
+`
 
     const DisplayCode = {
     0: code => (`
@@ -118,13 +79,24 @@ print(df.dtypes)
     1: code => (`
 # Demo of "Convert Data Type One by One Manually"
 
-df = df.astype('dictioary')   # method 1: get dictionary....
-print(df.dtypes)
+# df = df.astype('dictioary')   # method 1: get dictionary....
+# print(df.dtypes)
+para_result,cond = "",""
+print(target_col,target_operation)
+for index1, index2 in zip(target_col, target_operation):
+    cond += "\\n" + str(index1) + ":  " + str(index2)
+    if index2 in ['int64', 'float64']:
+        ndf[index1] = pd.to_numeric(ndf[index1], errors='coerce')
+    elif index2 == 'datetime':
+        # ndf[index1] = pd.to_datetime(ndf[index1]) # json problem: turn into a sequence of num
+        ndf[index1] = ndf[index1].datetime.strftime('%Y-%m-%d')
+    elif index2 == ['int64', 'float64', 'string', 'bool', 'category']:
+        ndf[index1] = ndf[index1].astype(index2)
 
-#columns = [code....]   # method 2
-#target_data_types = [code...]
-#for column, data_type in zip(columns, target_data_types):
-    #df[column] = df[column].astype(data_type)
+for i,k in zip(list(ndf.columns), ndf.dtypes):
+    para_result +=  "\\n" + i + ": " + str(k)
+
+print(cond,para_result)
 `),
     2: code => (`
 # Demo of "Remove Columns"
@@ -193,8 +165,58 @@ for column in columns:
 
     }
 
-    // Demo Code End
+const Preprocessing = () => {
+    useCachedData()
 
+    let [optionText, setOptionText] = useState('Select operation')
+    let [subOptionText, setSubOptionText] = useState('Options')
+    let [option, setOption] = useState(-1)
+    let [showSubOptionModal, setShowSubOptionModal] = useState(false)
+    let dataset = useSelector(state => state.dataset)
+    let requestObjectRef = useRef(null)
+
+    // Demo Code Begin
+    let kernelRef = useRef()
+    let codeParent = useRef()
+    const [code, setCode] = useState('')
+    let { getData, result, input } = useSimpleForm({
+        default_key: 'default_value'
+    })
+
+    useEffect(() => {
+        if (!code) return
+
+        codeParent.current.innerHTML = ''
+        let pre = document.createElement('pre')
+        pre.setAttribute('data-executable', 'true')
+        pre.setAttribute('data-language', 'python')
+        codeParent.current.appendChild(pre)
+        pre.innerHTML = code
+        thebelab.bootstrap();
+
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready') {
+                kernelRef.current = data.kernel
+                console.log('kernel ready');
+                // alert('Ready')
+                // setActivateStatus('Ready')
+            }
+        })
+    }, [code])
+
+    const runCode = async (e) => {
+        let res = await fetchByJSON('current_data_json', {
+            filename: dataset.filename
+        })
+        let json = await res.json();
+        let res2 = await kernelRef.current.requestExecute({ code: InitialCode(json.data,requestObjectRef.current) }).done
+        console.log(res2);
+        document.querySelector('.thebelab-run-button').click()
+    }
+
+    const getCodeFromResult = (option, requestObject) => {
+        return DisplayCode[option](requestObject)
+    }
 
     const getDefaultSubOptions = useCallback(() => {
         const res = [...Array(7).keys()].map(e => ({}))
@@ -245,14 +267,17 @@ for column in columns:
         setShowSubOptionModal(false)
     }
 
+
     const onConfirm = async (e) => {
         let requestData = {}
         if(option!==0)
             eval(`requestData = getData${option}()`)
-        console.log(requestData)
-        let res = await fetchByJSON('preprocessing', {...requestData,option, filename:dataset.filename})
+        let requestObject = {...requestData,option, filename:dataset.filename}
+        let res = await fetchByJSON('preprocessing', requestObject)
+
         let json = await res.json()
-        setCode(getCodeFromResult(option, result)) // Demo code
+        setCode(getCodeFromResult(option,requestObject)) // Demo code
+        requestObjectRef.current = requestObject
         // console.log(json.data)
         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
         $('#display_cond').text(json.cond)
@@ -275,7 +300,7 @@ for column in columns:
 
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
-        <Modal isOpen={showSubOptionModal} onClose={()=>{
+        <Modal clickBgToClose={false} isOpen={showSubOptionModal} onClose={()=>{
             if (option === 1){
                 setSubOption(option, subOption, getData1())
             }
@@ -293,7 +318,7 @@ for column in columns:
                 setSubOption(option, subOption, getData5())
             }
 
-        }} setIsOpen={setShowSubOptionModal} contentStyleText="mx-auto mt-20">
+        }} setIsOpen={setShowSubOptionModal} contentStyleText="">
             <div className='p-5 flex flex-col'>
                 {option === 1 ? <div className='grid grid-cols-2'>
                     {dataset.cols.map((col,i)=><React.Fragment key={i}>
