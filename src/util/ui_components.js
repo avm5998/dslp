@@ -84,12 +84,12 @@ const ArrowSVG = ({ directionDown = true }) => (
 
 const ButtonTypeStyleText = {
   disabled: {
-    default: "text-limited cursor-default px-4 py-1 text-gray-400 border-gray-300",
+    default: "text-oneline cursor-default px-4 py-1 text-gray-400 border-gray-300",
     hover: [""],
   },
   normal: {
     default:
-      "text-limited box-border outline-none px-4 py-1 rounded-md text-blue-500 bg-gray-100 border-blue-500 border-2 cursor-pointer".split(
+      "text-oneline box-border outline-none px-4 py-1 rounded-md text-blue-500 bg-gray-100 border-blue-500 border-2 cursor-pointer".split(
         " "
       ),
     hover: "hover:text-white hover:bg-blue-500 hover:border-transparent".split(
@@ -98,14 +98,14 @@ const ButtonTypeStyleText = {
   },
   static: {
     default:
-      "text-limited outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      "text-oneline outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
         " "
       ),
     hover: [],
   },
   normal_r: {
     default:
-      "text-limited outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      "text-oneline outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
         " "
       ),
     hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500".split(
@@ -185,7 +185,7 @@ export function ButtonGroup({ buttons = [] }) {
   return (
     <>
       <div className="burger-menu">
-        <FontAwesomeIcon className={`${showItem?'hidden':''}`} icon={faBars} onClick={()=>setShowItem(s=>!s)}/>
+        <FontAwesomeIcon className={`${showItem?'hidden':''} cursor-pointer`} icon={faBars} onClick={()=>setShowItem(s=>!s)}/>
         <div className={cn('burger-menu-bg','rounded-md','px-4','py-2','absolute','top-0','right-0','flex','flex-col',showItem?'':'hidden')}>
           <>
           <div>

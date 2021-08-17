@@ -12,6 +12,7 @@ import BoxPlot from './boxPlot'
 import CandleStickChart from './candleStickChart'
 import LineGraph from './lineGraph'
 import Histogram from './histogram'
+import Heatmap from './heatmap'
 import PieChart from './pieChart'
 import RadarGraph from './radarGraph'
 import ScatterPlot from './scatterPlot'
@@ -31,10 +32,11 @@ const Graphs = [
     LineGraph,
     // NightingaleRoseChart,
     PieChart,
-    RadarGraph,
+    Heatmap,
+    // RadarGraph,
     ScatterPlot,
     // ThreeDScatterPlot,
-    Waffle
+    // Waffle
 ]
 
 const Functions = [

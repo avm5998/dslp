@@ -1177,7 +1177,15 @@ def query():
     params = request.json
     filename = params['filename']
     filters = json.loads(params['filters'])
-    df = _getCache(user_id,filename)
+    
+    if params['setSource']:# when query page loads, set a temporary dataset for filters to take effects on
+        df = _getCache(user_id,filename)
+        _setCache(user_id,filename + '__QUERY_TEMPORARY___',df)
+    else:
+        df = _getCache(user_id,filename + '__QUERY_TEMPORARY___')
+        if df is None:
+            df = _getCache(user_id,filename)
+
     ndf = df
     for filter in filters:
         queryType = filter['queryType']
@@ -1189,6 +1197,7 @@ def query():
             qObject = json.loads(filter['qString'])
             ndf = ndf[ndf.apply(lambda x:qObject['min'] <= x[qObject['column']] <= qObject['max'], axis = 1)]
 
+    _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
     cols = cols,col_lists = col_lists, num_cols = num_cols, 

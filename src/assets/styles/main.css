@@ -9,6 +9,11 @@
     overflow:hidden;
   }
 
+  .text-oneline{
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+
   .bordered-light{
     border:2px solid #eee;
     border-radius:0.5rem;

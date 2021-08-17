@@ -388,7 +388,7 @@ export function useCachedData(){
             })
         
             let json = await res.json()
-    
+
             if(json.modifiedJson){//use modified data
                 dispatch(DataSetActions.setData({...info,
                     filename:info.filename,
