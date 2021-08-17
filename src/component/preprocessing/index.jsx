@@ -54,6 +54,148 @@ const Preprocessing = () => {
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let dataset = useSelector(state => state.dataset)
 
+
+    // Demo Code Begin
+    let kernelRef = useRef()
+    let codeParent = useRef()
+    const [code, setCode] = useState('')
+    let { getData, result, input } = useSimpleForm({
+        default_key: 'default_value'
+    })
+
+    useEffect(() => {
+        if (!code) return
+
+        codeParent.current.innerHTML = ''
+        let pre = document.createElement('pre')
+        pre.setAttribute('data-executable', 'true')
+        pre.setAttribute('data-language', 'python')
+        codeParent.current.appendChild(pre)
+        pre.innerHTML = code
+        thebelab.bootstrap();
+
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready') {
+                kernelRef.current = data.kernel
+                console.log('kernel ready');
+                // alert('Ready')
+                // setActivateStatus('Ready')
+            }
+        })
+    }, [code])
+
+    const runCode = async (e) => {
+        let res = await fetchByJSON('current_data_json', {
+            filename: dataset.filename
+        })
+        let json = await res.json();
+        let res2 = await kernelRef.current.requestExecute({ code: InitialCode[option](json.data) }).done
+        document.querySelector('.thebelab-run-button').click()
+    }
+    const getCodeFromResult = (option, result) => {
+        return DisplayCode[option](result)
+    }
+    const InitialCode = {
+    0: code => `
+import pandas as pd
+from io import StringIO
+data_io = StringIO(r"""${code}""")
+df = pd.read_json(data_io)
+`,}
+
+    const DisplayCode = {
+    0: code => (`
+# Demo of "Convert All Data Types Automatically"
+
+print("Before converting")
+print(df.dtypes)
+
+df.convert_dtypes()  # Convert
+
+print("After converting")
+print(df.dtypes)
+`),
+    1: code => (`
+# Demo of "Convert Data Type One by One Manually"
+
+df = df.astype('dictioary')   # method 1: get dictionary....
+print(df.dtypes)
+
+#columns = [code....]   # method 2
+#target_data_types = [code...]
+#for column, data_type in zip(columns, target_data_types):
+    #df[column] = df[column].astype(data_type)
+`),
+    2: code => (`
+# Demo of "Remove Columns"
+
+print("Before Removing" )
+print(df.columns)
+
+columns = [code....]
+df = df.drop(columns, axis=1) # Remove Columns
+print("After Removing" )
+print(df.columns)
+ 
+    `),
+    3: code => (`
+# Demo of "Remove Useless Characters in Columns"
+
+columns = [code....]
+characters = [code...]
+
+for column, char in zip(columns, characters):
+    for ch in char:
+        df[column] = df[column].str.replace(ch, '')
+
+print(df.head(20))
+    `),
+    4: code => (`
+# Demo of "Remove Rows Containing Specific Values"
+
+columns = [code....]
+values = [code...]
+
+for column, value in zip(columns, values):
+    temp = value.split(',')
+    df = df[~(df[column].isin(temp))]
+
+print(df.head(20))
+
+    `),
+    5: code => (`
+# Demo of "Remove Specific Words in Columns"
+
+columns = [code....]
+words = [code...]
+
+for column, word in zip(columns, words):
+    temp = word.split(',') if ',' in word else word
+    if ',' in index2:
+        for each_word in temp:
+            df[column] = df[column].str.replace(each_word, '')   
+    else:
+        df[column] = df[column].str.replace(temp, '') 
+
+    `),
+    6: code => (`
+# Demo of "Remove Outliers"
+
+columns = [code...]
+above_list = []
+below_list = []
+for column in columns:
+    q_low = df[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
+    q_hi = df[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
+    df = df[(df[column] <= q_hi) & (df[column] >= q_low)] 
+
+    `),
+
+    }
+
+    // Demo Code End
+
+
     const getDefaultSubOptions = useCallback(() => {
         const res = [...Array(7).keys()].map(e => ({}))
         res[1].cols = []
@@ -110,7 +252,8 @@ const Preprocessing = () => {
         console.log(requestData)
         let res = await fetchByJSON('preprocessing', {...requestData,option, filename:dataset.filename})
         let json = await res.json()
-        console.log(json.data)
+        setCode(getCodeFromResult(option, result)) // Demo code
+        // console.log(json.data)
         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
         $('#display_cond').text(json.cond)
         $('#display_para_result').html(json.para_result)
@@ -123,12 +266,10 @@ const Preprocessing = () => {
     let currentOption = subOption.current[option]
     let {select : select1,getData: getData1} = useSimpleForm()
     let {select : select2,getData: getData2,result:result2} = useSimpleForm()
-    // let {select : select3,getData: getData3} = useSimpleForm()
     let {input : input3,getData: getData3} = useSimpleForm()
     let {input : input4,getData: getData4} = useSimpleForm()
     let {input : input5,getData: getData5} = useSimpleForm()
     let {select : input6,getData: getData6} = useSimpleForm()
-    let {input : input7,getData: getData7} = useSimpleForm()
 
 
 
@@ -241,6 +382,12 @@ const Preprocessing = () => {
                         setShowSubOptionModal(true)
                     }
                 }}/>
+                <Button onClick={() => {
+                    runCode()
+                }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
+                    ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
+                    
+                
                 
                 {/* <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
                 }}/> */}
@@ -248,25 +395,28 @@ const Preprocessing = () => {
             {/* <div className='mx-5 my-10 w-3/12'>
                 <MultiSelect selections={dataset.dataPreprocessing} passiveMode={true} />
             </div> */}
+            
         </div>
 
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-                <Label text="Preprocessing Conditions:" className='w-300'>
-                <div id = "display_cond" style={{ whiteSpace: 'pre-wrap' }} ></div>
-                </Label>
+            <div className="w-full flex flex-nowrap">
+                <div className='w-1/2 text-gray-500 font-semibold'>
+                    <div className='scroll'>
+                        <Label text="Preprocessing Conditions:" className='w-300'>
+                            <div id = "display_cond" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see conditions</div>
+                        </Label>
+                        <Label text="Preprocessing Results:">
+                            <div id = "display_para_result" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see preprocessed results</div>
+                        </Label>
+                    </div>
+                </div>
+                {/* Demo code */}
+                <div className='flex-grow-1 w-1/2' ref={codeParent}>  
+                    {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                        Select an operation to see the corresponding code
+                    </div>}
+                </div>
             </div>
-        </div>
 
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-            <Label text="Preprocessing Results:">
-                <div id = "display_para_result" style={{ whiteSpace: 'pre-wrap' }} ></div>
-            </Label>
-            </div>
-        </div>
-
-        
 
         <Table PageSize={10}/>
     </div>)

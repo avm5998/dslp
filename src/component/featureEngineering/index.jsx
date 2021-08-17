@@ -11,8 +11,7 @@ import { InlineTip } from '../common/tip'
 
 const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Create Features by Arithmetic Operations','Standard Scaler', 'Minmax Scaler',  'Text Data: Check Basic Features', 'Text Data: Label Values in Columns', 'Text Data: Feature Engineering']; //, 'Add New Features', 'Text Data: Feature Extraction Models',
 //                       0                    1                                     2                                          3                              4                 5                         6                                           7                           8
-// const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; //, 'Add New Features'
-//                        0                       1                                      2                            3              4                            5
+
 const getCanOperation = (dataset, operationIndex)=>{
     switch(operationIndex){
         case 0:
@@ -50,9 +49,7 @@ const FeatureEngineering = () => {
     let [showOptionModal, setShowOptionModal] = useState(false)
     let dataset = useSelector(state => state.dataset)
     let dispatch = useDispatch()
-
     let {result, checkbox:checkbox2, input:input2, getData,clearData} = useSimpleForm()
-    // let {result,getData,clearData} = useSimpleForm()
     let [isTsv, setIsTsv] = useState(0)
 
     useEffect(()=>{
@@ -74,6 +71,162 @@ const FeatureEngineering = () => {
     console.log(result);
 
     let ts = new Date().getTime()
+
+
+    // Demo Code Begin
+    let kernelRef = useRef()
+    let codeParent = useRef()
+    const [code, setCode] = useState('')
+    // let { getData, result, input } = useSimpleForm({
+    //     default_key: 'default_value'
+    // })
+
+    useEffect(() => {
+        if (!code) return
+
+        codeParent.current.innerHTML = ''
+        let pre = document.createElement('pre')
+        pre.setAttribute('data-executable', 'true')
+        pre.setAttribute('data-language', 'python')
+        codeParent.current.appendChild(pre)
+        pre.innerHTML = code
+        thebelab.bootstrap();
+
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready') {
+                kernelRef.current = data.kernel
+                console.log('kernel ready');
+                // alert('Ready')
+                // setActivateStatus('Ready')
+            }
+        })
+    }, [code])
+
+    const runCode = async (e) => {
+        let res = await fetchByJSON('current_data_json', {
+            filename: dataset.filename
+        })
+        let json = await res.json();
+        let res2 = await kernelRef.current.requestExecute({ code: InitialCode[option](json.data) }).done
+        document.querySelector('.thebelab-run-button').click()
+    }
+    const getCodeFromResult = (option, result) => {
+        return DisplayCode[option](result)
+    }
+
+    const InitialCode = {
+    0: code => `
+import pandas as pd
+from io import StringIO
+data_io = StringIO(r"""${code}""")
+df = pd.read_json(data_io)
+`,}
+
+{/* ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; */}
+
+    const DisplayCode = {
+    0: code => (`
+# Demo of "Convert Cases"
+
+print("Before converting")
+print(df.dtypes)
+
+df.convert_dtypes()  # Convert
+
+print("After converting")
+print(df.dtypes)
+`),
+    1: code => (`
+# Demo of "Convert Categorical to Numerical"
+
+df = df.astype('dictioary')   # method 1: get dictionary....
+print(df.dtypes)
+
+#columns = [code....]   # method 2
+#target_data_types = [code...]
+#for column, data_type in zip(columns, target_data_types):
+    #df[column] = df[column].astype(data_type)
+`),
+    2: code => (`
+# Demo of "Convert Numerical to Categorical"
+
+print("Before Removing" )
+print(df.columns)
+
+columns = [code....]
+df = df.drop(columns, axis=1) # Remove Columns
+print("After Removing" )
+print(df.columns)
+ 
+    `),
+    3: code => (`
+# Demo of "Standard Scaler"
+
+columns = [code....]
+characters = [code...]
+
+for column, char in zip(columns, characters):
+    for ch in char:
+        df[column] = df[column].str.replace(ch, '')
+
+print(df.head(20))
+    `),
+    4: code => (`
+# Demo of "Minmax Scaler"
+
+columns = [code....]
+values = [code...]
+
+for column, value in zip(columns, values):
+    temp = value.split(',')
+    df = df[~(df[column].isin(temp))]
+
+print(df.head(20))
+
+    `),
+    5: code => (`
+# Demo of "Text Data: Check Basic Features"
+
+columns = [code....]
+words = [code...]
+
+for column, word in zip(columns, words):
+    temp = word.split(',') if ',' in word else word
+    if ',' in index2:
+        for each_word in temp:
+            df[column] = df[column].str.replace(each_word, '')   
+    else:
+        df[column] = df[column].str.replace(temp, '') 
+
+    `),
+    6: code => (`
+# Demo of "Text Data: Label Values in Columns"
+
+columns = [code...]
+above_list = []
+below_list = []
+for column in columns:
+    q_low = df[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
+    q_hi = df[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
+    df = df[(df[column] <= q_hi) & (df[column] >= q_low)] 
+
+    `),
+    7: code => (`
+# Demo of "Text Data: Feature Engineering"
+
+columns = [code...]
+above_list = []
+below_list = []
+for column in columns:
+    q_low = df[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
+    q_hi = df[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
+    df = df[(df[column] <= q_hi) & (df[column] >= q_low)] 
+
+    `),
+
+    }
+
+    // Demo Code End
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showOptionModal} onClose={()=>{
@@ -191,6 +344,8 @@ const FeatureEngineering = () => {
                             console.log(data);
                             let res = await fetchByJSON('featureEngineering',{...data, filename:dataset.filename}) //send request
                             let json = await res.json()
+                            setCode(getCodeFromResult(option, result)) // Demo code
+
                             $('#display_results').html(json.para_result)
                             document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
        
@@ -236,23 +391,42 @@ const FeatureEngineering = () => {
                 <MultiSelect defaultText={'Selected operations'} customHeight={'h-8'} selections={dataset.dataEngineering} passiveMode={true} />
             </div>
         </div>
+        
+        <div className="w-full flex flex-nowrap">
+            <div className='w-1/2 text-gray-500 font-semibold'>
+                <div className='scroll'>
+                    <Label text="Results:">
+                        <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see results</div>
+                    </Label>
+                    <Label text="Plot:">
+                        <img id="img" src="" />
+                    </Label>
+                </div>
+            </div>
+            {/* Demo code */}
+            <div className='flex-grow-1 w-1/2' ref={codeParent}>  
+                {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                    Select an operation to see the corresponding code
+                </div>}
+            </div>
+        </div>
 
 
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+        {/* <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
             <div className='mx-5 w-12 w-full justify-start'>
             <Label text="Results:">
                 <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} ></div>
             </Label>
             </div>
-        </div>
+        </div> */}
 
-        <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
+        {/* <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
             <div className='mx-5 w-12 w-full justify-start'>
             <Label text="Plot:">
                 <img id="img" src="" />
             </Label>
             </div>
-        </div>
+        </div> */}
 
         <Table PageSize={10}/>
     </div>)

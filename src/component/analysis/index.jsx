@@ -112,7 +112,7 @@ df = pd.read_json(data_io)
 
 const DisplayCode = {
     'Linear Regression': code => (`
-# Demo for Linear Regression
+# Demo of Linear Regression
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -140,7 +140,7 @@ print("Measure performance of model with mean_absolute_error: ", mean_absolute_e
 `),
 
     'Decision Tree Regression': code => `
-# Demo for Decision Tree Regression
+# Demo of Decision Tree Regression
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -168,7 +168,7 @@ print("Measure performance of model with mean_absolute_error: ", mean_absolute_e
 `,
 
     'Random Forests Regression': code => `
-# Demo for Random Forests Regression
+# Demo of Random Forests Regression
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -196,7 +196,7 @@ print("Measure performance of model with mean_absolute_error: ", mean_absolute_e
 `,
 
     'SVM Regression': code => `
-# Demo for SVM Regression
+# Demo of SVM Regression
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -223,7 +223,7 @@ print("Measure performance of model with mean_absolute_error: ", mean_absolute_e
 `,
 
     'Logistic Regression': code => `
-# Demo for Logistic Regression
+# Demo of Logistic Regression
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -252,7 +252,7 @@ print("Measure performance of model with Classification Report: ", report)
     ,
 
     'Decision Tree Classifier': code => `
-# Demo for Decision Tree Classifier
+# Demo of Decision Tree Classifier
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -280,7 +280,7 @@ print("Measure performance of model with Classification Report: ", report)
 `
     ,
     'Random Forests Classifier': code => `
-# Demo for Random Forests Classifier
+# Demo of Random Forests Classifier
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -308,7 +308,7 @@ print("Measure performance of model with Classification Report: ", report)
 `
     ,
     'SVM Classifier': code => `
-# Demo for SVM Classifier
+# Demo of SVM Classifier
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -336,7 +336,7 @@ print("Measure performance of model with Classification Report: ", report)
 `
     ,
     'Naive Bayes Classifier': code => `
-# Demo for Naive Bayes Classifier
+# Demo of Naive Bayes Classifier
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -365,7 +365,7 @@ print("Measure performance of model with Classification Report: ", report)
     ,
 
     'K-means': code => `
-# Demo for K-means
+# Demo of K-means
 # Note: Only one variable "X" is changed automatically based on user's option,
 # other parameters are just example.
 
@@ -396,7 +396,7 @@ sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
     ,
 
     'Apriori': code => `
-# Demo for Apriori
+# Demo of Apriori
 # Note: Only two variables "transid" and "transitem" are changed automatically based on user's option,
 # other parameters are just example.
 
@@ -420,16 +420,17 @@ print(rules)
 `,
 
 'Seasonal ARIMA': code => `
-# Demo for Seasonal ARIMA
-# Note: Only two variables "date_col" and "time_series" are changed automatically based on user's option,
+# Demo of Seasonal ARIMA
+# Note: Only two variables "date_col" and "target_col" are changed automatically based on user's option,
 # other parameters are just example.
 
 # import libraries
 import statsmodels.api as sm 
 
-# one dependent variable, our target variable
+# get "date_col" variable, and our target variable "target_col"
 date_col = '${code.finalX}'
-time_series = '${code.finalY}'
+target_col = '${code.finalY}'
+time_series = df[target_col]
 model = sm.tsa.statespace.SARIMAX(time_series, order=(0,1,0), seasonal_order=(1,1,1,12)).fit()
 print(model.summary())
      
@@ -601,7 +602,7 @@ const Analysis = () => {
                                         {/*   0                           1                            2                               3                 4    */ }
                                         setOption(item)
                                         setOptionText(item)
-                                        setPredictVisible(item != 'clustering' && item != 'associate_rule' && item != 'time_series')
+                                        setPredictVisible(item != 'clustering' && item != 'associate_rule')
                                         return false
                                     }
                                 }))} />
@@ -656,21 +657,21 @@ const Analysis = () => {
                 </div>
             </div>
             <div className="w-full flex flex-nowrap">
-            <div className='w-1/2 text-gray-500 font-semibold'>
-                <div className='scroll'>
-                    <Label customStyle="p-4 gap-8" itemPos="start" text="Model Conditions:" className='w-300'>
-                        <div id="display_query" style={{ whiteSpace: 'pre-wrap' }} >Select a model to see the model conditions</div>
-                    </Label>
-                    <Label customStyle="p-4 gap-8" itemPos="start" text="Model Results:">
-                        <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} >Select a model to see the model results</div>
-                    </Label>
+                <div className='w-1/2 text-gray-500 font-semibold'>
+                    <div className='scroll'>
+                        <Label customStyle="p-4 gap-8" itemPos="start" text="Model Conditions:" className='w-300'>
+                            <div id="display_query" style={{ whiteSpace: 'pre-wrap' }} >Select a model to see the model conditions</div>
+                        </Label>
+                        <Label customStyle="p-4 gap-8" itemPos="start" text="Model Results:">
+                            <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} >Select a model to see the model results</div>
+                        </Label>
 
-                    <Label customStyle="p-4 gap-8" itemPos="start" text="Model Plot:">
-                        <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" />
-                        <div id="model_img_placeholder">Select a model to see the model plot</div>
-                    </Label>
+                        <Label customStyle="p-4 gap-8" itemPos="start" text="Model Plot:">
+                            <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" />
+                            <div id="model_img_placeholder">Select a model to see the model plot</div>
+                        </Label>
+                    </div>
                 </div>
-            </div>
                 <div className='flex-grow-1 w-1/2' ref={codeParent}>
                     {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
                         Select a model to see the corresponding code

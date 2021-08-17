@@ -1626,9 +1626,10 @@ def cond_preprocess_json():
     # 5: Remove Specific Words in Columns
     # 6: Remove Outliers
     if option == 0:
-        ndf = ndf.apply(pd.to_numeric, errors='ignore')
-        for i,k in zip(list(ndf.columns), ndf.dtypes):
-            para_result += "\n" + i + ": " + str(k)
+        ndf = ndf.convert_dtypes()
+        para_result += str(ndf.dtypes)
+        # for i,k in zip(list(ndf.columns), ndf.dtypes):
+        #     para_result += "\n" + i + ": " + str(k)
     elif option == 1:
         for index1, index2 in zip(target_col, target_operation):
             cond += "\n" + str(index1) + ":  " + str(index2)
@@ -1673,27 +1674,9 @@ def cond_preprocess_json():
                 q_hi = ndf[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
                 ndf = ndf[(ndf[column] <= q_hi) & (ndf[column] >= q_low)]  
 
-        # for index1, index2 in zip(target_col, target_operation):
-        #     print("idex1, idex2 = ", index1, index2)
-        #     ndf[index1] =  ndf[index1].astype(float)
-        #     q_low = ndf[index1].quantile(float(index2['below'].strip('%'))/100) if 'below' in index2 else ndf[index1].quantile(0)
-        #     q_hi = ndf[index1].quantile(float(index2['above'].strip('%'))/100) if 'above' in index2 else ndf[index1].quantile(1)
-        #     print(q_low, q_hi)
-
-            #     ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)] 
-            # condition = cleaner['condition']
-            # for item in condition['items']:
-            #     print("item= ", item)
-            #     ndf[item['col']] =  ndf[item['col']].astype(float)
-            #     q_low = ndf[item['col']].quantile(float(item['below'].strip('%'))/100) if 'below' in item else ndf[item['col']].quantile(0)
-            #     q_hi = ndf[item['col']].quantile(float(item['above'].strip('%'))/100) if 'above' in item else ndf[item['col']].quantile(1)
-            #     print(q_low, q_hi)
-
-            #     ndf = ndf[(ndf[item['col']] < q_hi) & (ndf[item['col']] > q_low)]  
-        
-    print(ndf.head(20))
-    print("cond = ", cond)
-    print("para_result=", para_result)
+    # print(ndf.head(20))
+    # print("cond = ", cond)
+    # print("para_result=", para_result)
     _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf)
     return jsonify(data=ndf.to_json(),
