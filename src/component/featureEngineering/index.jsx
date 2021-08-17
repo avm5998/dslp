@@ -205,6 +205,7 @@ const FeatureEngineering = () => {
                 </div>
             </div>
         </Modal>
+        
         <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
             <div className='mx-5 w-8/12 flex justify-start'>
                 <div className='w-72'>
