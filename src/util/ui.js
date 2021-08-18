@@ -566,7 +566,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
 }
 
 
-export function Modal({ clickBgToClose = true, id,fixedModalPosition=undefined,zIndex=1,isOpen, setIsOpen, duration = 300, children, onClose = () => { }, contentStyleText = '', style = {} }) {
+export function Modal({ clickBgToClose = true, id,fixedModalPosition=undefined,zIndex=3,isOpen, setIsOpen, duration = 300, children, onClose = () => { }, contentStyleText = '', style = {} }) {
     let modalBg = useRef()
     let [hidden, setHidden] = useState(true)
     let [realOpen, setIsRealOpen] = useState(false)//if hidden and opacity changed simontaneously, animation fails

@@ -617,7 +617,7 @@ const Analysis = () => {
                         : null}
                     {optionButtonVisibility[2] ?
                         <div>
-                            <Button width="w-40" text={'Add model'} onClick={clearPreset} />
+                            <Button width="w-40" text={'Add model'} onClick={addPreset} />
                         </div>
                         : null}
                 </div>
