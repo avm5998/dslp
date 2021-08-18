@@ -6,6 +6,8 @@ import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Checkbox, Label, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
+import { InlineTip } from '../common/tip';
+
 
 const Options = [
     {name:'Convert to',value:''},
@@ -168,6 +170,8 @@ const Preprocessing = () => {
     let kernelRef = useRef()
     let codeParent = useRef()
     const [code, setCode] = useState('')
+    const [activateStatus, setActivateStatus] = useState('Loading...')
+    let [dfJSON, setDfJSON] = useState('')//dataframe json
     let { getData, result, input } = useSimpleForm({
         default_key: 'default_value'
     })
@@ -192,6 +196,35 @@ const Preprocessing = () => {
             }
         })
     }, [code])
+
+    //start thebelab automatically
+    //load current dataframe
+    useEffect(() => {
+        if (!dataset.filename) {
+            setActivateStatus('No data')
+            return
+        }
+
+        thebelab.bootstrap();
+
+        //excute code in advance on thebelab to import libraries and set dataframe variable
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready' && dataset.filename) {
+                let res = await fetchByJSON('current_data_json', {
+                    filename: dataset.filename
+                })
+
+                let g = await res.json()
+                kernelRef.current = data.kernel
+                // alert('X')
+                data.kernel.requestExecute({ code: InitialCode(g.data) })
+                setDfJSON(g.data)
+                setActivateStatus('Ready')
+            }
+            // console.log("Status changed:", data.status, data.message);
+        })
+
+    }, [dataset.filename])
 
     const runCode = async (e) => {
         let res = await fetchByJSON('current_data_json', {
@@ -391,6 +424,12 @@ const Preprocessing = () => {
                             }
                         }))} />
                 </div>
+
+                <div className='w-auto flex justify-center items-center px-1'>
+                    <div className={``}>{activateStatus}</div>
+                    <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
+                </div>
+
                 <Button text={subOptionText} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
                     if(option>-1){
                         setShowSubOptionModal(true)

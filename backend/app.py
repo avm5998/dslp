@@ -1765,7 +1765,8 @@ def cond_Regression_json():
         elif metric == 'Visualize Tree: Flowchart':
             img = BytesIO()
             plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
-            tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+            class_names = list(str(i) for i in ndf[finalY].unique())
+            tree.plot_tree(model, feature_names=finalVar, class_names=class_names, filled=True)
             plt.savefig(img, format='png') 
             plt.clf()
             img.seek(0)
@@ -2006,7 +2007,8 @@ def cond_Classification_json():
         elif metric == 'Visualize Tree: Flowchart':
             img = BytesIO()
             plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
-            tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+            class_names = list(str(i) for i in ndf[finalY].unique())
+            tree.plot_tree(model, feature_names=finalVar, class_names=class_names, filled=True)
             plt.savefig(img, format='png') 
             plt.clf()
             img.seek(0)

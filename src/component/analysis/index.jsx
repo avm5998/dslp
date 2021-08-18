@@ -10,6 +10,7 @@ import { Checkbox, Modal, MultiSelect, Label, Input } from '../../util/ui'
 import { DropDown, Button, ButtonGroup } from '../../util/ui_components';
 import Table from '../common/table'
 import Tip from '../common/tip'
+import { InlineTip } from '../common/tip';
 import LinearRegressionOptions from './option/regression/linearRegression'
 import DecisionTreeRegressionOptions from './option/regression/decisiontreeRegression'
 import RandomForestsRegressionOptions from './option/regression/randomforestsRegression'
@@ -102,6 +103,7 @@ df['Quantity']= 1
 df = df.groupby(['Transaction','Item'])['Quantity'].sum().unstack().fillna(0)
 df = df.applymap(transform_transaction)
 `,
+
 time_series_analysis: code => `
 import pandas as pd
 from io import StringIO
@@ -469,6 +471,8 @@ const Analysis = () => {
     let codeParent = useRef()
     let { ref, hide: hideSelections } = useToggleGroup()
     const [code, setCode] = useState('')
+    const [activateStatus, setActivateStatus] = useState('Loading...')
+
 
     useEffect(() => {
         if (!code) return
@@ -490,6 +494,35 @@ const Analysis = () => {
             }
         })
     }, [code])
+
+    //start thebelab automatically
+    //load current dataframe
+    useEffect(() => {
+        if (!dataset.filename) {
+            setActivateStatus('No data')
+            return
+        }
+
+        thebelab.bootstrap();
+
+        //excute code in advance on thebelab to import libraries and set dataframe variable
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready' && dataset.filename) {
+                let res = await fetchByJSON('current_data_json', {
+                    filename: dataset.filename
+                })
+
+                let g = await res.json()
+                kernelRef.current = data.kernel
+                // alert('X')
+                data.kernel.requestExecute({ code: InitialCode[option] })
+                setDfJSON(g.data)
+                setActivateStatus('Ready')
+            }
+            // console.log("Status changed:", data.status, data.message);
+        })
+
+    }, [dataset.filename])
 
     const runCode = async (e) => {
         let res = await fetchByJSON('current_data_json', {
@@ -620,6 +653,12 @@ const Analysis = () => {
                                 }))} />
                         </div>
                     </div>
+
+                    <div className='w-auto flex justify-center items-center px-1'>
+                        <div className={``}>{activateStatus}</div>
+                        <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
+                    </div>
+
                     <div>
                         <ButtonGroup buttons={[
                             {
