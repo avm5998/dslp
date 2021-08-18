@@ -9,7 +9,7 @@ import Table from '../common/table'
 
 const Options = [
     {name:'Convert to',value:''},
-    {name:'String',value:'string'},
+    {name:'Object',value:'object'},
     {name:'Integer',value:'int64'},
     {name:'Float',value:'float64'},
     {name:'Datetime',value:'datetime'},
@@ -26,7 +26,7 @@ const NumericalOptions = [
 
 const CategoricalOptions = [
     {name:'Convert to',value:''},
-    {name:'String',value:'string'},
+    {name:'Object',value:'object'},
     {name:'Category',value:'category'},
 ]
 
@@ -68,43 +68,30 @@ for key, val in params.items():
     0: code => (`
 # Demo of "Convert All Data Types Automatically"
 
-print("Before converting")
-print(df.dtypes)
-
-df.convert_dtypes()  # Convert
+ndf.convert_dtypes()  # Convert data types
 
 print("After converting")
-print(df.dtypes)
+print(ndf.dtypes)
 `),
     1: code => (`
 # Demo of "Convert Data Type One by One Manually"
 
-# df = df.astype('dictioary')   # method 1: get dictionary....
-# print(df.dtypes)
-para_result,cond = "",""
-print(target_col,target_operation)
+print('target_col: ', target_col) # users can assign new values to this variable
+print('target_operation: ', target_operation) # users can assign new values to this variable
 for index1, index2 in zip(target_col, target_operation):
-    cond += "\\n" + str(index1) + ":  " + str(index2)
-    if index2 in ['int64', 'float64']:
-        ndf[index1] = pd.to_numeric(ndf[index1], errors='coerce')
-    elif index2 == 'datetime':
-        # ndf[index1] = pd.to_datetime(ndf[index1]) # json problem: turn into a sequence of num
+    if index2 == 'datetime':
         ndf[index1] = ndf[index1].datetime.strftime('%Y-%m-%d')
-    elif index2 == ['int64', 'float64', 'string', 'bool', 'category']:
+    elif index2 in ['int64', 'float64', 'object', 'bool', 'category']:
         ndf[index1] = ndf[index1].astype(index2)
 
-for i,k in zip(list(ndf.columns), ndf.dtypes):
-    para_result +=  "\\n" + i + ": " + str(k)
-
-print(cond,para_result)
+print("After converting")
+print(ndf.dtypes)
 `),
     2: code => (`
 # Demo of "Remove Columns"
 
-print("Before Removing" )
-print(df.columns)
-
-columns = [code....]
+columns = params['cols'] # users can assign new values to this variable
+print('columns: ', columns)
 df = df.drop(columns, axis=1) # Remove Columns
 print("After Removing" )
 print(df.columns)
@@ -113,53 +100,55 @@ print(df.columns)
     3: code => (`
 # Demo of "Remove Useless Characters in Columns"
 
-columns = [code....]
-characters = [code...]
+print('target_col: ', target_col) # users can assign new values to this variable
+print('target_operation: ', target_operation) # users can assign new values to this variable
 
-for column, char in zip(columns, characters):
-    for ch in char:
-        df[column] = df[column].str.replace(ch, '')
+for index1, index2 in zip(target_col, target_operation):
+    for k in index2:
+        ndf[index1] = ndf[index1].str.replace(k, '')
 
-print(df.head(20))
+print(ndf.head())  # check the dataset
     `),
     4: code => (`
 # Demo of "Remove Rows Containing Specific Values"
 
-columns = [code....]
-values = [code...]
+print('target_col: ', target_col) # users can assign new values to this variable
+print('target_operation: ', target_operation) # users can assign new values to this variable
 
-for column, value in zip(columns, values):
-    temp = value.split(',')
-    df = df[~(df[column].isin(temp))]
+for index1, index2 in zip(target_col, target_operation):
+    temp = index2.split(',')
+    ndf = ndf[~(df[index1].isin(temp))]
 
-print(df.head(20))
+print(ndf.head())  # check the dataset
 
     `),
     5: code => (`
 # Demo of "Remove Specific Words in Columns"
 
-columns = [code....]
-words = [code...]
+print('target_col: ', target_col) # users can assign new values to this variable
+print('target_operation: ', target_operation) # users can assign new values to this variable
 
-for column, word in zip(columns, words):
-    temp = word.split(',') if ',' in word else word
+for index1, index2 in zip(target_col, target_operation):
+    temp = index2.split(',') if ',' in index2 else index2
     if ',' in index2:
         for each_word in temp:
-            df[column] = df[column].str.replace(each_word, '')   
+            ndf[index1] = ndf[index1].str.replace(each_word, '')   
     else:
-        df[column] = df[column].str.replace(temp, '') 
+        ndf[index1] = ndf[index1].str.replace(temp, '') 
 
+print(ndf.head())  # check the dataset
+ 
     `),
     6: code => (`
 # Demo of "Remove Outliers"
 
-columns = [code...]
-above_list = []
-below_list = []
-for column in columns:
-    q_low = df[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
-    q_hi = df[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
-    df = df[(df[column] <= q_hi) & (df[column] >= q_low)] 
+for column in ndf.columns:
+    if column+'_above' in params or column+'_below' in params:
+        q_low = ndf[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
+        q_hi = ndf[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
+        ndf = ndf[(ndf[column] <= q_hi) & (ndf[column] >= q_low)] 
+
+print(ndf.describe())  # check the dataset
 
     `),
 

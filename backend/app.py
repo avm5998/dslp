@@ -1637,22 +1637,14 @@ def cond_preprocess_json():
     if option == 0:
         ndf = ndf.convert_dtypes()
         para_result += str(ndf.dtypes)
-        # for i,k in zip(list(ndf.columns), ndf.dtypes):
-        #     para_result += "\n" + i + ": " + str(k)
     elif option == 1:
         for index1, index2 in zip(target_col, target_operation):
             cond += "\n" + str(index1) + ":  " + str(index2)
-            print("index2==", index2)
-            print("index1=", index1)
-            if index2 in ['int64', 'float64']:
-                ndf[index1] = pd.to_numeric(ndf[index1], errors='coerce')
-            elif index2 == 'datetime':
-                # ndf[index1] = pd.to_datetime(ndf[index1]) # json problem: turn into a sequence of num
+            if index2 == 'datetime':
                 ndf[index1] = ndf[index1].datetime.strftime('%Y-%m-%d')
-            elif index2 == ['int64', 'float64', 'string', 'bool', 'category']:
+            elif index2 in ['int64', 'float64', 'object', 'bool', 'category']:
                 ndf[index1] = ndf[index1].astype(index2)
-        for i,k in zip(list(ndf.columns), ndf.dtypes):
-            para_result +=  "\n" + i + ": " + str(k)
+        para_result += str(ndf.dtypes)
     elif option == 2:
         remove_cols = params['cols']
         cond += "\n" + str(remove_cols)
