@@ -26,7 +26,7 @@ export const register = (fullname, username, email, password, role) => (dispatch
       console.log("reg em", email);
       dispatch({
         type: REGISTER_SUCCESS,
-        payload:{email:email}
+        payload:{email:email, otp_purpose : "register"}
       });
 
       dispatch({
@@ -46,6 +46,7 @@ export const register = (fullname, username, email, password, role) => (dispatch
 
       dispatch({
         type: REGISTER_FAIL,
+        payload:{email:"", otp_purpose : "register"}
       });
 
       dispatch({
@@ -131,6 +132,7 @@ export const reset_password = ( email) =>  dispatch => {
     (response) => {
       dispatch({
         type: PASSWORD_RESET_SUCCESS,
+        payload:{email:email, otp_purpose: "change_password"}
       });
 
       dispatch({
@@ -150,6 +152,7 @@ export const reset_password = ( email) =>  dispatch => {
 
       dispatch({
         type: PASSWORD_RESET_FAIL,
+        payload: {otp_purpose:""}
       });
 
       dispatch({
@@ -163,11 +166,12 @@ export const reset_password = ( email) =>  dispatch => {
 };
 
 
-export const reset_password_confirm = (  reset_token, new_password) => dispatch => {
-  return AuthService.reset_password_confirm(reset_token, new_password).then(
+export const reset_password_confirm = ( data ) => dispatch => {
+  return AuthService.reset_password_confirm(data).then(
     (response) => {
       dispatch({
         type: PASSWORD_RESET_CONFIRM_SUCCESS,
+        payload : {otp: "", email : "", otp_purpose : ""}
       });
       dispatch({
         type: SET_MESSAGE,
@@ -198,13 +202,22 @@ export const reset_password_confirm = (  reset_token, new_password) => dispatch 
   );
 };
 
-export const verify_otp = (  otp, email) => dispatch => {
-  console.log("a e",email)
-  return AuthService.verify_otp(otp, email).then(
+export const verify_otp = (  otp, email, otp_purpose) => dispatch => {
+  return AuthService.verify_otp(otp, email, otp_purpose).then(
     (response) => {
-      dispatch({
-        type: VERIFY_OTP_SUCCESS
-      });
+      if(otp_purpose === 'change_password'){
+        dispatch({
+          type: VERIFY_OTP_SUCCESS,
+          payload: {otp: otp, email : email, otp_purpose : otp_purpose}
+        });
+      }
+      else{
+        dispatch({
+          type: VERIFY_OTP_SUCCESS,
+          payload : {otp: "", email : "", otp_purpose : ""}
+        });
+      }
+
       dispatch({
         type: SET_MESSAGE,
         payload: response.data.message,
@@ -234,9 +247,9 @@ export const verify_otp = (  otp, email) => dispatch => {
   );
 };
 
-export const resend_otp = (email) => dispatch => {
+export const resend_otp = (email, otp_purpose) => dispatch => {
   console.log("a e",email)
-  return AuthService.resend_otp(email).then(
+  return AuthService.resend_otp(email, otp_purpose).then(
     (response) => {
       dispatch({
         type: RESEND_OTP_SUCCESS
