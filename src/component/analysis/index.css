@@ -3,7 +3,7 @@ div.scroll {
     padding: 4px;
     background-color: text-gray-500;
     overflow-x: auto;
-    height: 440px;
+    height: auto;
     overflow-y: auto;
     white-space: nowrap;
 }

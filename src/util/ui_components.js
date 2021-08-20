@@ -191,11 +191,11 @@ export function ButtonGroup({ buttons = [] }) {
           <div>
             <FontAwesomeIcon className='cursor-pointer hover:text-gray-600 absolute right-2 top-1 text-gray-400' icon={faTimes} onClick={()=>setShowItem(s=>!s)}/>
           </div>
-          {buttons.map(button=>(<div className='cursor-pointer text-gray-700 mr-4 burger-menu-sm-item border-gray-800' onClick={button.onClick || noop}>{button.text}</div>))}
+          {buttons.map(button=>(<div key={button.text} className='cursor-pointer text-gray-700 mr-4 burger-menu-sm-item border-gray-800' onClick={button.onClick || noop}>{button.text}</div>))}
           </>
         </div>
       </div>
-      <div className='burger-menu-item flex-row gap-4 items-center'>{buttons.map(button=>(<Button {...button}/>))}</div>
+      <div className='burger-menu-item flex-row gap-4 items-center'>{buttons.map(button=>(<Button key={button.text} {...button}/>))}</div>
     </>
   );
 }

@@ -549,12 +549,13 @@ const Analysis = () => {
         // console.log(presetsArr.length ? presetsArr[presetsArr.length-1] : null);
         // setCurrentPreset(presetsArr.length ? presetsArr[presetsArr.length-1] : null)
     }, [option, model, preset])
+    
     let submit = useCallback(async () => {
         dispatch(OptionActions.setOption(['analysis', option, model, { ...result }]))
         let res = await fetchByJSON(`analysis/${option}`, { ...result, filename: dataset.filename })   //send request
         let json = await res.json()     // receive request
-        setCode(getCodeFromResult(option, model, result))
-        console.log(json)
+        setCode(getCodeFromResult(option, model, result))   // demo code
+        // console.log(json)
         // json.cond.replace(/&/g, ",  ")
         $('#display_query').text(json.cond.trim())
         $('#display_results').html(json.para_result.trim())

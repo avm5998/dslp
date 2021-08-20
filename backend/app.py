@@ -1330,7 +1330,7 @@ def cond_eng_json():
 
     elif option == 1:
         cols = params['cols']
-        print("cols1-=", cols)
+        print("cols=", cols)
         for index, col in cols:
             label = LabelEncoder()
             ndf[col] = label.fit_transform(ndf[col].astype(str))
@@ -1356,8 +1356,6 @@ def cond_eng_json():
             ndf[new_colname] = ndf[col1_arithmetic] / ndf[col2_arithmetic]
     elif option == 4:
         cols = params['cols']
-        print("col3=", cols)
-        print('df', ndf.head())
         stand_scaler_col=[]
         for index, col in cols:
             stand_scaler_col.append(col)
@@ -1367,7 +1365,6 @@ def cond_eng_json():
         print(ndf.head())
     elif option == 5:
         cols = params['cols']
-        print("cols4=", cols)
         stand_scaler_col=[]
         for index, col in cols:
             stand_scaler_col.append(col)
@@ -1506,15 +1503,15 @@ def cond_eng_json():
             tf_vectorizer = CountVectorizer()
             tf = tf_vectorizer.fit_transform(ndf[text_feateng_col]).toarray()
             tf_feat_names = tf_vectorizer.get_feature_names()
-            para_result += "\nVocabulary: \n" + tf_feat_names 
-            para_result += '\nCount Vectorizer After fit_transform: \n' + tf
+            para_result += "\nVocabulary: \n" + str(tf_feat_names)
+            para_result += '\nCount Vectorizer After fit_transform: \n' + str(tf)
         if 'Extract Model2: TfidfVectorizer' in text_feateng_option:
             tfidf_vectorizer = TfidfVectorizer()
             tfidf = tfidf_vectorizer.fit_transform(ndf[text_feateng_col]).toarray()
             tfidf_feat_names = tfidf_vectorizer.get_feature_names()
-            para_result += "\nVocabulary: \n" + tfidf_feat_names
-            para_result += "\nidf vector: \n" + tfidf_vectorizer.idf_
-            para_result += '\nTF-IDF Vectorizer After fit_transform: \n' + tfidf
+            para_result += "\nVocabulary: \n" + str(tfidf_feat_names)
+            para_result += "\nidf vector: \n" + str(tfidf_vectorizer.idf_)
+            para_result += '\nTF-IDF Vectorizer After fit_transform: \n' + str(tfidf)
     _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf) # update num_col and cate_col
     return jsonify(data=ndf.to_json(), cols = cols, num_cols = num_cols, cate_cols = cate_cols, para_result=para_result, plot_url=plotUrl)

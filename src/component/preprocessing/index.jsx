@@ -164,7 +164,7 @@ const Preprocessing = () => {
     let [option, setOption] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let dataset = useSelector(state => state.dataset)
-    let requestObjectRef = useRef(null)
+    let requestObjectRef = useRef(null) //demo
 
     // Demo Code Begin
     let kernelRef = useRef()
@@ -299,7 +299,7 @@ const Preprocessing = () => {
 
         let json = await res.json()
         setCode(getCodeFromResult(option,requestObject)) // Demo code
-        requestObjectRef.current = requestObject
+        requestObjectRef.current = requestObject //demo code
         // console.log(json.data)
         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
         $('#display_cond').text(json.cond)

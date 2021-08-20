@@ -11,7 +11,8 @@ import { InlineTip } from '../common/tip'
 
 const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Create Features by Arithmetic Operations','Standard Scaler', 'Minmax Scaler',  'Text Data: Check Basic Features', 'Text Data: Label Values in Columns', 'Text Data: Feature Engineering']; //, 'Add New Features', 'Text Data: Feature Extraction Models',
 //                       0                    1                                     2                                          3                              4                 5                         6                                           7                           8
-
+// const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; //, 'Add New Features'
+//                        0                       1                                      2                            3              4                            5
 const getCanOperation = (dataset, operationIndex)=>{
     switch(operationIndex){
         case 0:
@@ -49,37 +50,214 @@ const FeatureEngineering = () => {
     let [showOptionModal, setShowOptionModal] = useState(false)
     let dataset = useSelector(state => state.dataset)
     let dispatch = useDispatch()
+
     let {result, checkbox:checkbox2, input:input2, getData,clearData} = useSimpleForm()
+    // let {result,getData,clearData} = useSimpleForm()
     let [isTsv, setIsTsv] = useState(0)
-
-    useEffect(()=>{
-        let extension = dataset.filename.substr(dataset.filename.lastIndexOf('.')+1)
-        if(extension === 'tsv'){
-            setIsTsv(1)
-        }
-    },[])
-
-    useEffect(()=>{
-        clearData()
-        result.activeOption = option
-        result.cols = {}
-        // if(option == 0){
-        //     result.cols = {}
-        // }
-    },[option])
-
-    console.log(result);
-
-    let ts = new Date().getTime()
 
 
     // Demo Code Begin
+    let [dfJSON, setDfJSON] = useState('')//dataframe json
     let kernelRef = useRef()
     let codeParent = useRef()
     const [code, setCode] = useState('')
-    // let { getData, result, input } = useSimpleForm({
-    //     default_key: 'default_value'
-    // })
+    const [activateStatus, setActivateStatus] = useState('Loading...')
+    const getCodeFromResult = (option, result) => {
+        return DisplayCode[option](result)
+    }
+    const InitialCode = {
+    0: code => `
+    import pandas as pd
+    from io import StringIO
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    1: code => `
+    import pandas as pd
+    from io import StringIO
+    from sklearn.preprocessing import LabelEncoder
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    2: code => `
+    import pandas as pd
+    from io import StringIO
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    3: code => `
+    import pandas as pd
+    from io import StringIO
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    4: code => `
+    import pandas as pd
+    from io import StringIO
+    from sklearn.preprocessing import StandardScaler
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    5: code => `
+    import pandas as pd
+    from io import StringIO
+    from sklearn.preprocessing import MinMaxScaler
+
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    6: code => `
+    import pandas as pd
+    from io import StringIO
+    import nltk
+    from nltk.tokenize import word_tokenize
+    nltk.download('punkt')
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    7: code => `
+    import pandas as pd
+    from io import StringIO
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    8: code => `
+    import pandas as pd
+    from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+    from io import StringIO
+    data_io = StringIO(r"""${code}""")
+    df = pd.read_json(data_io)
+    `,
+    }
+
+    const DisplayCode = {
+0: code => (`
+# Demo of "Convert Cases"
+
+operation = "to lowercase"
+column = "Name"  # change to the column to be tested from dataset
+
+if operation == 'to lowercase':
+    df[column] = df[column].astype(str).str.lower()
+elif operation == 'to uppercase':
+    df[column] = df[column].astype(str).str.upper()
+
+print(df.head())
+`),
+    1: code => (`
+# Demo of "Convert Categorical to Numerical"
+
+column = "Sex"  # change to the column to be tested from dataset
+
+label = LabelEncoder()
+df[column] = label.fit_transform(df[column].astype(str))
+
+print(df.head())
+
+`),
+    2: code => (`
+# Demo of "Convert Numerical to Categorical"
+# Assigned values are based on the dataset: titanic.csv
+
+column = "Sex"  # change to the column to be tested from dataset
+
+bins = [0,1,2]  # bins of "column"
+labels = ['female', 'male']  # labels to be assigned to bins 
+df[column] = pd.cut(df[column].astype(float), bins=bins, labels=labels)
+    
+print(df.head())
+ 
+    `),
+    3: code => (`
+# Demo of "Create Features by Arithmetic Operations"
+
+column1 = "Quantity"
+operation = '*'
+column2 = "Unit Price"
+new_colname = "Total Price"
+
+if operation == '+':
+    df[new_colname] = df[column1] + ndf[column2]
+elif operation == '-':
+    df[new_colname] = df[column1] - df[column2]
+elif operation == '*':
+    df[new_colname] = df[column1] * df[column2]
+elif operation == '/':
+    df[new_colname] = df[column1] / df[column2]
+
+print(df.head())
+
+    `),
+
+    4: code => (`
+# Demo of "Standard Scaler"
+# Assigned values are based on the dataset: titanic.csv
+
+columns = ["Age", "Sex"]    # change to columns to be tested from dataset
+
+scaler = StandardScaler()
+df[columns] = scaler.fit_transform(df[columns])
+
+print(df.head())
+    `),
+
+    5: code => (`
+# Demo of "Minmax Scaler"
+# Assigned values are based on the dataset: titanic.csv
+
+columns = ["Age", "Sex"]    # change to columns to be tested from dataset
+
+scaler = MinMaxScaler()
+df[columns] = scaler.fit_transform(df[columns])
+
+print(df.head())
+    `),
+
+    6: code => (`
+# Demo of "Text Data: Check Basic Features"
+
+column = 'Name'
+operation = 'check most common words'
+all_words=[]
+for msg in df[column]:
+    words=word_tokenize(msg)
+    for w in words:
+        all_words.append(w)
+#Frequency of Most Common Words
+frequency_dist=nltk.FreqDist(all_words)
+print(frequency_dist)
+#Frequency Plot for first 20 most frequently occuring words
+frequency_dist.plot(20,cumulative=False)
+
+    `),
+    7: code => (`
+# No Demo for "Text Data: Label Values in Columns"
+
+    `),
+    8: code => (`
+# Demo of "Text Data: Feature Engineering"
+
+text_feateng_option = 'Extract Model1: CountVectorizer'
+column = 'Name'
+
+if text_feateng_option == 'Extract Model1: CountVectorizer':
+    tf_vectorizer = CountVectorizer()
+    tf = tf_vectorizer.fit_transform(df[column]).toarray()
+    tf_feat_names = tf_vectorizer.get_feature_names()
+    print("Vocabulary: \\n", str(tf_feat_names))
+    print("Count Vectorizer After fit_transform: \\n", str(tf))
+elif text_feateng_option == 'Extract Model2: TfidfVectorizer':
+    tfidf_vectorizer = TfidfVectorizer()
+    tfidf = tfidf_vectorizer.fit_transform(df[column]).toarray()
+    tfidf_feat_names = tfidf_vectorizer.get_feature_names()
+    print("Vocabulary: \\n" + str(tfidf_feat_names))
+    print("idf vector: \\n" + str(tfidf_vectorizer.idf_))
+    print("TF-IDF Vectorizer After fit_transform: \\n" + str(tfidf))
+
+    `),
+
+    }
+
 
     useEffect(() => {
         if (!code) return
@@ -102,131 +280,71 @@ const FeatureEngineering = () => {
         })
     }, [code])
 
+
+    //start thebelab automatically
+    //load current dataframe
+    useEffect(() => {
+        if (!dataset.filename) {
+            setActivateStatus('No data')
+            return
+        }
+
+        thebelab.bootstrap();
+
+        //excute code in advance on thebelab to import libraries and set dataframe variable
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready' && dataset.filename) {
+                let res = await fetchByJSON('current_data_json', {
+                    filename: dataset.filename
+                })
+
+                let g = await res.json()
+                kernelRef.current = data.kernel
+                // alert('X')
+                data.kernel.requestExecute({ code: InitialCode[option] })
+                setDfJSON(g.data)
+                setActivateStatus('Ready')
+            }
+            // console.log("Status changed:", data.status, data.message);
+        })
+
+    }, [dataset.filename])
+
+
     const runCode = async (e) => {
         let res = await fetchByJSON('current_data_json', {
             filename: dataset.filename
         })
+
         let json = await res.json();
+
         let res2 = await kernelRef.current.requestExecute({ code: InitialCode[option](json.data) }).done
+
         document.querySelector('.thebelab-run-button').click()
     }
-    const getCodeFromResult = (option, result) => {
-        return DisplayCode[option](result)
-    }
 
-    const InitialCode = {
-    0: code => `
-import pandas as pd
-from io import StringIO
-data_io = StringIO(r"""${code}""")
-df = pd.read_json(data_io)
-`,}
+    //Demo Code End
 
-{/* ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Standard Scaler', 'Minmax Scaler', 'Text Data: Feature Extraction Models']; */}
 
-    const DisplayCode = {
-    0: code => (`
-# Demo of "Convert Cases"
+    useEffect(()=>{
+        let extension = dataset.filename.substr(dataset.filename.lastIndexOf('.')+1)
+        if(extension === 'tsv'){
+            setIsTsv(1)
+        }
+    },[])
 
-print("Before converting")
-print(df.dtypes)
+    useEffect(()=>{
+        clearData()
+        result.activeOption = option
+        result.cols = {}
+        // if(option == 0){
+        //     result.cols = {}
+        // }
+    },[option])
 
-df.convert_dtypes()  # Convert
+    console.log(result);
 
-print("After converting")
-print(df.dtypes)
-`),
-    1: code => (`
-# Demo of "Convert Categorical to Numerical"
-
-df = df.astype('dictioary')   # method 1: get dictionary....
-print(df.dtypes)
-
-#columns = [code....]   # method 2
-#target_data_types = [code...]
-#for column, data_type in zip(columns, target_data_types):
-    #df[column] = df[column].astype(data_type)
-`),
-    2: code => (`
-# Demo of "Convert Numerical to Categorical"
-
-print("Before Removing" )
-print(df.columns)
-
-columns = [code....]
-df = df.drop(columns, axis=1) # Remove Columns
-print("After Removing" )
-print(df.columns)
- 
-    `),
-    3: code => (`
-# Demo of "Standard Scaler"
-
-columns = [code....]
-characters = [code...]
-
-for column, char in zip(columns, characters):
-    for ch in char:
-        df[column] = df[column].str.replace(ch, '')
-
-print(df.head(20))
-    `),
-    4: code => (`
-# Demo of "Minmax Scaler"
-
-columns = [code....]
-values = [code...]
-
-for column, value in zip(columns, values):
-    temp = value.split(',')
-    df = df[~(df[column].isin(temp))]
-
-print(df.head(20))
-
-    `),
-    5: code => (`
-# Demo of "Text Data: Check Basic Features"
-
-columns = [code....]
-words = [code...]
-
-for column, word in zip(columns, words):
-    temp = word.split(',') if ',' in word else word
-    if ',' in index2:
-        for each_word in temp:
-            df[column] = df[column].str.replace(each_word, '')   
-    else:
-        df[column] = df[column].str.replace(temp, '') 
-
-    `),
-    6: code => (`
-# Demo of "Text Data: Label Values in Columns"
-
-columns = [code...]
-above_list = []
-below_list = []
-for column in columns:
-    q_low = df[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
-    q_hi = df[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
-    df = df[(df[column] <= q_hi) & (df[column] >= q_low)] 
-
-    `),
-    7: code => (`
-# Demo of "Text Data: Feature Engineering"
-
-columns = [code...]
-above_list = []
-below_list = []
-for column in columns:
-    q_low = df[column].quantile(float(params[column+'_above'].strip('%') or 0)/100 if column+'_above' in params else 0)
-    q_hi = df[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
-    df = df[(df[column] <= q_hi) & (df[column] >= q_low)] 
-
-    `),
-
-    }
-
-    // Demo Code End
+    let ts = new Date().getTime()
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showOptionModal} onClose={()=>{
@@ -344,7 +462,7 @@ for column in columns:
                             console.log(data);
                             let res = await fetchByJSON('featureEngineering',{...data, filename:dataset.filename}) //send request
                             let json = await res.json()
-                            setCode(getCodeFromResult(option, result)) // Demo code
+                            setCode(getCodeFromResult(option, result)) // demo code
 
                             $('#display_results').html(json.para_result)
                             document.getElementById("img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
@@ -360,7 +478,6 @@ for column in columns:
                 </div>
             </div>
         </Modal>
-        
         <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
             <div className='mx-5 w-8/12 flex justify-start'>
                 <div className='w-72'>
@@ -380,6 +497,11 @@ for column in columns:
                             }
                         }))} />
                 </div>
+                <div className='w-auto flex justify-center items-center px-1'>
+                    <div className={``}>{activateStatus}</div>
+                    <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
+                </div>
+
                 <Button text={'Options'} disabled={!canOperation} customStyle={'h-6 w-48 ml-10 py-1'} onClick={()=>{
                     if(option>-1){
                         result.cols = {}
@@ -387,16 +509,22 @@ for column in columns:
                     }
                 }}/>
             </div>
-            <div className='mx-5 w-3/12'>
-                <MultiSelect defaultText={'Selected operations'} customHeight={'h-8'} selections={dataset.dataEngineering} passiveMode={true} />
-            </div>
+          
+
+            {/* demo code */}
+            <Button onClick={() => {
+                            runCode() 
+                        }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
+                            ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
+   
         </div>
-        
+
         <div className="w-full flex flex-nowrap">
             <div className='w-1/2 text-gray-500 font-semibold'>
                 <div className='scroll'>
+
                     <Label text="Results:">
-                        <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see results</div>
+                        <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see preprocessed results</div>
                     </Label>
                     <Label text="Plot:">
                         <img id="img" src="" />
@@ -412,21 +540,6 @@ for column in columns:
         </div>
 
 
-        {/* <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-            <Label text="Results:">
-                <div id = "display_results" style={{ whiteSpace: 'pre-wrap' }} ></div>
-            </Label>
-            </div>
-        </div> */}
-
-        {/* <div className="h-auto w-full items-start justify-start bg-gray-100 shadow-md py-4 px-4 box-border">
-            <div className='mx-5 w-12 w-full justify-start'>
-            <Label text="Plot:">
-                <img id="img" src="" />
-            </Label>
-            </div>
-        </div> */}
 
         <Table PageSize={10}/>
     </div>)
