@@ -1,6 +1,6 @@
 Dear user,
 
-Please enter the below One Time Password (OTP) to confirm your
+Please enter the below One Time Password (OTP) to confirm
 {{otp}}
 
 Your OTP will expire in 5 minutes

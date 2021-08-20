@@ -55,6 +55,7 @@ const EnterOtp = ({props}) => {
   let { message } = useSelector(state => state.message);
   const dispatch = useDispatch();
   let emailToBeRegistered = useSelector(state => state.auth.emailToBeRegistered);
+  let otp_purpose = useSelector(state => state.auth.otp_purpose);
   console.log("otp e", emailToBeRegistered);
   const handleChange = (val) => {
     setOtp(val);
@@ -62,11 +63,16 @@ const EnterOtp = ({props}) => {
 
   const submitOtp = () => {
     setSuccessful(false);
-    dispatch(verify_otp(otp, emailToBeRegistered)).then(() => {
+    dispatch(verify_otp(otp, emailToBeRegistered, otp_purpose)).then(() => {
         console.log("otp verified successfully")
         setSuccessful(true);
         setResendOtpButtonEnable(false);
-        history.push("/login");
+        if(otp_purpose == "register"){
+          history.push("/login");
+        }
+        else if(otp_purpose == "change_password"){
+          history.push("/reset");
+        }
       })
       .catch(() => {
         setSuccessful(false);
@@ -77,7 +83,7 @@ const EnterOtp = ({props}) => {
 
 const resendOtp = () => {
   setOtpResent(false);
-  dispatch(resend_otp(emailToBeRegistered)).then(() => {
+  dispatch(resend_otp(emailToBeRegistered, otp_purpose)).then(() => {
     setOtpResent(true);
     setOtp("");
     setResendOtpButtonEnable(false);
@@ -118,7 +124,7 @@ const resendOtp = () => {
           <Grid item xs={12} textalign="center">
             <Paper elevation={0}>
               <Typography variant="h6">
-                Please enter the verification code sent to your mobile
+                Please enter the verification code sent to your email
               </Typography>
             </Paper>
           </Grid>

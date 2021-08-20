@@ -561,7 +561,7 @@ const ChangePassword = ({ tabpanelIndex, tabpanel, currentUser }) => {
     if (checkBtn.current.context._errors.length === 0) {
         let token = currentUser.accessToken;
         token = token.replaceAll("$", ".")
-        dispatch(reset_password_confirm(token, newPassword))
+        dispatch(reset_password_confirm({"reset_token":token, "new_password":newPassword}))
         .then(() => {
           setSuccessful(true);
         })

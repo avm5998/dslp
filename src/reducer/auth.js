@@ -28,32 +28,40 @@ import {
 let user = JSON.parse(localStorage.getItem("user"));
 let emailToBeRegistered = localStorage.getItem("emailToBeRegistered");
 const initialState = user
-  ? { isLoggedIn: true, user, emailToBeRegistered: ""}
-  : { isLoggedIn: false, user: null, emailToBeRegistered:emailToBeRegistered };
+  ? { isLoggedIn: true, user, emailToBeRegistered: "", otp:"", otp_purpose:""}
+  : { isLoggedIn: false, user: null, emailToBeRegistered:emailToBeRegistered, otp:"", otp_purpose:""};
   
 
 export default function (state = initialState, action) {
   const { type, payload } = action;
 
   switch (type) {
+    case PASSWORD_RESET_SUCCESS:
     case REGISTER_SUCCESS:
       return {
         ...state,
         isLoggedIn: false,
-        emailToBeRegistered : payload.email
+        emailToBeRegistered : payload.email,
+        otp_purpose : payload.otp_purpose
       };
     case REGISTER_FAIL:
     case VERIFY_OTP_SUCCESS:
+    case PASSWORD_RESET_CONFIRM_SUCCESS:
       return {
         ...state,
         isLoggedIn: false,
-        emailToBeRegistered : ""
+        emailToBeRegistered : payload.email,
+        otp: payload.otp,
+        otp_purpose:payload.otp_purpose
       };
     case LOGIN_SUCCESS:
       return {
         ...state,
         isLoggedIn: true,
-        user: payload.user
+        user: payload.user,
+        emailToBeRegistered : "",
+        otp_purpose : "",
+        otp:""
       };
     case LOGIN_FAIL:
       return {
@@ -67,10 +75,8 @@ export default function (state = initialState, action) {
         isLoggedIn: false,
         user: null,
       };
-    case PASSWORD_RESET_SUCCESS:
     case PASSWORD_RESET_FAIL:
     case PASSWORD_RESET_CONFIRM_FAIL:
-    case PASSWORD_RESET_CONFIRM_SUCCESS:
     case CHANGE_PROFILE_PIC_FAILURE:
     case LOGOUT_FAIL:
     case CHANGE_INSTRUCTOR_FAILURE:

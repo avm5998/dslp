@@ -59,19 +59,19 @@ const forgot_password = (email) => {
   return axios.post(API_URL+'forgot', { email });
 };
 
-const reset_password_confirm = (reset_token, new_password) => {
-  return axios.post(API_URL+'reset', { reset_token, new_password });
+const reset_password_confirm = (data) => {
+  return axios.post(API_URL+'reset', data);
 };
 
 
-const verify_otp = (otp, email) => {
+const verify_otp = (otp, email, otp_purpose) => {
   console.log("s e",email)
-  return axios.post(API_URL+'verify_otp', { otp, email });
+  return axios.post(API_URL+'verify_otp', { otp, email, otp_purpose });
 }
 
-const resend_otp = (email) => {
+const resend_otp = (email, otp_purpose) => {
   console.log("s e",email)
-  return axios.post(API_URL+'resend_otp', { email });
+  return axios.post(API_URL+'resend_otp', { email, otp_purpose });
 }
 
 export default {

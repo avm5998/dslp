@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useHistory } from "react-router-dom";
 import { connect } from 'react-redux';
 import Form from "react-validation/build/form";
 import Input from "react-validation/build/input";
@@ -33,7 +34,7 @@ const validEmail = (value) => {
 const ForgotPassword = (props) => {
   const form = useRef();
   const checkBtn = useRef();
-
+  let history = useHistory();
   const [email, setEmail] = useState("");
   const [successful, setSuccessful] = useState(false);
   const { message } = useSelector(state => state.message);
@@ -55,6 +56,7 @@ const ForgotPassword = (props) => {
         dispatch(reset_password(email))
           .then(() => {
             setSuccessful(true);
+            history.push("/enterOtp")
           })
           .catch(() => {
             setSuccessful(false);
@@ -83,7 +85,7 @@ const ForgotPassword = (props) => {
                   validations={[required, validEmail]}
                 />
               </div>
-              <button className="w-auto btn btn-lg btn-primary btn-block col-span-2">Send reset link to mail </button>
+              <button className="w-auto btn btn-lg btn-primary btn-block col-span-2">Send otp to email </button>
             
             </div>
             {message && (

@@ -1,80 +1,7 @@
-  
-// import React, { useState } from 'react';
-// import { Redirect } from 'react-router-dom';
-// import { connect } from 'react-redux';
-// import { reset_password_confirm } from '../../actions/auth';
-
-
-// const ResetPasswordConfirm = ({ match, reset_password_confirm }) => {
-//     const [requestSent, setRequestSent] = useState(false);
-//     const [formData, setFormData] = useState({
-//         new_password: '',
-//         re_new_password: ''
-//     });
-//     console.log(match.params)
-//     const { new_password, re_new_password } = formData;
-
-//     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-//     const onSubmit = e => {
-//         e.preventDefault();
-        
-//         const token = match.params.token;
-
-//         reset_password_confirm(token, new_password, re_new_password);
-//         setRequestSent(true);
-//     };
-
-//     if (requestSent) {
-//         return <Redirect to='/login' />
-//     }
-
-//     return (
-//         <div className="form-signin flex flex-col justifyy-center">
-
-//         <div className="card card-container">
-  
-//           <h1 className="cursor-default mb-6 text-2xl font-semibold tracking-tighter text-gray-300 sm:text-3xl title-font text-center">
-//                   Reset password
-//           </h1>
-//             <form onSubmit={e => onSubmit(e)}>
-//             <div className='form-group'>
-//                     <input
-//                         className='form-control'
-//                         type='password'
-//                         placeholder='New Password'
-//                         name='new_password'
-//                         value={new_password}
-//                         onChange={e => onChange(e)}
-//                         minLength='6'
-//                         required
-//                     />
-//                 </div>
-//                 <div className='form-group'>
-//                     <input
-//                         className='form-control'
-//                         type='password'
-//                         placeholder='Confirm New Password'
-//                         name='re_new_password'
-//                         value={re_new_password}
-//                         onChange={e => onChange(e)}
-//                         minLength='6'
-//                         required
-//                     />
-//                 </div>
-//                 <button className='btn btn-primary' type='submit'>Reset Password</button>
-//             </form>
-//         </div>
-//         </div>
-//     );
-// };
-
-// export default connect(null, { reset_password_confirm })(ResetPasswordConfirm);
-
 
 
 import React, { useState, useRef } from "react";
-import { Redirect, Link } from 'react-router-dom';
+import { Redirect, Link, useHistory } from 'react-router-dom';
 import { reset_password_confirm } from '../../actions/auth';
 import { useDispatch, useSelector } from "react-redux";
 import { connect } from 'react-redux';
@@ -118,7 +45,9 @@ const ResetPasswordConfirm = ({ match, reset_password_confirm }) => {
     const [password, setPassword] = useState("");
     const [successful, setSuccessful] = useState(false);
     const { message } = useSelector(state => state.message);
-
+    let history = useHistory();
+    let emailToBeRegistered = useSelector(state => state.auth.emailToBeRegistered);
+    let otp = useSelector(state => state.auth.otp);
   
     const dispatch = useDispatch();
 
@@ -142,17 +71,27 @@ const ResetPasswordConfirm = ({ match, reset_password_confirm }) => {
     console.log(form.current);
     console.log(checkBtn)
     if (checkBtn.current.context._errors.length === 0) {
+      let data = {}
+      if(otp == ""){
         let token = match.params.token;
-        token = token.replaceAll("$", ".")
-        reset_password_confirm(token, password)
-        .then(() => {
-          setSuccessful(true);
-          setConfirmPassword("");
-          setPassword("");
-        })
-        .catch(() => {
-          setSuccessful(false);
-        });
+        token = token.replaceAll("$", ".");
+        data["token"] = token
+      }
+      else{
+        data["otp"] = otp;
+        data["email"] = emailToBeRegistered
+      }
+      data["new_password"] = password
+      reset_password_confirm(data)
+      .then(() => {
+        setSuccessful(true);
+        setConfirmPassword("");
+        setPassword("");
+        history.push("/login")
+      })
+      .catch(() => {
+        setSuccessful(false);
+      });
     }
   };
 

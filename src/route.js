@@ -378,7 +378,7 @@ const Routes = (props) => {
                 <Route path="/enterOtp" component={EnterOtp}/>
                 <Route
                   exact
-                  path="/reset/:token"
+                  path="/reset"
                   component={ResetPasswordConfirm}
                 />
                 <Route path="/requests" component={PendingRequests} />
