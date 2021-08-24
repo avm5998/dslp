@@ -145,7 +145,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                         {subOption === 3 ?
                             <div className="flex flex-col"><br></br>
                             <Label customStyle={``} text='Remove Seasonality and Test Stationarity:'><InlineTip info="We can make the dataset stationary by using difference, and apply ADF to test statinarity. Default: Original Data with No Difference"/></Label>
-                            <DropDown defaultText={'Select option'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Original Data with No Difference', 'First Difference', 'Second Difference', 'Seasonal First Difference']}  //, 'Seasonal Second Difference'
+                            <DropDown defaultText={'Select option'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Original Data', 'First Difference', 'Second Difference', 'Seasonal First Difference']}  //, 'Seasonal Second Difference'
                             onSelect={e => {
                                 result.test_stationarity_option = e
                             }} />
@@ -157,7 +157,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                             <Input defaultValue={option.corr_lags}  placeholder='Number of Lags. Default:50' onInput={(e,v) => {
                                 result.corr_lags = v 
                             }} width={`w-64`} attrs={{ list: 'corr_lags_list' }} />
-                            <DropDown defaultText={'Select option'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['First Difference', 'Second Difference', 'Seasonal First Difference', 'Seasonal Second Difference']} 
+                            <DropDown defaultText={'Select option'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['Original Dataset', 'First Difference', 'Second Difference', 'Seasonal First Difference']} 
                             onSelect={e => {
                                 result.check_correlation_option = e
                             }} />
@@ -216,7 +216,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
-                 <Label text="Future Time Period(months)"><InlineTip info="Input the time period to be predicted."/></Label>
+                 <Label text="Future Time Period(months)"><InlineTip info="Input the time period to be predicted. Set this option to 0 to check model in the 'Options' page."/></Label>
                 <Input placeholder='12' onInput={(e,v) => {
                     result.predict_period = v 
                 }} customStyle={`w-64`} attrs={{ list: 'predict_period_list' }} />

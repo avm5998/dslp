@@ -37,6 +37,8 @@ from nltk.corpus import stopwords
 from wordcloud import WordCloud
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
+import contractions  # expand contractions
+
 # time series analysis packages:
 from pandas.tseries.offsets import DateOffset
 import statsmodels.api as sm 
@@ -1418,53 +1420,8 @@ def cond_eng_json():
         text_feateng_option = params['text_feateng_operation']
         if 'convert to lower case' in text_feateng_option:
             ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(x.lower() for x in x.split()))
-        if 'expand contraction' in text_feateng_option:
-            print('contraction------')
-            # Dictionary of English Contractions
-            contractions_dict = { "ain't": "are not","'s":" is","aren't": "are not",
-                        "can't": "cannot","can't've": "cannot have",
-                        "'cause": "because","could've": "could have","couldn't": "could not",
-                        "couldn't've": "could not have", "didn't": "did not","doesn't": "does not",
-                        "don't": "do not","hadn't": "had not","hadn't've": "had not have",
-                        "hasn't": "has not","haven't": "have not","he'd": "he would",
-                        "he'd've": "he would have","he'll": "he will", "he'll've": "he will have",
-                        "how'd": "how did","how'd'y": "how do you","how'll": "how will",
-                        "I'd": "I would", "i'd": "i would","I'd've": "I would have", "i'd've": "i would have",
-                        "I'll": "I will", "i'll": "i will", "i'll've": "i will have","i'm": "i am",
-                        "I'll've": "I will have","I'm": "I am", "I've": "I have", "i've": "i have", "isn't": "is not",
-                        "it'd": "it would","it'd've": "it would have","it'll": "it will", "it's": "it is",
-                        "it'll've": "it will have", "let's": "let us","ma'am": "madam",
-                        "mayn't": "may not","might've": "might have","mightn't": "might not", 
-                        "mightn't've": "might not have","must've": "must have","mustn't": "must not",
-                        "mustn't've": "must not have", "needn't": "need not",
-                        "needn't've": "need not have","o'clock": "of the clock","oughtn't": "ought not",
-                        "oughtn't've": "ought not have","shan't": "shall not","sha'n't": "shall not",
-                        "shan't've": "shall not have","she'd": "she would","she'd've": "she would have",
-                        "she'll": "she will", "she'll've": "she will have","should've": "should have",
-                        "shouldn't": "should not", "shouldn't've": "should not have", "so've": "so have",
-                        "that'd": "that would","that'd've": "that would have", "there'd": "there would",
-                        "there'd've": "there would have", "they'd": "they would",
-                        "they'd've": "they would have","they'll": "they will",
-                        "they'll've": "they will have", "they're": "they are","they've": "they have",
-                        "to've": "to have","wasn't": "was not","we'd": "we would",
-                        "we'd've": "we would have","we'll": "we will","we'll've": "we will have",
-                        "we're": "we are","we've": "we have", "weren't": "were not","what'll": "what will",
-                        "what'll've": "what will have","what're": "what are", "what've": "what have",
-                        "when've": "when have","where'd": "where did", "where've": "where have",
-                        "who'll": "who will","who'll've": "who will have","who've": "who have",
-                        "why've": "why have","will've": "will have","won't": "will not",
-                        "won't've": "will not have", "would've": "would have","wouldn't": "would not",
-                        "wouldn't've": "would not have","y'all": "you all", "y'all'd": "you all would",
-                        "y'all'd've": "you all would have","y'all're": "you all are",
-                        "y'all've": "you all have", "you'd": "you would","you'd've": "you would have",
-                        "you'll": "you will","you'll've": "you will have", "you're": "you are",
-                        "you've": "you have"}
-            contractions_re = re.compile('(%s)' % '|'.join(contractions_dict.keys()))
-            def expand_contractions(text,contractions_dict=contractions_dict):
-                def replace(match):
-                    return contractions_dict[match.group(0)]
-                return contractions_re.sub(replace, text)
-            ndf[text_feateng_col]=ndf[text_feateng_col].apply(lambda x:expand_contractions(x))
+        if 'expand contraction' in text_feateng_option:    
+            ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(contractions.fix(i) for i in x.split()))
         if 'remove punctuation' in text_feateng_option:
             ndf[text_feateng_col] = ndf[text_feateng_col].str.replace('[^\w\s]','')
         if 'remove stopwords automatically' in text_feateng_option:
@@ -1608,7 +1565,7 @@ def cond_preprocess_json():
     # 2: Remove Columns
     # 3: Remove Useless Characters in Columns
     # 4: Remove Rows Containing Specific Values
-    # 5: Remove Specific Words in Columns
+    # 5: Remove Specific Words in One Column
     # 6: Remove Outliers
     if option == 0:
         ndf = ndf.convert_dtypes()
@@ -1663,7 +1620,6 @@ def cond_preprocess_json():
 
 # Sophie merged--> need modify 
 def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
-    # if isinstance(Y_test, pd.DataFrame):
     Y_test.reset_index(drop=True, inplace=True)
     comp_df = pd.concat([Y_test, pd.DataFrame(Y_pred)], axis=1)
     comp_df.columns = ["Actual(Y_test)", "Prediction(Y_pred)"]
@@ -1684,7 +1640,7 @@ def get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType):
     plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
     img.close()
     # else:
-        # plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+    #     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     return plotUrl
 
 
@@ -1795,7 +1751,7 @@ def cond_Regression_json():
         model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
         metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
-        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType )
         cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
         cond += "\nPlot Predicted vs. Observed Target Variable:  Plot Type: " + plotType
         cond += '\nMetric: ' + metric
@@ -1887,16 +1843,14 @@ def cond_Classification_json():
     # isTsv = True if filename.split('.')[-1]=='tsv' else False
     isTsv = True if 'amazon' in filename else False
     print('isTsv=', isTsv)
-    if isTsv:
-        text_data_feat_model = params['text_data_feat_model']
+    text_data_feat_model = params['text_data_feat_model'] if 'text_data_feat_model' in params else '--'
+    if isTsv or text_data_feat_model != '--':
         if text_data_feat_model == 'CountVectorizer':
             scaler = CountVectorizer()
         elif text_data_feat_model == 'TfidfVectorizer':
             scaler = TfidfVectorizer()
         X = scaler.fit_transform(ndf[finalVar[0]]).toarray()
         Y = ndf[finalY].values
-        # print("X=",X)
-        # print('Y=',Y)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = test_size, random_state = 0)
     else:
         kfold = KFold(n_splits=10, random_state=7, shuffle=True)
@@ -1911,7 +1865,8 @@ def cond_Classification_json():
         param_C = 1.0 if params['param_C']=='None' or (not params['param_C'].strip()) else float(params['param_C'])
         model = LogisticRegression(solver=param_solver, C=param_C)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if text_data_feat_model == '--':
+            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
             report = classification_report(Y_test, Y_pred)
             para_result += "\nClassification Report of " + analysis_model + ":\n" + report
@@ -1957,7 +1912,8 @@ def cond_Classification_json():
         param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
         model = DecisionTreeClassifier(criterion=param_criterion, max_depth=param_max_depth, max_leaf_nodes=param_max_leaf_nodes) 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if text_data_feat_model == '--':
+            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
             report = classification_report(Y_test, Y_pred)
             para_result += "\nClassification Report of " + analysis_model + ":\n" + report
@@ -2030,7 +1986,8 @@ def cond_Classification_json():
         param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
         model = RandomForestClassifier(max_depth=param_max_depth, n_estimators=param_n_estimators, criterion=param_criterion, max_leaf_nodes=param_max_leaf_nodes)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if text_data_feat_model == '--':
+            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
             report = classification_report(Y_test, Y_pred)
             para_result += "\nClassification Report of " + analysis_model + ":\n" + report
@@ -2077,7 +2034,8 @@ def cond_Classification_json():
         param_kernel = params['param_kernel'] if 'param_kernel' in params else 'rbf'
         model = SVC(C=param_C, gamma=param_gamma, kernel=param_kernel)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if text_data_feat_model == '--':
+            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
             report = classification_report(Y_test, Y_pred)
             para_result += "\nClassification Report of " + analysis_model + ":\n" + report
@@ -2126,7 +2084,8 @@ def cond_Classification_json():
             X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) 
 
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        if text_data_feat_model == '--':
+            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
         if metric == "Classification Report":
             report = classification_report(Y_test, Y_pred)
             para_result += "\nClassification Report of " + analysis_model + ":\n" + report
@@ -2265,13 +2224,21 @@ def cond_Clustering_json():
         ax.set_ylabel("PC2")
         ax.set_zlabel("PC3")
         plt.title(analysis_model + ' Clustering with 3 PCAs')
+    elif clustering_plot == 'check clusters in dataset':
+        model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
+        pred = model.fit(scaled_data)
+        ndf['Clusters'] = pd.DataFrame(pred.labels_)
+        count_val = ndf['Clusters'].value_counts()
+        para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")  
+        labeledData = pd.concat((X_train, ndf['Clusters']), axis=1)
+        para_result += labeledData.to_html()
     elif clustering_plot == 'all attributes: 2D plot':
         model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
         pred = model.fit(scaled_data)
-        df['Clusters'] = pd.DataFrame(pred.labels_)
-        count_val = df['Clusters'].value_counts()
+        ndf['Clusters'] = pd.DataFrame(pred.labels_)
+        count_val = ndf['Clusters'].value_counts()
         para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")
-        labeledData = pd.concat((X_train, df['Clusters']), axis=1)
+        labeledData = pd.concat((X_train, ndf['Clusters']), axis=1)
         sns.pairplot(labeledData, hue='Clusters',palette='Paired_r')
     elif clustering_plot == 'three attributes: 3D plot':
         model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
@@ -2309,7 +2276,6 @@ def cond_Clustering_json():
     img.seek(0)
     plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
     img.close()
-    para_result += labeledData.to_html()
 
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
@@ -2402,13 +2368,30 @@ def cond_timeSeries_json():
     params_seasonal_order_D = int(params['params_seasonal_order_D']) if params['params_seasonal_order_D'] else 0
     params_seasonal_order_Q = int(params['params_seasonal_order_Q']) if params['params_seasonal_order_Q'] else 0
     params_seasonal_order_m = int(params['params_seasonal_order_m']) if params['params_seasonal_order_m'] else 0
+    order_param = (params_order_p,params_order_d,params_order_q)
+    seasonal_order_param = (params_seasonal_order_P,params_seasonal_order_D,params_seasonal_order_Q,params_seasonal_order_m)   
     option = params['activeOption'] 
     predict_period = int(params['predict_period']) if params['predict_period'] else 0
     para_result += analysis_model
     if analysis_model == 'Seasonal ARIMA':
-        if option in [-1, 0]:
-            order_param = (params_order_p,params_order_d,params_order_q)
-            seasonal_order_param = (params_seasonal_order_P,params_seasonal_order_D,params_seasonal_order_Q,params_seasonal_order_m)
+        if predict_period != 0:
+            ndf[date_col] = pd.to_datetime(ndf[date_col]) # convert date type
+            future_dates = [ndf[date_col].iloc[-1] + DateOffset(months=x) for x in range(1,predict_period)]
+            ndf.set_index(date_col, inplace=True)  # set date column as index
+            future_df = pd.DataFrame(index=future_dates,columns=ndf.columns)
+            final_df = pd.concat([ndf,future_df])
+            model2 = sm.tsa.statespace.SARIMAX(final_df[target_col], order=order_param, seasonal_order=seasonal_order_param)
+            model2 = model2.fit()
+            final_df['SARIMA Forecast'] = model2.predict(start=final_df.shape[0]-24,end=final_df.shape[0]-1)
+            img = BytesIO()
+            final_df[[target_col,'SARIMA Forecast']].plot(figsize=(12,8)) # set interval of x
+            plt.title('Prediction for Future ' + str(predict_period) + ' Months')
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        elif option in [-1, 0]:
             metric = "check residual"
             cond += 'Model Parameters: order=' + str(order_param) + ';  \nseasonal_order=' + str(seasonal_order_param) + "; \nMetric: " + metric
             model = sm.tsa.statespace.SARIMAX(time_series, order=order_param, seasonal_order=seasonal_order_param).fit()
@@ -2455,21 +2438,22 @@ def cond_timeSeries_json():
                 test = adfuller(time_series)
                 result += "\nAugmented Dicky-Fuller Test\n"
                 labels = ['ADF Test Statistic', 'p-value', ' # of lags', 'Num of Observations used']
+                result += "Null Hypothesis: the data series is not stationary.\n"
                 for value, label in zip(test, labels):
                     result += label + ":" + str(value) + "\n"
                 if test[1] <= 0.05:
                     result += "\nStrong evidence against null hypothesis"
                     result += "\nreject null hypothesis"
-                    result += "\n" + test_diff_metric_sarima + " Data is stationary"
+                    result += "\nThus, " + test_diff_metric_sarima + " Data is stationary"
                 else:
                     result += "\nWeak evidence against null hypothesis"
                     result += "\nfail to reject null hypothesis"
-                    result += "\n" + test_diff_metric_sarima + " Data is non-stationary"
+                    result += "\nThus, " + test_diff_metric_sarima + " Data is non-stationary"
                 return result
 
             test_stationarity_option = params['test_stationarity_option'] if params['test_stationarity_option'] else 'Original Data'
             cond += "\nTest Stationarity: ADF Test \nTest Difference Metric:" + test_stationarity_option
-            if test_stationarity_option == 'Original Data with No Difference':
+            if test_stationarity_option == 'Original Data':
                 result = adf_test(time_series, test_stationarity_option)
             elif test_stationarity_option == "First Difference":
                 ndf['First Difference'] = time_series.diff()
@@ -2495,46 +2479,56 @@ def cond_timeSeries_json():
         elif option == 4: # 'Check Correlation'
             lags_acf_sarima = int(params['corr_lags']) if params['corr_lags'] else 50
             check_correlation_option = params['check_correlation_option']
-            if check_correlation_option == 'First Difference':
-                ndf['First Difference'] = time_series.diff()
-            elif check_correlation_option == 'Second Difference':
-                ndf['Second Difference'] = time_series - time_series.shift(12)
-            elif check_correlation_option == 'Seasonal First Difference':
-                ndf['First Difference'] = time_series.diff()
-                ndf['Seasonal First Difference'] = ndf['First Difference'] - ndf['First Difference'].shift(12)
-            corr_operation = params['corr_operation'] if params['corr_operation'] else 'acf'
-            cond += "\nCheck Correlation \nPeriod(months):" + "\nNumber of Lags:" + str(lags_acf_sarima) +  "\n" + check_correlation_option + "\n" + corr_operation
+            corr_operation = params['corr_operation'] if 'corr_operation' in params or params['corr_operation'] else 'acf'
+            cond += "\nCheck Correlation of " + check_correlation_option + ": " + corr_operation +  "\nNumber of Lags:" + str(lags_acf_sarima) 
 
             img = BytesIO()
             if corr_operation == "acf":
-                plot_acf(ndf['Seasonal First Difference'].dropna(),lags=lags_acf_sarima)
+                if check_correlation_option == 'Original Dataset':
+                    plot_acf(time_series.dropna(),lags=lags_acf_sarima)
+                elif check_correlation_option == 'First Difference':
+                    ndf['First Difference'] = time_series.diff()
+                    plot_acf(ndf['First Difference'].dropna(),lags=lags_acf_sarima)
+                elif check_correlation_option == 'Second Difference':
+                    ndf['Second Difference'] = time_series - time_series.shift(12)
+                    plot_acf(ndf['Second Difference'].dropna(),lags=lags_acf_sarima)
+                elif check_correlation_option == 'Seasonal First Difference':
+                    ndf['First Difference'] = time_series.diff()
+                    ndf['Seasonal First Difference'] = ndf['First Difference'] - ndf['First Difference'].shift(12)
+                    plot_acf(ndf['Seasonal First Difference'].dropna(),lags=lags_acf_sarima)
             elif corr_operation == "pacf":
-                plot_pacf(ndf['Seasonal First Difference'].dropna(), lags=lags_acf_sarima) # set method='ywm'
+                if check_correlation_option == 'Original Dataset':
+                    plot_pacf(time_series.dropna(),lags=lags_acf_sarima)
+                elif check_correlation_option == 'First Difference':
+                    ndf['First Difference'] = time_series.diff()
+                    plot_pacf(ndf['First Difference'].dropna(),lags=lags_acf_sarima)
+                elif check_correlation_option == 'Second Difference':
+                    ndf['Second Difference'] = time_series - time_series.shift(12)
+                    plot_pacf(ndf['Second Difference'].dropna(),lags=lags_acf_sarima)
+                elif check_correlation_option == 'Seasonal First Difference':
+                    ndf['First Difference'] = time_series.diff()
+                    ndf['Seasonal First Difference'] = ndf['First Difference'] - ndf['First Difference'].shift(12)
+                    plot_pacf(ndf['Seasonal First Difference'].dropna(),lags=lags_acf_sarima)
             elif corr_operation == "auto":
-                autocorrelation_plot(ndf['Seasonal First Difference'].dropna())
+                if check_correlation_option == 'Original Dataset':
+                    autocorrelation_plot(time_series.dropna())
+                elif check_correlation_option == 'First Difference':
+                    ndf['First Difference'] = time_series.diff()
+                    autocorrelation_plot(ndf['First Difference'].dropna())
+                elif check_correlation_option == 'Second Difference':
+                    ndf['Second Difference'] = time_series - time_series.shift(12)
+                    autocorrelation_plot(ndf['Second Difference'].dropna())
+                elif check_correlation_option == 'Seasonal First Difference':
+                    ndf['First Difference'] = time_series.diff()
+                    ndf['Seasonal First Difference'] = ndf['First Difference'] - ndf['First Difference'].shift(12)
+                    autocorrelation_plot(ndf['Seasonal First Difference'].dropna())
             plt.savefig(img, format='png') 
             plt.clf()
             img.seek(0)
             plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
             img.close()
         
-        if predict_period != 0:
-            ndf[date_col] = pd.to_datetime(ndf[date_col]) # convert date type
-            future_dates = [ndf[date_col].iloc[-1] + DateOffset(months=x) for x in range(1,predict_period)]
-            ndf.set_index(date_col, inplace=True)  # set date column as index
-            future_df = pd.DataFrame(index=future_dates,columns=ndf.columns)
-            final_df = pd.concat([ndf,future_df])
-            model2 = sm.tsa.statespace.SARIMAX(final_df[target_col], order=order_param, seasonal_order=seasonal_order_param)
-            model2 = model2.fit()
-            final_df['SARIMA Forecast'] = model2.predict(start=final_df.shape[0]-24,end=final_df.shape[0]-1)
-            img = BytesIO()
-            final_df[[target_col,'SARIMA Forecast']].plot(figsize=(12,8)) # set interval of x
-            plt.title('Prediction for Future ' + str(predict_period) + ' Months')
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
+        
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 

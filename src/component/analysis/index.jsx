@@ -100,8 +100,7 @@ def transform_transaction(val):
     if val >= 1:
         return 1
 df['Quantity']= 1
-df = df.groupby(['Transaction','Item'])['Quantity'].sum().unstack().fillna(0)
-df = df.applymap(transform_transaction)
+
 `,
 
 time_series_analysis: code => `
@@ -549,7 +548,7 @@ const Analysis = () => {
         // console.log(presetsArr.length ? presetsArr[presetsArr.length-1] : null);
         // setCurrentPreset(presetsArr.length ? presetsArr[presetsArr.length-1] : null)
     }, [option, model, preset])
-    
+
     let submit = useCallback(async () => {
         dispatch(OptionActions.setOption(['analysis', option, model, { ...result }]))
         let res = await fetchByJSON(`analysis/${option}`, { ...result, filename: dataset.filename })   //send request

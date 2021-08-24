@@ -35,7 +35,7 @@ export default function ({ dataset, result, submit }) {
 
 
                 <Label customStyle={``} text='Clustering Plot' ><InlineTip info="Plot clusters in dataset. If do PCA plot, go to 'Advanced Option' do PCA first.  Default: all attributes: 2D plot"/></Label>
-                <DropDown defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['all attributes: 2D plot', 'three attributes: 3D plot', 'PCA: 2D plot', "PCA: 3D plot"]} 
+                <DropDown defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={["check clusters in dataset", 'all attributes: 2D plot', 'three attributes: 3D plot', 'PCA: 2D plot', "PCA: 3D plot"]} 
                     onSelect={e => {
                         result.clustering_plot = e
                     } 

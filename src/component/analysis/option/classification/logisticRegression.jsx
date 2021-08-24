@@ -37,7 +37,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }}>
                     {/* how to make it hidden  */}
                 <Label customStyle={``} text='Select Extract Model:' ><InlineTip info="Select one extraction model for text data"/></Label>
-                <DropDown zIndex={30} defaultValue={option.text_data_feat_model} defaultText={'Select model'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['CountVectorizer', 'TfidfVectorizer']} 
+                <DropDown zIndex={30} defaultValue={option.text_data_feat_model} defaultText={'Select model'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['--', 'CountVectorizer', 'TfidfVectorizer']} 
                         onSelect={e => {
                             result.text_data_feat_model = e
                         }}/>

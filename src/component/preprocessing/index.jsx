@@ -11,7 +11,7 @@ import { InlineTip } from '../common/tip';
 
 const Options = [
     {name:'Convert to',value:''},
-    {name:'Object',value:'object'},
+    {name:'String',value:'string'},
     {name:'Integer',value:'int64'},
     {name:'Float',value:'float64'},
     {name:'Datetime',value:'datetime'},
@@ -28,7 +28,7 @@ const NumericalOptions = [
 
 const CategoricalOptions = [
     {name:'Convert to',value:''},
-    {name:'Object',value:'object'},
+    {name:'String',value:'string'},
     {name:'Category',value:'category'},
 ]
 
@@ -83,7 +83,7 @@ print('target_operation: ', target_operation) # users can assign new values to t
 for index1, index2 in zip(target_col, target_operation):
     if index2 == 'datetime':
         ndf[index1] = ndf[index1].datetime.strftime('%Y-%m-%d')
-    elif index2 in ['int64', 'float64', 'object', 'bool', 'category']:
+    elif index2 in ['int64', 'float64', 'string', 'bool', 'category']:
         ndf[index1] = ndf[index1].astype(index2)
 
 print("After converting")
@@ -125,7 +125,7 @@ print(ndf.head())  # check the dataset
 
     `),
     5: code => (`
-# Demo of "Remove Specific Words in Columns"
+# Demo of "Remove Specific Words in One Column"
 
 print('target_col: ', target_col) # users can assign new values to this variable
 print('target_operation: ', target_operation) # users can assign new values to this variable
@@ -413,7 +413,7 @@ const Preprocessing = () => {
                 <div className='w-96'>
                     <DropDown text={optionText} customStyle='h-10 w-96' customUlStyle={'w-96'} items={
                         // , 'Text Data: Check New Features', 'Text Data: Preprocessing'
-                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in Columns', 'Remove Outliers'].map((item, i) => ({
+                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in One Column', 'Remove Outliers'].map((item, i) => ({
                             name: item, onClick(e) {
                                 {/*   0                                              1                            2                               3                                4                                       5                            6*/ }
                                 setOption(i)

@@ -41,22 +41,23 @@ export default function ({ dataset, result, submit }) {
                     } 
                 }/>
            
-                <Label text="support_min_threshold"><InlineTip info="Set parameters: threshold for 'support'. Default:0.1. 'support' is used to measure the abundance or frequency of an itemset in a database."/></Label>
+                <Label text="support min_threshold"><InlineTip info="Set parameters: threshold for 'support'. Default:0.1. 'support' is used to measure the abundance or frequency of an itemset in a database."/></Label>
                 <Input defaultValue={option.params_support_min_thresh} placeholder='0.1' onInput={(e,v) => {
                     result.params_support_min_thresh = v 
                 }} customStyle={`w-64`} attrs={{ list: 'support_min_threshold_list' }} />
    
-                <Label text="lift_min_threshold"><InlineTip info="Set parameters: threshold for 'lift'. Default:1.0. The lift metric is commonly used to measure how much more often the antecedent and consequent of a rule A->C occur together than we would expect if they were statistically independent. If A and C are independent, the Lift score will be exactly 1."/></Label>
-                <Input defaultValue={option.params_lift_min_thresh} placeholder='1.0' onInput={(e,v) => {
-                    result.params_lift_min_thresh = v 
-                }} customStyle={`w-64`} attrs={{ list: 'lift_min_threshold_list' }} />
-                
-                <Label text="confidence_min_threshold"><InlineTip info="Set parameters: threshold for 'confidence'. Default:0.5. The confidence of a rule A->C is the probability of seeing the consequent in a transaction given that it also contains the antecedent. Note that the metric is not symmetric or directed; for instance, the confidence for A->C is different than the confidence for C->A. The confidence is 1 (maximal) for a rule A->C if the consequent and antecedent always occur together."/></Label>
+                 <Label text="confidence min_threshold"><InlineTip info="Set parameters: threshold for 'confidence'. Default:0.5. The confidence of a rule A->C is the probability of seeing the consequent in a transaction given that it also contains the antecedent. Note that the metric is not symmetric or directed; for instance, the confidence for A->C is different than the confidence for C->A. The confidence is 1 (maximal) for a rule A->C if the consequent and antecedent always occur together."/></Label>
                 <Input defaultValue={option.params_confidence_min_thresh} placeholder='0.5' onInput={(e,v) => {
                     result.params_confidence_min_thresh = v 
                 }} customStyle={`w-64`} attrs={{ list: 'confidence_min_threshold_list' }} />
 
-                <Label text="antecedent_length"><InlineTip info="Set parameters: threshold for 'antecedent_length'. Default:1"/></Label>
+                <Label text="lift min_threshold"><InlineTip info="Set parameters: threshold for 'lift'. Default:1.0. The lift metric is commonly used to measure how much more often the antecedent and consequent of a rule A->C occur together than we would expect if they were statistically independent. If A and C are independent, the Lift score will be exactly 1."/></Label>
+                <Input defaultValue={option.params_lift_min_thresh} placeholder='1.0' onInput={(e,v) => {
+                    result.params_lift_min_thresh = v 
+                }} customStyle={`w-64`} attrs={{ list: 'lift_min_threshold_list' }} />
+                
+               
+                <Label text="antecedent length"><InlineTip info="Set parameters: threshold for 'antecedent_length'. Default:1"/></Label>
                 <Input defaultValue={option.params_antecedent_len} placeholder='1' onInput={(e,v) => {
                     result.params_antecedent_len = v 
                 }} customStyle={`w-64`} attrs={{ list: 'antecedent_length_list' }} />
