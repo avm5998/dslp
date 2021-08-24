@@ -74,6 +74,41 @@ const filenames = [
     description: "Cleaned titanic dataset",
     method: "Supervised"
   },
+  {
+    id: 6,
+    filename: "weather.csv",
+    type: "Classification",
+    description: "Weather dataset",
+    method: "Supervised"
+  },
+  {
+    id: 7,
+    filename: "acs2015_county_data.csv",
+    type: "Classification",
+    description: "ACS 2015 dataset",
+    method: "Supervised"
+  },
+  {
+    id: 8,
+    filename: "house_rent.csv",
+    type: "Classification",
+    description: "House Rent dataset",
+    method: "Supervised"
+  },
+  {
+    id: 9,
+    filename: "country_vaccinations_by_manufacturer",
+    type: "Classification",
+    description: "Country Vaccinations by Manufacturer",
+    method: "Supervised"
+  },
+  {
+    id: 10,
+    filename: "country_vaccinations.csv",
+    type: "Classification",
+    description: "Country Vaccinations dataset",
+    method: "Supervised"
+  }
   // {
   //   id: 4,
   //   filename: "credit_card_default_classification.csv",
