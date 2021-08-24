@@ -102,13 +102,13 @@ const filenames = [
     description: "Classification dataset",
     method: "Supervised"
   },
-  {
-    id: 10,
-    filename: "country_vaccinations.csv",
-    type: "Classification",
-    description: "Classification dataset",
-    method: "Supervised"
-  }
+  // {
+  //   id: 10,
+  //   filename: "country_vaccinations.csv",
+  //   type: "Classification",
+  //   description: "Classification dataset",
+  //   method: "Supervised"
+  // }
   // {
   //   id: 4,
   //   filename: "credit_card_default_classification.csv",
