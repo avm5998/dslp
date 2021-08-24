@@ -78,35 +78,35 @@ const filenames = [
     id: 6,
     filename: "weather.csv",
     type: "Classification",
-    description: "Weather dataset",
+    description: "Classification dataset",
     method: "Supervised"
   },
   {
     id: 7,
     filename: "acs2015_county_data.csv",
     type: "Classification",
-    description: "ACS 2015 dataset",
+    description: "Classification dataset",
     method: "Supervised"
   },
   {
     id: 8,
     filename: "house_rent.csv",
     type: "Classification",
-    description: "House Rent dataset",
+    description: "Classification dataset",
     method: "Supervised"
   },
   {
     id: 9,
-    filename: "country_vaccinations_by_manufacturer",
+    filename: "country_vaccinations_by_manufacturer.csv",
     type: "Classification",
-    description: "Country Vaccinations by Manufacturer",
+    description: "Classification dataset",
     method: "Supervised"
   },
   {
     id: 10,
     filename: "country_vaccinations.csv",
     type: "Classification",
-    description: "Country Vaccinations dataset",
+    description: "Classification dataset",
     method: "Supervised"
   }
   // {
