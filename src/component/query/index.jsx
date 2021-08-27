@@ -1,14 +1,14 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
-import { RangeSelector } from '../../util/ui'
+import { Modal, RangeSelector } from '../../util/ui'
 import { Button, DropDown, MultiSelect, ButtonGroup } from '../../util/ui_components'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
+import { pythonEscape, fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { useTable, usePagination, useSortBy } from 'react-table'
 import Table from '../common/table'
 import './index.css'
 import Help from '../common/help'
-
+import Sandbox from '../common/sandbox'
 const NumericComparators = ['<', '=', '>']
 const CategoricalComparators = ['=']
 const QueryType = {
@@ -33,6 +33,22 @@ const getQString = (type, numQuery = { min: Number.MIN_SAFE_INTEGER, max: Number
     }
 }
 
+const getCodeFromConditions = ({conditions})=>{
+    return `
+filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
+ndf = df
+for filter in filters:
+    queryType = filter['queryType']
+    if queryType == 2: # categorical
+        qObject = json.loads(filter['qString'])
+        ndf = ndf[ndf.apply(lambda x:x[qObject['column']] in qObject['cates'], axis = 1)]
+    
+    elif queryType == 1:# numerical
+        qObject = json.loads(filter['qString'])
+        ndf = ndf[ndf.apply(lambda x:qObject['min'] <= x[qObject['column']] <= qObject['max'], axis = 1)]
+print(ndf)
+`
+}
 
 const Page = () => {
     useCachedData()
@@ -47,6 +63,8 @@ const Page = () => {
     let numericalRangeRef = useRef({})
     let categoricalRef = useRef([])
     let dispatch = useDispatch()
+    let sandboxRef = useRef(null)
+
 
     useEffect(async () => {
         let res = await fetchByJSON('query', {
@@ -85,6 +103,7 @@ const Page = () => {
     }
 
     return (<>
+        <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`}/>
         <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 0rem)' }}>
             <div className="flex my-2 py-4 flex-row h-auto w-full items-center justify-between shadow-sm bg-gray-100">
 
@@ -100,7 +119,7 @@ const Page = () => {
                 </div>
 
                 <div className='mx-5 text-center'>
-                    {queryType === QueryType.Numerical && dataset.num_lists[searchColumn].max && dataset.num_lists[searchColumn].min ?
+                    {queryType === QueryType.Numerical && dataset.num_lists[searchColumn].max!==undefined && dataset.num_lists[searchColumn].min!==undefined ?
                         <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
                             Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
                         }} />
@@ -118,6 +137,12 @@ const Page = () => {
                     <ButtonGroup buttons={[{
                         text: 'Add filter',
                         onClick: addFilter
+                    },{
+                        text:' Show code',
+                        onClick: ()=>{
+                            sandboxRef.current.setCode(getCodeFromConditions({conditions:filters}))
+                            sandboxRef.current.show()
+                        }
                     }]} />
                 </div>
 

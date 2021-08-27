@@ -1,14 +1,48 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo, pythonEscape, useCachedData } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Modal } from '../../util/ui'
-import { Button, MultiSelect, DropDown } from '../../util/ui_components'
+import { Button, MultiSelect, DropDown, ButtonGroup } from '../../util/ui_components'
 import Table from '../common/table'
 import { data } from 'autoprefixer';
 import Tip from '../common/tip'
+import Sandbox from '../common/sandbox'
+
+const getCodeFromConditions = ({ conditions }) => {
+    return `
+MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+cleaners = json.loads(${pythonEscape(JSON.stringify(conditions))})
+ndf = df.replace(MISSING_VALUES, np.nan)
+for cleaner in cleaners:
+    option = cleaner['option']
+# 0 Remove N/A Rows
+# 1 Remove N/A Columns
+# 2 Replace N/A By Mean 
+# 3 Replace N/A By Median 
+# 4 Replace N/A By Specific Value 
+# 5 Remove Outliers 
+if option == 0:
+    ndf = ndf.dropna(axis=0)
+if option == 1:
+    ndf = ndf.dropna(axis=1)
+if option == 2:
+    condition = cleaner['condition']
+    for col in condition['cols']:
+        ndf[col].fillna(ndf[col].astype(float).mean(), inplace=True)
+if option == 3:
+    condition = cleaner['condition']
+    for col in condition['cols']:
+        ndf[col].fillna(ndf[col].astype(float).median(), inplace=True)
+if option == 4:
+    condition = cleaner['condition']
+    for item in condition['items']:
+        ndf[item['col']].fillna(item['val'], inplace=True)
+print(ndf)
+`
+}
 
 const CleanTypes = ['Remove N/A Rows', 'Remove N/A Columns', 'Replace N/A By Mean', 'Replace N/A By Median', 'Replace N/A By Specific Value'];
 
@@ -29,6 +63,7 @@ const Cleaning = ({ location }) => {
     let [subOptionText, setSubOptionText] = useState('Input values')
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let dispatch = useDispatch()
+    let sandboxRef = useRef(null)
 
     useEffect(() => {
         queryCleaner()
@@ -90,8 +125,8 @@ const Cleaning = ({ location }) => {
             }
             cleaningCondition.current[4].condition.items = items
             if (items.length) setSubOptionText('Edit values')
-        } 
-        
+        }
+
 
         setShowSubOptionModal(false)
     }
@@ -119,6 +154,7 @@ const Cleaning = ({ location }) => {
     }, [dataset.dataCleaners])
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
+        <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`} />
         {/* <Tip info={{
             '#confirmBtn':'Just confirm your data',
             // '#dropdownClean':`What is data cleaning?
@@ -135,7 +171,7 @@ const Cleaning = ({ location }) => {
                                 <input ref={ref => cleaningCondition.current[4].refs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Specified Value" />
                             </div>
                         </div>)}
-                    </div>             
+                    </div>
                 </div>
                 <div className="flex justify-end m-3 mt-10">
                     <Button text='Confirm' customStyleText='bordered-light' onClick={onConfirmSubOption} />
@@ -186,7 +222,19 @@ const Cleaning = ({ location }) => {
             </div>
 
             <div className='mx-5 w-3/12'>
-                <Button width="w-64" id='confirmBtn' text='Confirm' onClick={onConfirm} />
+                <ButtonGroup
+                    buttons={[{
+                        text: 'Confirm',
+                        onClick: onConfirm
+                    }, {
+                        text: 'Show code',
+                        onClick: () => {
+                            sandboxRef.current.setCode(getCodeFromConditions({ conditions: dataset.dataCleaners }))
+                            sandboxRef.current.show()
+                        }
+                    }
+                    ]}
+                />
             </div>
         </div>
         <Table PageSize={10} />

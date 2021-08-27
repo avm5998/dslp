@@ -22,6 +22,7 @@ export function getProp(object,...props){
     }
     return cur
 }
+export const pythonEscape = str=>`'''${toUnicode(str).replace(/\\/g,'\\\\')}'''`
 
 export function toUnicode(str) {
 	return str.split('').map(function (value, index, array) {

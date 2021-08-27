@@ -1234,7 +1234,6 @@ def cond_clean_json():
     df = _getCache(user_id, filename)
     # auto replace missing values
     ndf = df.replace(MISSING_VALUES, np.nan)
-    print(cleaners)
     for cleaner in cleaners:
         option = cleaner['option']
         # 0 Remove N/A Rows
