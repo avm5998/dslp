@@ -55,7 +55,7 @@ for(let condition of conditions){
 
 return `
 filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
-df.query('''${queries.join(' and ')}''',inplace = True)
+${queries.map(q=>`df.query('''${q}''',inplace = True)`).join('\n')}
 df
 `
 
