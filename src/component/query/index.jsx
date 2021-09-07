@@ -58,21 +58,6 @@ filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
 ${queries.map(q=>`df.query('''${q}''',inplace = True)`).join('\n')}
 df
 `
-
-    return `
-filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
-ndf = df
-for filter in filters:
-    queryType = filter['queryType']
-    if queryType == 2: # categorical
-        qObject = json.loads(filter['qString'])
-        ndf = ndf[ndf.apply(lambda x:x[qObject['column']] in qObject['cates'], axis = 1)]
-    
-    elif queryType == 1:# numerical
-        qObject = json.loads(filter['qString'])
-        ndf = ndf[ndf.apply(lambda x:qObject['min'] <= x[qObject['column']] <= qObject['max'], axis = 1)]
-print(ndf)
-`
 }
 
 const Page = () => {

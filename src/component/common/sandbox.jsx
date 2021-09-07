@@ -27,7 +27,7 @@ export default forwardRef(({ dataset, additional }, ref) => {
     let pre = document.createElement('pre')
     pre.setAttribute('data-executable', 'true')
     pre.setAttribute('data-language', 'python')
-    codeParent.current.appendChild(pre)
+    codeParent?.current?.appendChild(pre)
     pre.innerHTML = code
     thebelab.bootstrap();
   }, [code])
@@ -79,7 +79,9 @@ export default forwardRef(({ dataset, additional }, ref) => {
     thebelab.on("status", async function (evt, data) {
       if (data.status === 'ready') {
         setStatusText('Ready')
-        document.querySelector('#codesandbox_rightPart').appendChild(document.querySelector('.jp-OutputArea'))
+        let child = document.querySelector('.jp-OutputArea')
+        if (child)
+          document.querySelector('#codesandbox_rightPart').appendChild(child)
       }
     })
   }, [])
