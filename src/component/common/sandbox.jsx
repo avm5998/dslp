@@ -85,7 +85,7 @@ export default forwardRef(({ dataset, additional }, ref) => {
   }, [])
 
   return (<Modal
-    fixedModalPosition={{ width: '80vw', height: 'auto', minHeight:'80vh',margin: 'auto' }}
+    fixedModalPosition={{ minWidth: '80vw', height: 'auto', minHeight:'80vh',margin: 'auto' }}
     zIndex={50}
     isOpen={codeVisible}
     setIsOpen={setCodeVisible}
@@ -94,7 +94,7 @@ export default forwardRef(({ dataset, additional }, ref) => {
     }}
   >
     <div>
-      <div className='flex flex-col w-full h-full justify-between gap-2 m-4'>
+      <div className='flex flex-col w-full h-full justify-between gap-2 my-4'>
         <div className="flex w-full justify-center items-center m-0 flex-grow-0 h-20">
           <div className="cursor-default">Sandbox status: {statusText}</div>
         </div>

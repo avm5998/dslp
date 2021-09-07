@@ -34,6 +34,31 @@ const getQString = (type, numQuery = { min: Number.MIN_SAFE_INTEGER, max: Number
 }
 
 const getCodeFromConditions = ({conditions})=>{
+let queries = []
+for(let condition of conditions){
+    let { queryType,qString } = condition
+    if ( queryType == 2 ){
+        let { column, cates } = JSON.parse(qString);
+        queries.push(`${column} in [${cates.map(cate=>`"${cate}"`).join(',')}]`)
+    }else if( queryType == 1 ){
+        let { min,max,column } = JSON.parse(qString);
+
+        if (min!==undefined){
+            queries.push(`${column} >= ${min}`)
+        }
+        
+        if (max!==undefined){
+            queries.push(`${column} <= ${max}`)
+        }
+    }
+}
+
+return `
+filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
+df.query('''${queries.join(' and ')}''',inplace = True)
+df
+`
+
     return `
 filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
 ndf = df
