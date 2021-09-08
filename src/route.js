@@ -45,6 +45,7 @@ import { history } from "./store";
 import "./route.css";
 import logo from './assets/images/logo.png'
 
+import Idle from './Idle'
 //add all solid icon-fonts
 library.add(fas);
 library.add(far);
@@ -219,6 +220,7 @@ const Routes = (props) => {
               <div className="fixed flex flex-col left-0 w-2/12 h-full border-r">
                 <div className="flex items-center justify-center h-20 heading">
                 <DATA_MINING_SVG/>
+                <Idle></Idle>
                   <div className="ml-2">Data Science Learning Platform</div>
                 </div>
 

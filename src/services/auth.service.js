@@ -2,6 +2,7 @@
 import axios from "axios";
 import {config} from '../config/client'
 import authHeader from "./auth-header";
+import {fetchWithRefresh} from '../util/util'
 
 const API_URL = config.endpoint + "api/auth/";
 
@@ -36,7 +37,7 @@ const logout = async () => {
   // localStorage.removeItem("user");
 
   // console.log(authHeader());
-  const res = await fetch(API_URL + "logout", {method:'DELETE', headers: authHeader()});
+  const res = await fetchWithRefresh(API_URL + "logout", {method:'DELETE', headers: authHeader()});
 
   // if (response.msg==="Access token revoked"){
     // localStorage.removeItem("user");
