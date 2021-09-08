@@ -12,35 +12,45 @@ import Tip from '../common/tip'
 import Sandbox from '../common/sandbox'
 
 const getCodeFromConditions = ({ conditions }) => {
-    return `
+    let cleaners = []
+for(let val of conditions){
+    let { option,condition } =  val
+    if (option == 0){
+        cleaners.push(`df.dropna(axis = 0,inplace = True)`)
+    }
+
+    if (option == 1){
+        cleaners.push(`df.dropna(axis = 1,inplace = True)`)
+    }
+
+    if (option == 2){
+        let { cols,items } = condition
+        for(let col of cols){
+            cleaners.push(`df['${col}'].fillna(df['${col}'].astype(float).mean(), inplace=True)`)
+        }
+    }
+
+    if (option == 3){
+        let { cols,items } = condition
+        for(let col of cols){
+            cleaners.push(`df['${col}'].fillna(df['${col}'].astype(float).median(), inplace=True)`)
+        }
+    }
+
+    if (option == 4){
+        let { cols,items } = condition
+        for(let item of items){
+            cleaners.push(`df['${item.col}'].fillna(${Number.isNaN(Number(item.val))?`'${item.val}'`:item.val}, inplace=True)`)
+        }
+    }
+}
+
+return `
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 cleaners = json.loads(${pythonEscape(JSON.stringify(conditions))})
-ndf = df.replace(MISSING_VALUES, np.nan)
-for cleaner in cleaners:
-    option = cleaner['option']
-# 0 Remove N/A Rows
-# 1 Remove N/A Columns
-# 2 Replace N/A By Mean 
-# 3 Replace N/A By Median 
-# 4 Replace N/A By Specific Value 
-# 5 Remove Outliers 
-if option == 0:
-    ndf = ndf.dropna(axis=0)
-if option == 1:
-    ndf = ndf.dropna(axis=1)
-if option == 2:
-    condition = cleaner['condition']
-    for col in condition['cols']:
-        ndf[col].fillna(ndf[col].astype(float).mean(), inplace=True)
-if option == 3:
-    condition = cleaner['condition']
-    for col in condition['cols']:
-        ndf[col].fillna(ndf[col].astype(float).median(), inplace=True)
-if option == 4:
-    condition = cleaner['condition']
-    for item in condition['items']:
-        ndf[item['col']].fillna(item['val'], inplace=True)
-print(ndf)
+df.replace(MISSING_VALUES, np.nan, inplace = True)
+${cleaners.join('\n')}
+df
 `
 }
 
@@ -90,7 +100,6 @@ const Cleaning = ({ location }) => {
 
     const [guideStep, setGuideStep] = useState(0)
     useEffect(() => {
-        console.log(guideStep);
         switch (guideStep) {
             case 0:
                 if (location.state?.guide) {
@@ -132,6 +141,7 @@ const Cleaning = ({ location }) => {
     }
 
     const queryCleaner = async () => {
+        
         let res = await fetchByJSON('clean', {
             cleaners: JSON.stringify(dataset.dataCleaners),
             filename: dataset.filename
@@ -165,7 +175,7 @@ const Cleaning = ({ location }) => {
             <div className='p-5 flex flex-col'>
                 <div className="flex flex-col">
                     <div className={`${option === 4 ? '' : 'hidden'}`}>
-                        {dataset.cols.map(name => <div key={name} className="flex flex-row justify-between w-full">
+                        {dataset?.cols?.map(name => <div key={name} className="flex flex-row justify-between w-full">
                             <div className='py-3 px-10 label-left'>{name + ':'}</div>
                             <div className='py-3 label-right'>
                                 <input ref={ref => cleaningCondition.current[4].refs[name] = ref} className='py-2 px-5 focus:outline-none rounded-full' placeholder="Specified Value" />

@@ -1233,6 +1233,8 @@ def cond_clean_json():
     cleaners = json.loads(params['cleaners'])
     df = _getCache(user_id, filename)
     # auto replace missing values
+    if df is None:
+        return jsonify(data=None)
     ndf = df.replace(MISSING_VALUES, np.nan)
     for cleaner in cleaners:
         option = cleaner['option']

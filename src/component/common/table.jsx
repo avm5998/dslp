@@ -11,7 +11,8 @@ export default function ({PageSize, styleText = '', style = {
     height: 'fit-content',
     padding: '30px',
     boxSizing: 'border-box',
-    margin:'0 auto'
+    marginLeft:'auto',
+    marginRight:'auto',
 }}) {
     let dataset = useSelector(state => state.dataset)
 
@@ -41,7 +42,6 @@ export default function ({PageSize, styleText = '', style = {
         setPageSize,
         state: { pageIndex, pageSize },
     } = tableInstance
-    // console.log(dataset.tableData);
     const pageRange = [...Array(PaginationRange).keys()].map(i => pageIndex + i - (PaginationRange >> 1)).filter(i => i > -1 && i < pageCount)
 
     return (<div className="flex flex-row " style={{minWidth:'100%'}}><div className={`flex flex-col w-full items-center justify-center h-full bg-gray-100 mt-2 ${styleText}`} style={style}>
