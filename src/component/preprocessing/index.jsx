@@ -7,6 +7,8 @@ import { actions as DataSetActions } from '../../reducer/dataset'
 import { Checkbox, Label, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
 import Table from '../common/table'
 import { InlineTip } from '../common/tip';
+import { func } from 'prop-types';
+import { getType } from '@reduxjs/toolkit';
 
 
 const Options = [
@@ -75,47 +77,92 @@ ndf.convert_dtypes()  # Convert data types
 print("After converting")
 print(ndf.dtypes)
 `),
-    1: code => (`
+    1: code => function(){
+        let targetCol = []
+        let targetOperation = []
+        for(let key in code){
+            let value = code[key]
+            if(value && key!='filename' && key!='option'){
+                targetCol.push(`"${key}"`)
+                targetOperation.push(`"${value}"`)
+            }
+        }
+return `
 # Demo of "Convert Data Type One by One Manually"
 
-print('target_col: ', target_col) # users can assign new values to this variable
-print('target_operation: ', target_operation) # users can assign new values to this variable
-for index1, index2 in zip(target_col, target_operation):
-    if index2 == 'datetime':
-        ndf[index1] = ndf[index1].datetime.strftime('%Y-%m-%d')
-    elif index2 in ['int64', 'float64', 'string', 'bool', 'category']:
-        ndf[index1] = ndf[index1].astype(index2)
+# target column(s)
+target_col = [${targetCol}] 
+
+# new data type
+target_operation = [${targetOperation}] 
+
+for column, data_type in zip(target_col, target_operation):
+    if column == 'datetime':
+        ndf[column] = ndf[column].datetime.strftime('%Y-%m-%d')
+    else:
+        ndf[column] = ndf[column].astype(data_type)
 
 print("After converting")
 print(ndf.dtypes)
-`),
-    2: code => (`
+`},
+    2: code => function(){
+        let targetCol = []
+        let value = []
+        for(let key in code){
+            if(key!='filename' && key!='option'){
+                value = code[key]
+            }
+        }
+        for(let k in value)targetCol.push(`"${value[k]}"`)
+return `
 # Demo of "Remove Columns"
 
-columns = params['cols'] # users can assign new values to this variable
-print('columns: ', columns)
-df = df.drop(columns, axis=1) # Remove Columns
-print("After Removing" )
+# column(s) that will be dropped
+columns = [${targetCol}]
+
+# remove columns
+df = df.drop(columns, axis=1) 
+
+print("After Removing:" )
 print(df.columns)
- 
-    `),
-    3: code => (`
+ `},
+    3: code => function(){
+        let targetCol = []
+        let targetOperation = []
+        for(let key in code){
+            let value = code[key]
+            if(value && key!='filename' && key!='option'){
+                targetCol.push(`"${key}"`)
+                targetOperation.push(`"${value}"`)
+            }
+        }
+return `
 # Demo of "Remove Useless Characters in Columns"
 
-print('target_col: ', target_col) # users can assign new values to this variable
-print('target_operation: ', target_operation) # users can assign new values to this variable
+target_col = [${targetCol}]
+target_operation = [${targetOperation}]
 
 for index1, index2 in zip(target_col, target_operation):
     for k in index2:
         ndf[index1] = ndf[index1].str.replace(k, '')
 
 print(ndf.head())  # check the dataset
-    `),
-    4: code => (`
+    `},
+    4: code => function(){
+        let targetCol = []
+        let targetOperation = []
+        for(let key in code){
+            let value = code[key]
+            if(value && key!='filename' && key!='option'){
+                targetCol.push(`"${key}"`)
+                targetOperation.push(`"${value}"`)
+            }
+        }
+        return `
 # Demo of "Remove Rows Containing Specific Values"
 
-print('target_col: ', target_col) # users can assign new values to this variable
-print('target_operation: ', target_operation) # users can assign new values to this variable
+target_col = [${targetCol}]
+target_operation = [${targetOperation}]
 
 for index1, index2 in zip(target_col, target_operation):
     temp = index2.split(',')
@@ -123,12 +170,22 @@ for index1, index2 in zip(target_col, target_operation):
 
 print(ndf.head())  # check the dataset
 
-    `),
-    5: code => (`
+    `},
+    5: code => function(){
+        let targetCol = []
+        let targetOperation = []
+        for(let key in code){
+            let value = code[key]
+            if(value && key!='filename' && key!='option'){
+                targetCol.push(`"${key}"`)
+                targetOperation.push(`"${value}"`)
+            }
+        }
+        return `
 # Demo of "Remove Specific Words in One Column"
 
-print('target_col: ', target_col) # users can assign new values to this variable
-print('target_operation: ', target_operation) # users can assign new values to this variable
+target_col = [${targetCol}]
+target_operation = [${targetOperation}]
 
 for index1, index2 in zip(target_col, target_operation):
     temp = index2.split(',') if ',' in index2 else index2
@@ -140,9 +197,19 @@ for index1, index2 in zip(target_col, target_operation):
 
 print(ndf.head())  # check the dataset
  
-    `),
-    6: code => (`
+    `},
+    6: code => function(){
+        let params = []
+        for(let key in code){
+            let value = code[key]
+            if(value && key!='filename' && key!='option'){
+                params.push(`"${key}" : "${value}"`)
+            }
+        }
+        return`
 # Demo of "Remove Outliers"
+
+params = {${params.join(", ")}}
 
 for column in ndf.columns:
     if column+'_above' in params or column+'_below' in params:
@@ -152,7 +219,7 @@ for column in ndf.columns:
 
 print(ndf.describe())  # check the dataset
 
-    `),
+    `},
 
     }
 
