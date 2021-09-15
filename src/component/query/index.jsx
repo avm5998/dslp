@@ -34,19 +34,29 @@ const getQString = (type, numQuery = { min: Number.MIN_SAFE_INTEGER, max: Number
 }
 
 const getCodeFromConditions = ({conditions})=>{
-    return `
+let queries = []
+for(let condition of conditions){
+    let { queryType,qString } = condition
+    if ( queryType == 2 ){
+        let { column, cates } = JSON.parse(qString);
+        queries.push(`${column} in [${cates.map(cate=>`"${cate}"`).join(',')}]`)
+    }else if( queryType == 1 ){
+        let { min,max,column } = JSON.parse(qString);
+
+        if (min!==undefined){
+            queries.push(`${column} >= ${min}`)
+        }
+        
+        if (max!==undefined){
+            queries.push(`${column} <= ${max}`)
+        }
+    }
+}
+
+return `
 filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
-ndf = df
-for filter in filters:
-    queryType = filter['queryType']
-    if queryType == 2: # categorical
-        qObject = json.loads(filter['qString'])
-        ndf = ndf[ndf.apply(lambda x:x[qObject['column']] in qObject['cates'], axis = 1)]
-    
-    elif queryType == 1:# numerical
-        qObject = json.loads(filter['qString'])
-        ndf = ndf[ndf.apply(lambda x:qObject['min'] <= x[qObject['column']] <= qObject['max'], axis = 1)]
-print(ndf)
+${queries.map(q=>`df.query('''${q}''',inplace = True)`).join('\n')}
+df
 `
 }
 
