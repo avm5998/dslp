@@ -386,17 +386,17 @@ elif text_feateng_option == 'Extract Model2: TfidfVectorizer':
                             </div>
                         )}
                     </div>: ''}
-
+ 
                 {option === 1 ? <div>
                     <MultiSelect defaultText={`Select columns to convert`} defaultOpen={false} selections={dataset.cate_cols}  customStyle="w-72 mr-0" customUlStyle="w-72 mr-0" onSelect={e=>result.cols = e} />
                 </div> : ''}
 
                 {option ===  2 ? 
-                    <div className='grid grid-cols-3'>
+                    <div className='grid grid-cols-3 gap-2'>
                         {dataset.num_cols.map((col,i)=><React.Fragment key={i}>
                             <Checkbox {...checkbox2} label={col} name='suboption_checked' item={col}/>
-                            <input {...input2} className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins: int list' name={col+'_Bins'}/>
-                            <input {...input2} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Labels: string list' name={col+'_Labels'}/>
+                            <input {...input2} className='Bins mx-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Bins: int list' name={col+'_Bins'}/>
+                            <input {...input2} className='mx-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Labels: string list' name={col+'_Labels'}/>
                         </React.Fragment>)}
                         <Label text=''></Label>
                         <Label customStyle={`w-100 mr-0`} customUlStyle="w-100 mr-0" text="eg. column 'Age', Bins=[0,2,17,65,99], Labels=[Toddler, Child, Adult, Elderly]"/>

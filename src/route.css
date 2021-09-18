@@ -165,7 +165,7 @@ arrow-span {
   height: 100vh;
 }
 
-.ml-2 {
+.router-left-title {
   font-size: 24px;
   font-weight: bold;
 }
