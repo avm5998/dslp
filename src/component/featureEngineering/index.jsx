@@ -8,6 +8,7 @@ import { Checkbox, Label, Modal, Button, MultiSelect, DropDown } from '../../uti
 import Table from '../common/table'
 // import Tip from '../common/tip'
 import { InlineTip } from '../common/tip'
+import { keyBy } from 'lodash';
 
 const Options = ['Convert Cases', 'Convert Categorical to Numerical', 'Convert Numerical to Categorical', 'Create Features by Arithmetic Operations','Standard Scaler', 'Minmax Scaler',  'Text Data: Check Basic Features', 'Text Data: Label Values in Columns', 'Text Data: Feature Engineering']; //, 'Add New Features', 'Text Data: Feature Extraction Models',
 //                       0                    1                                     2                                          3                              4                 5                         6                                           7                           8
@@ -131,11 +132,22 @@ const FeatureEngineering = () => {
     }
 
     const DisplayCode = {
-0: code => (`
+0: code => function(){
+    let operation = []
+    let column = []
+    for(let value of code['cols']){
+        if(value[1] != "no change"){
+            column.push(`"${value[0]}"`)
+            operation.push(`"${value[1]}"`)
+        }
+    }
+    return `
 # Demo of "Convert Cases"
 
-operation = "to lowercase"
-column = "Name"  # change to the column to be tested from dataset
+# column(s) that will be affected
+column = [${column}] 
+# operation of that column(s)
+operation = [${operation}]
 
 if operation == 'to lowercase':
     df[column] = df[column].astype(str).str.lower()
@@ -143,31 +155,43 @@ elif operation == 'to uppercase':
     df[column] = df[column].astype(str).str.upper()
 
 print(df.head())
-`),
-    1: code => (`
+`},
+    1: code => function(){
+        let column = []
+        for(let value of code['cols']){
+            column.push(`"${value[1]}"`)
+        }
+        return `
 # Demo of "Convert Categorical to Numerical"
 
-column = "Sex"  # change to the column to be tested from dataset
+# column(s) will be affected
+column = [${column}]
 
 label = LabelEncoder()
 df[column] = label.fit_transform(df[column].astype(str))
 
 print(df.head())
 
-`),
-    2: code => (`
+`},
+    2: code => function(){
+        let column = []
+        let bins = []
+        let labels = []
+        for(let value of code['cols']){
+            console.log(value)
+            column.push(`"${value[1]}"`)
+        }
+        return `
 # Demo of "Convert Numerical to Categorical"
-# Assigned values are based on the dataset: titanic.csv
 
-column = "Sex"  # change to the column to be tested from dataset
+column = [${column}]  # change to the column to be tested from dataset
 
 bins = [0,1,2]  # bins of "column"
 labels = ['female', 'male']  # labels to be assigned to bins 
 df[column] = pd.cut(df[column].astype(float), bins=bins, labels=labels)
     
 print(df.head())
- 
-    `),
+    `},
     3: code => (`
 # Demo of "Create Features by Arithmetic Operations"
 
@@ -333,6 +357,7 @@ elif text_feateng_option == 'Extract Model2: TfidfVectorizer':
         }
     },[])
 
+    //clear current result
     useEffect(()=>{
         clearData()
         result.activeOption = option
@@ -473,6 +498,10 @@ elif text_feateng_option == 'Extract Model2: TfidfVectorizer':
                                 cate_cols: json.cate_cols,
                             }))
                             dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+
+                            clearData()
+                            result.activeOption = option
+                            result.cols = {}
                         }
                     }}/>
                 </div>
