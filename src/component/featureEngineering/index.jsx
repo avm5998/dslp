@@ -177,17 +177,24 @@ print(df.head())
         let column = []
         let bins = []
         let labels = []
-        for(let value of code['cols']){
-            console.log(value)
-            column.push(`"${value[1]}"`)
+        for (let key in code){
+            let fieldName = ''
+            if (key.indexOf('Bins')>-1 && code[key]){
+                fieldName = key.substring(0,key.indexOf('Bins'))
+                column.push(fieldName)
+                bins.push(code[key])
+            }
+            if (key.indexOf('Labels')>-1 && code[key]){
+                labels.push(code[key])
+            }
         }
         return `
 # Demo of "Convert Numerical to Categorical"
 
 column = [${column}]  # change to the column to be tested from dataset
 
-bins = [0,1,2]  # bins of "column"
-labels = ['female', 'male']  # labels to be assigned to bins 
+bins = [${bins}]  # bins of "column"
+labels = [${labels}]  # labels to be assigned to bins 
 df[column] = pd.cut(df[column].astype(float), bins=bins, labels=labels)
     
 print(df.head())
