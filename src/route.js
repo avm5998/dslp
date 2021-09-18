@@ -221,7 +221,7 @@ const Routes = (props) => {
                 <div className="flex items-center justify-center h-20 heading">
                 <DATA_MINING_SVG/>
                 <Idle></Idle>
-                  <div className="ml-2">Data Science Learning Platform</div>
+                  <div className="ml-2 router-left-title">Data Science Learning Platform</div>
                 </div>
 
                 <div className="overflow-y-auto overflow-x-hidden flex-grow sidebar">
