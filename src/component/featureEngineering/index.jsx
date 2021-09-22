@@ -16,7 +16,7 @@ const Options = {
     'ConvertCases': 'Convert Cases',
     'ConvertCategoricalToNumerical': 'Convert Categorical to Numerical',
     'ConvertNumericalToCategorical': 'Convert Numerical to Categorical',
-    'CreateFeaturesByArithmeticOperations': 'reate Features by Arithmetic Operations',
+    'CreateFeaturesByArithmeticOperations': 'Create Features by Arithmetic Operations',
     'StandardScaler': 'Standard Scaler',
     'MinmaxScaler': 'Minmax Scaler',
     'TextDataFeatureCheckBasicFeatures': 'Text Data: Check Basic Features',
