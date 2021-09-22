@@ -1297,12 +1297,12 @@ def cond_eng_json():
     img = BytesIO()
     plt.figure(figsize=(20,20))
     option = params['activeOption']
-    print("option=", option)
+    print("option:", option)
 
-    if option == 0:
-        cols = params['cols']
-        print("cols=", cols)
-        for col,ctype in cols:
+    if option == 'Convert Cases':
+        subOption = params['subOption']
+        print("subOption=", subOption)
+        for col,ctype in subOption:
             print('col,ctype=', col,ctype)
             if ctype == 'to lowercase':
                 ndf[col] = ndf[col].astype(str).str.lower()
@@ -1310,18 +1310,21 @@ def cond_eng_json():
                 ndf[col] = ndf[col].astype(str).str.upper()
         print(ndf.head())
 
-    elif option == 1:
-        cols = params['cols']
-        print("cols=", cols)
-        for index, col in cols:
+    elif option == 'Convert Categorical to Numerical':
+        subOption = params['subOption']
+        print("subOption=", subOption)
+        for col in subOption.values():
             label = LabelEncoder()
             ndf[col] = label.fit_transform(ndf[col].astype(str))
-    elif option == 2:
-        suboption_checked = params['suboption_checked']
-        print('suboption_checked 2= ', suboption_checked)
-        for col in suboption_checked:
-            col_bins = params[col+'_'+'Bins']
-            col_labels = params[col+'_'+'Labels']
+    elif option == 'Convert Numerical to Categorical':
+        subOption = params['subOption']
+        print("subOption=", subOption)
+        for col,prop in subOption.items():
+            checked = prop['checked']
+            col_bins = prop['label']
+            col_labels = prop['label']
+            if not checked:
+                continue
             ndf[col] = pd.cut(ndf[col].astype(float), bins=list(col_bins.split(",")), labels=list(col_labels.split(",")))
     elif option == 3:
         col1_arithmetic = params['col1_arithmetic']

@@ -118,6 +118,7 @@ export function Label({
   pos = "left",
   text = "",
   customStyle = EMPTY_O,
+  customStyleText = '',
   children = null,
 }) {
   return (
@@ -126,6 +127,7 @@ export function Label({
       className={cn(
         "flex",
         "items-center",
+        customStyleText,
         pos === "mid" ? "justify-center" : pos === "right" ? "justify-end" : ""
       )}
     >
@@ -231,9 +233,9 @@ export function Button({
         overrideClass
           ? overrideClass
           : cn(
-              customStyleText,
               width,
-              style.default.concat(hoverAnimation ? style.hover : [])
+              style.default.concat(hoverAnimation ? style.hover : []),
+              customStyleText,
             )
       }
       onClick={onClick}
