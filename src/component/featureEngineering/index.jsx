@@ -64,28 +64,181 @@ df[column] = label.fit_transform(df[column].astype(str))
 print(df.head())
 `},
     [Options.ConvertCategoricalToNumerical]: (subOption) => {
-        console.log(subOption)
+        // console.log(subOption)
         return `
 # Demo of "Convert Categorical to Numerical"
 
 # column(s) will be affected
-column = []
+column = [${Object.values(subOption).map(e => `"${e}"`).join(',')}]
 
 label = LabelEncoder()
 df[column] = label.fit_transform(df[column].astype(str))
 print(df.head())
 `},
     [Options.ConvertNumericalToCategorical]: (subOption) => {
-        console.log(subOption);
+        let column = Object.keys(subOption)
+        let bins = []
+        let labels = []
+        for(let key of column){
+            bins.push(subOption[key]['bins'].split(','))
+            labels.push(subOption[key]['label'].split(',').map(e => `"${e}"`))
+        }
         return `
 # Demo of "Convert Numerical to Categorical"
 
-column = []  # change to the column to be tested from dataset
+columns = [${column.map(e => `"${e}"`).join(',')}]  # change to the column to be tested from dataset
 
-bins = []  # bins of "column"
-labels = []  # labels to be assigned to bins 
-df[column] = pd.cut(df[column].astype(float), bins=bins, labels=labels)
-print(df.head())    
+bins = [${bins.map(e=>`[${e}]`).join(',')}]  # bins of "column"
+labels = [${labels.map(e=>`[${e}]`).join(',')}]  # labels to be assigned to bins 
+
+for column, bin, label in zip(columns, bins, labels):
+    df[column] = pd.cut(df[column].astype(float), bins=bin, labels=label)
+print(df.head()) 
+`},
+    [Options.CreateFeaturesByArithmeticOperations]: (subOption) => {
+        let values = Object.values(subOption)
+        return `
+# Demo of "Create Features By Arithmetic Operations"
+col1_arithmetic = '${values[0]}'
+operation = '${values[1]}'
+col2_arithmetic = '${values[2]}'
+new_colname = '${values[3]}'
+if operation == '+':
+    ndf[new_colname] = ndf[col1_arithmetic] + ndf[col2_arithmetic]
+elif operation == '-':
+    ndf[new_colname] = ndf[col1_arithmetic] - ndf[col2_arithmetic]
+elif operation == '*':
+    ndf[new_colname] = ndf[col1_arithmetic] * ndf[col2_arithmetic]
+elif operation == '/':
+    ndf[new_colname] = ndf[col1_arithmetic] / ndf[col2_arithmetic]
+`},
+    [Options.StandardScaler]: (subOption) => {
+        let values = Object.values(subOption)
+        return `
+# Demo of "Standard Scaler"
+cols = [${values.map(e => `'${e}'`).join(",")}]
+stand_scaler_col=[]
+for col in cols:
+    stand_scaler_col.append(col)
+print('stand_scaler_col= ', stand_scaler_col)
+scaler = StandardScaler()
+ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
+print(ndf.head())
+`},
+    [Options.MinmaxScaler]: (subOption) => {
+        let values = Object.values(subOption)
+        return `
+# Demo of "Minmax Scaler"
+cols = [${values.map(e => `'${e}'`).join(",")}]
+stand_scaler_col=[]
+for col in cols:
+    stand_scaler_col.append(col)
+print('stand_scaler_col= ', stand_scaler_col)
+scaler = MinMaxScaler()
+ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
+print(ndf.head())
+`},
+    [Options.TextDataFeatureCheckBasicFeatures]: (subOption) => {
+        let values = Object.values(subOption).map(e => `'${e}'`)
+        return `
+# Demo of "Text Data: Check Basic Features"
+basic_col = ${values[0]}
+basic_operation = ${values[1]}
+if basic_operation == 'check most common words':
+    all_words=[]
+    for msg in df[basic_col]:
+        words=word_tokenize(msg)
+        for w in words:
+            all_words.append(w)
+    #Frequency of Most Common Words
+    frequency_dist=nltk.FreqDist(all_words)
+    #Frequency Plot for first 100 most frequently occuring words
+    frequency_dist.plot(100,cumulative=False)
+elif basic_operation == 'visualize: wordcloud':
+    wc = WordCloud(width=1000, height=1000, background_color="black", max_words=2000, random_state=42, max_font_size=30)
+    wc.generate(' '.join(df[basic_col]))
+    plt.imshow(wc)
+    plt.axis("off")
+elif basic_operation == 'words count':
+    new_basic_col = basic_col + '_words_count'
+    ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len(str(x).split(" ")))
+elif basic_operation == "charactures count":
+    new_basic_col = basic_col + '_charactures_count'
+    ndf[new_basic_col] = ndf[basic_col].apply(len)
+elif basic_operation == "average word length":
+    def avg_word(sentence):
+        words = sentence.split()
+        return (sum(len(word) for word in words)/len(words)) if len(words)!=0 else 0
+    new_basic_col = basic_col + '_average_word_length'
+    ndf[new_basic_col] = ndf[basic_col].apply(lambda x: avg_word(x))
+elif basic_operation == "stopwords count":
+    stop = stopwords.words('english')
+    new_basic_col = basic_col + '_stopwords_count'
+    ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len([x for x in x.split() if x in stop]))
+elif basic_operation == "numbers count":
+    new_basic_col = basic_col + '_numbers_count'
+    ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len([x for x in x.split() if x.isdigit()]))
+elif basic_operation == "uppercase count":
+    new_basic_col = basic_col + '_uppercase_count'
+    ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len([x for x in x.split() if x.isupper()]))
+`},
+[Options.TextDataFeatureLabelValuesInColumns]: (subOption) => {
+        let columns = Object.keys(subOption)
+        let currVal = []
+        let colname = []
+        let newVal = []
+        debugger
+        for(let key of columns){
+            currVal.push(subOption[key]['Currval'].split(',').map(e => `"${e}"`))
+            colname.push(subOption[key]['NewCol'].split(',').map(e => `"${e}"`))
+            newVal.push(subOption[key]['NewVal'].split(',').map(e => `"${e}"`))
+        }
+    return `
+# Demo of "Text Data Feature Label Values in Columns"
+columns = [${columns.map(e => `"${e}"`).join(",")}]
+col_currVal =[${currVal.map(e=>`[${e}]`).join(',')}]
+new_colname = [${colname.map(e=>`[${e}]`).join(',')}]
+col_newVal = [${newVal.map(e=>`[${e}]`).join(',')}]
+for col, currVal, colname, newVal in zip(columns, col_currVal, new_colname, col_newVal) :
+    new_feat_assigns = {}
+    col_currVal_list = currVal.split(',')
+    col_newVal_list = newVal.split(',')
+    for uniq_val, new_label in zip(col_currVal_list, col_newVal_list):
+        new_feat_assigns[uniq_val] = new_label
+    ndf[colname] = ndf[col].apply(lambda x: new_feat_assigns.get[x])
+`},
+[Options.TextDataFeatureFeatureEngineering]: (subOption) => {
+    let col = subOption['text_feateng_col']
+    let operation = subOption['text_feateng_operation']
+    return `
+# Demo of "Text Data: Feature Engineering"
+text_feateng_col = '${col}'
+text_feateng_option = [${operation.map(e => `'${e}'`)}] 
+if 'convert to lower case' in text_feateng_option:
+    ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(x.lower() for x in x.split()))
+if 'expand contraction' in text_feateng_option:    
+    ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(contractions.fix(i) for i in x.split()))
+if 'remove punctuation' in text_feateng_option:
+    ndf[text_feateng_col] = ndf[text_feateng_col].str.replace('[^\w\s]','')
+if 'remove stopwords automatically' in text_feateng_option:
+    stop = stopwords.words('english')
+    ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(x for x in x.split() if x not in stop))
+if 'remove digits' in text_feateng_option:
+    ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ''.join([i for i in x if not i.isdigit()]))
+if 'Word Normalization1: lemmatization' in text_feateng_option:
+    lemma = WordNetLemmatizer()
+    ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ' '.join(lemma.lemmatize(term, pos="v") for term in x.split()))           
+if 'Word Normalization2: stemming' in text_feateng_option:
+    ps=PorterStemmer()
+    ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: ' '.join(ps.stem(term) for term in x.split()))           
+if 'Extract Model1: CountVectorizer' in text_feateng_option:
+    tf_vectorizer = CountVectorizer()
+    tf = tf_vectorizer.fit_transform(ndf[text_feateng_col]).toarray()
+    tf_feat_names = tf_vectorizer.get_feature_names()
+if 'Extract Model2: TfidfVectorizer' in text_feateng_option:
+    tfidf_vectorizer = TfidfVectorizer()
+    tfidf = tfidf_vectorizer.fit_transform(ndf[text_feateng_col]).toarray()
+    tfidf_feat_names = tfidf_vectorizer.get_feature_names()
 `},
 }
 
@@ -225,7 +378,7 @@ const FeatureEngineering = () => {
                             onSelect={e => {
                                 subOption.current.col2_arithmetic = e
                             }} ></DropDown>
-                        <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Column Name' name='new_colname' />
+                        <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Column Name' name='new_colname' onChange={e => subOption.current.new_colname = e.target.value} />
                     </div> : ''}
 
                 {option === Options.StandardScaler ? <div>
@@ -253,10 +406,10 @@ const FeatureEngineering = () => {
                 {option === Options.TextDataFeatureLabelValuesInColumns ?
                     <div className='grid grid-cols-4'>
                         {dataset.cate_cols.map((col, i) => <React.Fragment key={i}>
-                            <Checkbox label={col} name='suboption_checked_text' item={col} />
-                            <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Current Values: string list' name={col + '_CurrVal'} />
-                            <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Column Name: string' name={col + '_NewCol'} />
-                            <input className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Values: string list' name={col + '_NewVal'} />
+                            <Checkbox label={col} name='suboption_checked_text' item={col} onChange={(e, checked) => assignSubOption(col, { checked })} />
+                            <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Current Values: string list' name={col + '_CurrVal'} onChange={e => assignSubOption(col, { Currval : e.target.value })} />
+                            <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Column Name: string' name={col + '_NewCol'} onChange={e => assignSubOption(col, { NewCol : e.target.value })} />
+                            <input className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Values: string list' name={col + '_NewVal'} onChange={e => assignSubOption(col, { NewVal : e.target.value })} />
                         </React.Fragment>)}
                         <Label text=''></Label>
                         <Label customStyleText={`w-100 mr-0`} text="eg. current column 'publication', Current Values = [ Atlantic, National Review, Breitbart, New York Times],  New Column Name='politic lean', New Values=[ left, right, right, left]" />

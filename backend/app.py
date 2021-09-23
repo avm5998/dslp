@@ -1326,11 +1326,12 @@ def cond_eng_json():
             if not checked:
                 continue
             ndf[col] = pd.cut(ndf[col].astype(float), bins=list(col_bins.split(",")), labels=list(col_labels.split(",")))
-    elif option == 3:
-        col1_arithmetic = params['col1_arithmetic']
-        operation = params['operation']
-        col2_arithmetic = params['col2_arithmetic']
-        new_colname = params['new_colname']
+    elif option == 'Create Features by Arithmetic Operations':
+        subOption = params['subOption']
+        col1_arithmetic = subOption['col1_arithmetic']
+        operation = subOption['operation']
+        col2_arithmetic = subOption['col2_arithmetic']
+        new_colname = subOption['new_colname']
         if operation == '+':
             ndf[new_colname] = ndf[col1_arithmetic] + ndf[col2_arithmetic]
         elif operation == '-':
@@ -1339,25 +1340,28 @@ def cond_eng_json():
             ndf[new_colname] = ndf[col1_arithmetic] * ndf[col2_arithmetic]
         elif operation == '/':
             ndf[new_colname] = ndf[col1_arithmetic] / ndf[col2_arithmetic]
-    elif option == 4:
-        cols = params['cols']
+    elif option == 'Standard Scaler':
+        subOption = params['subOption']
+        cols = [v for v in subOption.values()]
         stand_scaler_col=[]
-        for index, col in cols:
+        for col in cols:
             stand_scaler_col.append(col)
         print('stand_scaler_col= ', stand_scaler_col)
         scaler = StandardScaler()
         ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
         print(ndf.head())
-    elif option == 5:
-        cols = params['cols']
+    elif option == 'Minmax Scaler':
+        subOption = params['subOption']
+        cols = [v for v in subOption.values()]
         stand_scaler_col=[]
-        for index, col in cols:
+        for col in cols:
             stand_scaler_col.append(col)
         scaler = MinMaxScaler()
         ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
-    elif option == 6:
-        basic_col = params['check_basic_col']
-        basic_operation = params['basic_operation']
+    elif option == 'Text Data: Check Basic Features':
+        subOption = params['subOption']
+        basic_col = subOption['check_basic_col']
+        basic_operation = subOption['basic_operation']
         if basic_operation == 'check most common words':
             all_words=[]
             for msg in df[basic_col]:
@@ -1407,21 +1411,25 @@ def cond_eng_json():
             new_basic_col = basic_col + '_uppercase_count'
             ndf[new_basic_col] = ndf[basic_col].apply(lambda x: len([x for x in x.split() if x.isupper()]))
 
-    elif option == 7:
-        suboption_checked_text = params['suboption_checked_text']
-        for col in suboption_checked_text:
-            col_currVal = params[col+'_CurrVal']
-            new_colname = params[col+'_NewCol']
-            col_newVal = params[col+'_NewVal']
-            new_feat_assigns = {}
-            col_currVal_list = col_currVal.split(',')
-            col_newVal_list = col_newVal.split(',')
-            for uniq_val, new_label in zip(col_currVal_list, col_newVal_list):
-                new_feat_assigns[uniq_val] = new_label
-            ndf[new_colname] = ndf[col].apply(lambda x: new_feat_assigns.get[x])
-    elif option == 8:
-        text_feateng_col = params['text_feateng_col']
-        text_feateng_option = params['text_feateng_operation']
+    elif option == 'Text Data: Label Values in Columns':
+        subOption = params['subOption']
+        print(subOption)
+        columns = list(subOption.keys())
+        for col in columns:
+            if subOption[col]['checked']:
+                col_currVal = subOption[col]['Currval']
+                new_colname = subOption[col]['NewCol']
+                col_newVal = subOption[col]['NewVal']
+                new_feat_assigns = {}
+                col_currVal_list = col_currVal.split(',')
+                col_newVal_list = col_newVal.split(',')
+                for uniq_val, new_label in zip(col_currVal_list, col_newVal_list):
+                    new_feat_assigns[uniq_val] = new_label
+                ndf[new_colname] = ndf[col].apply(lambda x: new_feat_assigns.get(x))
+    elif option == 'Text Data: Feature Engineering':
+        subOption = params['subOption']
+        text_feateng_col = subOption['text_feateng_col']
+        text_feateng_option = subOption['text_feateng_operation']
         if 'convert to lower case' in text_feateng_option:
             ndf[text_feateng_col] = ndf[text_feateng_col].apply(lambda x: " ".join(x.lower() for x in x.split()))
         if 'expand contraction' in text_feateng_option:    
