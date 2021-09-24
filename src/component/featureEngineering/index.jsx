@@ -334,8 +334,8 @@ const FeatureEngineering = () => {
     let ts = new Date().getTime()
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showOptionModal} onClose={() => {
-        }} setIsOpen={setShowOptionModal} contentStyleText="mx-auto mt-20">
-            <div className='p-7 flex flex-col'>
+        }} setIsOpen={setShowOptionModal} fixedModalPosition={true} contentStyleText="mx-10 mt-10 w-auto">
+            <div className='p-2 flex flex-col'>
                 {option === Options.ConvertCases ?
                     <div className="flex flex-col gap-2">
                         {dataset.cate_cols.map((name,i) =>
@@ -392,7 +392,7 @@ const FeatureEngineering = () => {
 
                 {option === Options.TextDataFeatureCheckBasicFeatures ?
                     <div className="flex flex-col3">
-                        <DropDown defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cols}
+                        <DropDown defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cate_cols}
                             onSelect={e => {
                                 subOption.current.check_basic_col = e
                             }} />
@@ -407,9 +407,9 @@ const FeatureEngineering = () => {
                     <div className='grid grid-cols-4'>
                         {dataset.cate_cols.map((col, i) => <React.Fragment key={i}>
                             <Checkbox label={col} name='suboption_checked_text' item={col} onChange={(e, checked) => assignSubOption(col, { checked })} />
-                            <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Current Values: string list' name={col + '_CurrVal'} onChange={e => assignSubOption(col, { Currval : e.target.value })} />
-                            <input className='Bins m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Column Name: string' name={col + '_NewCol'} onChange={e => assignSubOption(col, { NewCol : e.target.value })} />
-                            <input className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='New Values: string list' name={col + '_NewVal'} onChange={e => assignSubOption(col, { NewVal : e.target.value })} />
+                            <input className='Bins m-2 px-2 focus:outline-none rounded-full' placeholder='Current Values: string list' name={col + '_CurrVal'} onChange={e => assignSubOption(col, { Currval : e.target.value })} />
+                            <input className='Bins m-2 px-2 focus:outline-none rounded-full' placeholder='New Column Name: string' name={col + '_NewCol'} onChange={e => assignSubOption(col, { NewCol : e.target.value })} />
+                            <input className='m-2 px-2 focus:outline-none rounded-full' placeholder='New Values: string list' name={col + '_NewVal'} onChange={e => assignSubOption(col, { NewVal : e.target.value })} />
                         </React.Fragment>)}
                         <Label text=''></Label>
                         <Label customStyleText={`w-100 mr-0`} text="eg. current column 'publication', Current Values = [ Atlantic, National Review, Breitbart, New York Times],  New Column Name='politic lean', New Values=[ left, right, right, left]" />
@@ -417,11 +417,11 @@ const FeatureEngineering = () => {
 
                 {option === Options.TextDataFeatureFeatureEngineering ?
                     <div className="flex flex-col">
-                        <DropDown defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cols}
+                        <DropDown zIndex={100} width="w-40" defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cate_cols}
                             onSelect={e => {
                                 subOption.current.text_feateng_col = e
                             }} />
-                        <MultiSelect defaultText={`Select one/multi-operation`} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'Word Normalization1: lemmatization', 'Word Normalization2: stemming', 'Extract Model1: CountVectorizer', 'Extract Model2: TfidfVectorizer']} width="w-72 mr-0"
+                        <MultiSelect zIndex={99} width="w-30" defaultText={`Select one/multi-operation`} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'Word Normalization1: lemmatization', 'Word Normalization2: stemming', 'Extract Model1: CountVectorizer', 'Extract Model2: TfidfVectorizer']} width="w-72 mr-0"
                             onSelect={e => subOption.current.text_feateng_operation = e} />
                     </div> : ''}
 

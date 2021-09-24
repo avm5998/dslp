@@ -1302,8 +1302,7 @@ def cond_eng_json():
     if option == 'Convert Cases':
         subOption = params['subOption']
         print("subOption=", subOption)
-        for col,ctype in subOption:
-            print('col,ctype=', col,ctype)
+        for col,ctype in subOption.items():
             if ctype == 'to lowercase':
                 ndf[col] = ndf[col].astype(str).str.lower()
             elif ctype == 'to uppercase':
@@ -1321,10 +1320,10 @@ def cond_eng_json():
         print("subOption=", subOption)
         for col,prop in subOption.items():
             checked = prop['checked']
-            col_bins = prop['label']
-            col_labels = prop['label']
             if not checked:
                 continue
+            col_bins = prop['bins']
+            col_labels = prop['label']
             ndf[col] = pd.cut(ndf[col].astype(float), bins=list(col_bins.split(",")), labels=list(col_labels.split(",")))
     elif option == 'Create Features by Arithmetic Operations':
         subOption = params['subOption']
@@ -1475,7 +1474,6 @@ def cond_select_json():
     df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
     print('params***!!=====', params)
-
     DEFAULT_PLOT_SIZE = (5,5)
     Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information','Principal Component Analysis'])}
     PlotType_library = {i:e for i,e in enumerate(['bar', 'scatter', 'line', 'heatmap'])}
