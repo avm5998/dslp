@@ -334,8 +334,8 @@ const FeatureEngineering = () => {
     let ts = new Date().getTime()
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
         <Modal isOpen={showOptionModal} onClose={() => {
-        }} setIsOpen={setShowOptionModal} fixedModalPosition={true} contentStyleText="mx-10 mt-10 w-auto">
-            <div className='p-2 flex flex-col'>
+        }} setIsOpen={setShowOptionModal} contentStyleText="mx-auto">
+            <div className='p-2 flex flex-col' style={{maxWidth:'80vw'}}>
                 {option === Options.ConvertCases ?
                     <div className="flex flex-col gap-2">
                         {dataset.cate_cols.map((name,i) =>
@@ -365,7 +365,7 @@ const FeatureEngineering = () => {
                     </div> : ''}
 
                 {option === Options.CreateFeaturesByArithmeticOperations ?
-                    <div className="flex flex-col3">
+                    <div className="flex gap-2">
                         <DropDown defaultText={'Select column 1'} showOnHover={false} width={`w-64`} items={dataset.num_cols}
                             onSelect={e => {
                                 subOption.current.col1_arithmetic = e
@@ -391,7 +391,7 @@ const FeatureEngineering = () => {
                 </div> : ''}
 
                 {option === Options.TextDataFeatureCheckBasicFeatures ?
-                    <div className="flex flex-col3">
+                    <div className="flex gap-2">
                         <DropDown defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cate_cols}
                             onSelect={e => {
                                 subOption.current.check_basic_col = e
@@ -416,12 +416,12 @@ const FeatureEngineering = () => {
                     </div> : ''}
 
                 {option === Options.TextDataFeatureFeatureEngineering ?
-                    <div className="flex flex-col">
-                        <DropDown zIndex={100} width="w-40" defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cate_cols}
+                    <div className="flex flex-col gap-2">
+                        <DropDown zIndex={100} width="w-64" defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cate_cols}
                             onSelect={e => {
                                 subOption.current.text_feateng_col = e
                             }} />
-                        <MultiSelect zIndex={99} width="w-30" defaultText={`Select one/multi-operation`} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'Word Normalization1: lemmatization', 'Word Normalization2: stemming', 'Extract Model1: CountVectorizer', 'Extract Model2: TfidfVectorizer']} width="w-72 mr-0"
+                        <MultiSelect zIndex={99} width="w-64" defaultText={`Select one/multi-operation`} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'Word Normalization1: lemmatization', 'Word Normalization2: stemming', 'Extract Model1: CountVectorizer', 'Extract Model2: TfidfVectorizer']}
                             onSelect={e => subOption.current.text_feateng_operation = e} />
                     </div> : ''}
 
