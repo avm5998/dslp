@@ -362,8 +362,8 @@ const FeatureEngineering = () => {
                             <input className='mx-3 px-1 focus:outline-none rounded-full' placeholder='Labels: string list' onChange={e => assignSubOption(col, { label: e.target.value })} />
                         </React.Fragment>)}
                         <Label customStyleText={`w-100 mr-0`} text="eg. column 'Age', Bins=[0,2,17,65,99], Labels=[Toddler, Child, Adult, Elderly]" />
-                        <Label customStyleText={`w-100 mr-0`} text="eg. column 'Survived', Bins=[0, 1, 2], Labels=[No, Yes] Here 0~1 stands for No and 1~2 stands for Yes" />
-                        <Label customStyleText={`w-100 mr-0`} text="*hint: Bins should always be greater by one than Labels." />
+                        <Label customStyleText={`w-100 mr-0`} text="eg. column 'Survived', Bins=[0, 1, 2], Labels=[No, Yes] *Here 0~1 stands for No and 1~2 stands for Yes." />
+                        <Label customStyleText={`w-100 mr-0`} text="*hint: Bins should always be greater by one than Labels in order to create lower bound and upper bound for the data." />
                     </div> : ''}
 
                 {option === Options.CreateFeaturesByArithmeticOperations ?

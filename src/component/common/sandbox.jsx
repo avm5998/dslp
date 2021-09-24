@@ -81,7 +81,8 @@ export default forwardRef(({ dataset, additional }, ref) => {
         setStatusText('Ready')
         let child = document.querySelector('.jp-OutputArea')
         if (child)
-          document.querySelector('#codesandbox_rightPart').appendChild(child)
+          if (document.querySelector('#codesandbox_rightPart'))
+            document.querySelector('#codesandbox_rightPart').appendChild(child)
       }
     })
   }, [])
