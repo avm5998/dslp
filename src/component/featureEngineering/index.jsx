@@ -76,12 +76,15 @@ df[column] = label.fit_transform(df[column].astype(str))
 print(df.head())
 `},
     [Options.ConvertNumericalToCategorical]: (subOption) => {
-        let column = Object.keys(subOption)
+        let column = []
         let bins = []
         let labels = []
-        for(let key of column){
-            bins.push(subOption[key]['bins'].split(','))
-            labels.push(subOption[key]['label'].split(',').map(e => `"${e}"`))
+        for(let key of Object.keys(subOption)){
+            if(subOption[key]['checked']){
+                column.push(`'${key}'`)
+                bins.push(subOption[key]['bins'].split(','))
+                labels.push(subOption[key]['label'].split(',').map(e => `"${e}"`))
+            }
         }
         return `
 # Demo of "Convert Numerical to Categorical"
@@ -359,8 +362,8 @@ const FeatureEngineering = () => {
                             <input className='mx-3 px-1 focus:outline-none rounded-full' placeholder='Labels: string list' onChange={e => assignSubOption(col, { label: e.target.value })} />
                         </React.Fragment>)}
                         <Label customStyleText={`w-100 mr-0`} text="eg. column 'Age', Bins=[0,2,17,65,99], Labels=[Toddler, Child, Adult, Elderly]" />
-                        <Label customStyleText={`w-100 mr-0`} text="eg. column 'Survived', Bins=[0,1,2], Labels=[Yes, No]" />
-
+                        <Label customStyleText={`w-100 mr-0`} text="eg. column 'Survived', Bins=[0, 1, 2], Labels=[No, Yes] Here 0~1 stands for No and 1~2 stands for Yes" />
+                        <Label customStyleText={`w-100 mr-0`} text="*hint: Bins should always be greater by one than Labels." />
                     </div> : ''}
 
                 {option === Options.CreateFeaturesByArithmeticOperations ?
