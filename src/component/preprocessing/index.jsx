@@ -209,7 +209,7 @@ print(ndf.head())  # check the dataset
         return`
 # Demo of "Remove Outliers"
 
-params = {${params.join(", ")}}
+params = {${params.join(",")}}
 
 for column in ndf.columns:
     if column+'_above' in params or column+'_below' in params:

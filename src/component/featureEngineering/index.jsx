@@ -187,7 +187,6 @@ elif basic_operation == "uppercase count":
         let currVal = []
         let colname = []
         let newVal = []
-        debugger
         for(let key of columns){
             currVal.push(subOption[key]['Currval'].split(',').map(e => `"${e}"`))
             colname.push(subOption[key]['NewCol'].split(',').map(e => `"${e}"`))
@@ -417,11 +416,11 @@ const FeatureEngineering = () => {
 
                 {option === Options.TextDataFeatureFeatureEngineering ?
                     <div className="flex flex-col gap-2">
-                        <DropDown zIndex={100} width="w-64" defaultText={'Select column'} showOnHover={false} width={`w-64`} items={dataset.cate_cols}
+                        <DropDown zIndex={100} width="w-30" defaultText={'Select column'} showOnHover={false} items={dataset.cate_cols}
                             onSelect={e => {
                                 subOption.current.text_feateng_col = e
                             }} />
-                        <MultiSelect zIndex={99} width="w-64" defaultText={`Select one/multi-operation`} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'Word Normalization1: lemmatization', 'Word Normalization2: stemming', 'Extract Model1: CountVectorizer', 'Extract Model2: TfidfVectorizer']}
+                        <MultiSelect zIndex={99} width="w-fill" defaultText={'Select one/multi-operation'} defaultOpen={false} selections={['convert to lower case', 'expand contraction', 'remove punctuation', 'remove stopwords automatically', 'remove digits', 'Word Normalization1: lemmatization', 'Word Normalization2: stemming', 'Extract Model1: CountVectorizer', 'Extract Model2: TfidfVectorizer']}
                             onSelect={e => subOption.current.text_feateng_operation = e} />
                     </div> : ''}
 

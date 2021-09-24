@@ -89,7 +89,7 @@ const ButtonTypeStyleText = {
   },
   normal: {
     default:
-      "text-oneline box-border outline-none px-4 py-1 rounded-md text-blue-500 bg-gray-100 border-blue-500 border-2 cursor-pointer".split(
+      "text-oneline box-border outline-none px-fill py-1 rounded-md text-blue-500 bg-gray-100 border-blue-500 border-2 cursor-pointer".split(
         " "
       ),
     hover: "hover:text-white hover:bg-blue-500 hover:border-transparent".split(
@@ -345,7 +345,7 @@ export const MultiSelect = forwardRef(
         >
           <div className={cn("flex h-full items-center")}>
             {selected.length ? null : (
-              <div className="flex items-center outline-none h-full w-full text-gray-400 text-limited">
+              <div className="flex px-4 items-center outline-none h-full w-full text-gray-400 text-limited">
                 {defaultText}
               </div>
             )}
@@ -388,7 +388,7 @@ export const MultiSelect = forwardRef(
                 <XSVG />
               </div>
             </div>
-            <div className={cn("ml-auto", "mr-4", passiveMode ? "hidden" : "")}>
+            <div className={cn("ml-auto", "mr-2", passiveMode ? "hidden" : "")}>
               <ArrowSVG directionDown={!menuOpen} />
             </div>
           </div>
