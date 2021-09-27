@@ -1322,8 +1322,8 @@ def cond_eng_json():
             checked = prop['checked']
             if not checked:
                 continue
-            col_bins = prop['bins']
-            col_labels = prop['label']
+            col_bins = prop['bins'].replace("[", "").replace("]","")
+            col_labels = prop['label'].replace("[", "").replace("]","")
             ndf[col] = pd.cut(ndf[col].astype(float), bins=list(col_bins.split(",")), labels=list(col_labels.split(",")))
     elif option == 'Create Features by Arithmetic Operations':
         subOption = params['subOption']

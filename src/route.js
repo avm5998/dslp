@@ -21,6 +21,7 @@ import FeatureEngineering from "./component/featureEngineering";
 import Preprocessing from "./component/preprocessing";
 import FeatureSelection from "./component/featureSelection";
 import Analysis from "./component/analysis";
+import Download from "./component/download";
 import Guide from "./component/guide";
 import EnterOtp from "./component/enter-otp/enter-otp"
 // testing dummy
@@ -64,6 +65,7 @@ const Menu = {
     { text: "Feature Engineering", icon: "cog", to: "/featureEngineering" },
     { text: "Feature Selection", icon: "list", to: "/featureSelection" },
     { text: "Analysis", icon: "microscope", to: "/analysis" },
+    { text: "DataSet Download", icon: "cloud-download-alt", to: "/download" },
   ],
 };
 
