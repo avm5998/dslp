@@ -1416,9 +1416,10 @@ def cond_eng_json():
         columns = list(subOption.keys())
         for col in columns:
             if subOption[col]['checked']:
-                col_currVal = subOption[col]['Currval']
-                new_colname = subOption[col]['NewCol']
-                col_newVal = subOption[col]['NewVal']
+                col_currVal = subOption[col]['Currval'].replace("[","").replace("]","")
+                print(col_currVal)
+                new_colname = subOption[col]['NewCol'].replace("[","").replace("]","")
+                col_newVal = subOption[col]['NewVal'].replace("[","").replace("]","")
                 new_feat_assigns = {}
                 col_currVal_list = col_currVal.split(',')
                 col_newVal_list = col_newVal.split(',')

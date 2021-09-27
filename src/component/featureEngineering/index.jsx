@@ -81,9 +81,9 @@ print(df.head())
         let labels = []
         for(let key of Object.keys(subOption)){
             if(subOption[key]['checked']){
-                column.push(`'${key}'`)
-                bins.push(subOption[key]['bins'].split(','))
-                labels.push(subOption[key]['label'].split(',').map(e => `"${e}"`))
+                column.push(key)
+                bins.push(subOption[key]['bins'].replace("[","").replace("]","").split(','))
+                labels.push(subOption[key]['label'].replace("[","").replace("]","").split(',').map(e => `"${e}"`))
             }
         }
         return `
@@ -191,9 +191,9 @@ elif basic_operation == "uppercase count":
         let colname = []
         let newVal = []
         for(let key of columns){
-            currVal.push(subOption[key]['Currval'].split(',').map(e => `"${e}"`))
-            colname.push(subOption[key]['NewCol'].split(',').map(e => `"${e}"`))
-            newVal.push(subOption[key]['NewVal'].split(',').map(e => `"${e}"`))
+            currVal.push(subOption[key]['Currval'].replace("[","").replace("]","").split(',').map(e => `"${e}"`))
+            colname.push(subOption[key]['NewCol'].replace("[","").replace("]","").split(',').map(e => `"${e}"`))
+            newVal.push(subOption[key]['NewVal'].replace("[","").replace("]","").split(',').map(e => `"${e}"`))
         }
     return `
 # Demo of "Text Data Feature Label Values in Columns"
