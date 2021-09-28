@@ -386,6 +386,7 @@ const Routes = (props) => {
                   component={ResetPasswordConfirm}
                 />
                 <Route path="/requests" component={PendingRequests} />
+                <Route path="/download" component={Download}/>
               </Switch>
             </div>
           </div>

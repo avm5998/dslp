@@ -1324,6 +1324,9 @@ def cond_eng_json():
                 continue
             col_bins = prop['bins'].replace("[", "").replace("]","")
             col_labels = prop['label'].replace("[", "").replace("]","")
+            for i in list(map(int, col_bins.split(","))):
+                print(type(i))
+                break
             ndf[col] = pd.cut(ndf[col].astype(float), bins=list(map(int, col_bins.split(","))), labels=list(col_labels.split(",")))
     elif option == 'Create Features by Arithmetic Operations':
         subOption = params['subOption']
@@ -2542,10 +2545,10 @@ def cond_timeSeries_json():
         
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
-@app.route('/download', methods=['GET'])
+@app.route('/currentDataDownload', methods=['POST'])
 @cross_origin()
 @jwt_required()
-def download_data_set(filepath):
+def download_data_set():
     try:
         params = request.json
         filename = params['filename']
