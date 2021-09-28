@@ -1,7 +1,7 @@
 import math
 import sys
 import os
-from flask import Flask, render_template, request, Response, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response
+from flask import Flask, render_template, request, Response, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response, send_file, send_from_directory
 from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 import pymongo
@@ -2545,8 +2545,19 @@ def cond_timeSeries_json():
 @app.route('/download', methods=['GET'])
 @cross_origin()
 @jwt_required()
-def download_data_set():
-    pass
+def download_data_set(filepath):
+    try:
+        params = request.json
+        filename = params['filename']
+        user_id = get_jwt_identity()
+        df = _getCache(user_id, filename)
+        return Response(
+            df.to_csv(),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+            f"attachment; filename=changed_{filename}.csv"})
+    except Exception as e:
+        raise InternalServerError('Something went wrong')
 
 if __name__ == '__main__':
     app.run(host='0,0,0,0',debug=True)
