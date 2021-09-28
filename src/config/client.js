@@ -11,8 +11,8 @@ let devConfig = {
 let prodConfig = {
   api: {
     protocol: 'http',
-    host: 'vclient5.cs.rit.edu',
-    port: 8000,
+    host: 'vclient4.cs.rit.edu',
+    port: 5000,
     prefix: ''
   },
   endpoint: ''
