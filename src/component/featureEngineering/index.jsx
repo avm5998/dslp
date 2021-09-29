@@ -438,11 +438,12 @@ const FeatureEngineering = () => {
 
                         $('#display_results').html(json.para_result)
                         document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
-
                         dispatch(DataSetActions.setData({
                             cols: json.cols,
                             num_cols: json.num_cols,
                             cate_cols: json.cate_cols,
+                            num_lists: json.num_lists,
+                            cate_lists: json.cate_lists,
                         }))
                         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
                     }} />
