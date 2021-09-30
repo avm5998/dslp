@@ -2552,16 +2552,10 @@ def download_data_set():
         user_id,filename = getFromToken(token)
         print(user_id,filename)
         df = _getCache(user_id, filename)
-        print(df)
         response = make_response(df.to_csv(index=False))
-        cd = 'attachment; filename=mycsv.csv'
-        response.headers['Content-Disposition'] = cd 
+        response.headers['Content-Disposition'] = f'attachment; filename={filename.replace(".csv","")}_{datetime.timestamp(datetime.now())}.csv'
         response.headers['Content-type'] = 'application/octet-stream'
-        # response.mimetype='application/octet-stream'
         return response
-        # return Response(df.to_csv(index=False),mimetype="text/csv",
-        # headers={"Content-Disposition":
-        #             "attachment;filename=myplot.csv"})
     except Exception as e:
         print(e)
 
