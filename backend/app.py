@@ -1,7 +1,7 @@
 import math
 import sys
 import os
-from flask import Flask, render_template, request, Response, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response, send_file, send_from_directory
+from flask import Flask, render_template, request, make_response,Response, redirect, url_for, abort, send_from_directory,jsonify, Markup, make_response, send_file, send_from_directory
 from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 import pymongo
@@ -1226,7 +1226,6 @@ def cleanEditedCache():
 @jwt_required(optional=True)
 def cond_clean_json():
     user_id = get_jwt_identity()
-    web = []
     params = request.json
     print('params=', params)
     filename = params['filename']
@@ -2542,22 +2541,28 @@ def cond_timeSeries_json():
         
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
-@app.route('/currentDataDownload', methods=['POST'])
+@app.route('/currentDataDownload',methods=['POST'])
 @cross_origin()
 @jwt_required()
 def download_data_set():
     try:
+        user_id = get_jwt_identity()
         params = request.json
         filename = params['filename']
-        user_id = get_jwt_identity()
+        print(params)
         df = _getCache(user_id, filename)
-        return Response(
-            df.to_csv(),
-            mimetype="text/csv",
-            headers={"Content-disposition":
-            f"attachment; filename=changed_{filename}.csv"})
+        print(df)
+        response = make_response(df.to_csv(index=False))
+        cd = 'attachment; filename=mycsv.csv'
+        response.headers['Content-Disposition'] = cd 
+        response.headers['Content-type'] = 'application/octet-stream'
+        # response.mimetype='application/octet-stream'
+        return response
+        # return Response(df.to_csv(index=False),mimetype="text/csv",
+        # headers={"Content-Disposition":
+        #             "attachment;filename=myplot.csv"})
     except Exception as e:
-        raise InternalServerError('Something went wrong')
+        print(e)
 
 if __name__ == '__main__':
     app.run(host='0,0,0,0',debug=True)

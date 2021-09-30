@@ -1,19 +1,19 @@
 import React from "react";
-import { Component } from "react";
-import { fetchByJSON } from "../../util/util";
-const Download = ()=> {
+import { useSelector } from "react-redux";
+import { fetchByJSON, useCachedData } from "../../util/util";
 
+const Download = ()=> {
+    useCachedData()
+    let dataset = useSelector(state => state.dataset)
     return (
-        // <form method="get" action="http(s)://下载文件的后台接口">
             <button type="submit" onClick={async ()=>{
                 let res = await fetchByJSON("currentDataDownload",{
-                    filename:"titanic"
+                    filename: dataset.filename
                 })
 
                 let json = await res.json()
                 console.log(json)
             }}>Download!</button>
-        // </form>
     )
 }
 
