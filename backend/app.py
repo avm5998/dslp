@@ -2541,15 +2541,16 @@ def cond_timeSeries_json():
         
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
-@app.route('/currentDataDownload',methods=['POST'])
+def getFromToken(token):
+    return token.split('@')
+
+@app.route('/currentDataDownload',methods=["GET"])
 @cross_origin()
-@jwt_required()
 def download_data_set():
     try:
-        user_id = get_jwt_identity()
-        params = request.json
-        filename = params['filename']
-        print(params)
+        token = request.args.get('token')
+        user_id,filename = getFromToken(token)
+        print(user_id,filename)
         df = _getCache(user_id, filename)
         print(df)
         response = make_response(df.to_csv(index=False))
