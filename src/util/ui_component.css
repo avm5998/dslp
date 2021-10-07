@@ -65,3 +65,12 @@ and (max-width : 1024px)  {
     display: none;
   }
 }
+
+
+.text-white-n-important{
+  color:#fff;
+}
+
+.bg-white-n-important{
+  background-color: white;
+}
