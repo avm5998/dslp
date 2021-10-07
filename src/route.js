@@ -26,6 +26,8 @@ import Guide from "./component/guide";
 import EnterOtp from "./component/enter-otp/enter-otp"
 // testing dummy
 import { login } from "./actions/auth";
+import { fetchByJSON, useCachedData } from "./util/util";
+import { config } from './config/client'
 
 //Login imports
 import Login from "./component/login/login.component";
@@ -65,7 +67,7 @@ const Menu = {
     { text: "Feature Engineering", icon: "cog", to: "/featureEngineering" },
     { text: "Feature Selection", icon: "list", to: "/featureSelection" },
     { text: "Analysis", icon: "microscope", to: "/analysis" },
-    { text: "DataSet Download", icon: "cloud-download-alt", to: "/download" },
+    { text: "Download", icon: "cloud-download-alt", to: "", isDownload:true },
   ],
 };
 
@@ -128,6 +130,7 @@ const Routes = (props) => {
   let dataset = useSelector((state) => state.dataset);
   let [menuData, setMenuData] = useState(Menu);
   let [toggle, setToggle] = useState(false);
+  useCachedData()
 
   if (currentUser && currentUser.role === "admin") {
     const found = Menu["Main"].some((el) => el.text === "Requests");
@@ -320,7 +323,29 @@ const Routes = (props) => {
                             } menu-list menu-list-transition`}
                             key={item.text}
                           >
+                            {item.isDownload?<a class="relative flex flex-row items-center h-11 focus:outline-none border-l-4 border-transparent hover-border pr-6"
+                              href={`${config.endpoint}currentDataDownload?token=${currentUser.id}@${dataset.filename}`}
+                                target="iframe"
+                            ><span className="inline-flex justify-center items-center ml-6">
+                                <FontAwesomeIcon icon={item.icon} />
+                            </span>
+                          <span className="ml-2 text-sm tracking-wide truncate">
+                            {item.text}
+                          </span>
+                          <span
+                            style={{
+                              textOverflow: `ellipsis`,
+                              overflow: `hidden`,
+                              whiteSpace: `nowrap`,
+                            }}
+                            className={`${
+                              item.extraText ? "" : "hidden"
+                            } px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-indigo-500 bg-indigo-50 rounded-full`}
+                          >
+                            {item.extraText}
+                          </span></a>:
                             <Link
+                              target="iframe"
                               to={item.to}
                               className="relative flex flex-row items-center h-11 focus:outline-none border-l-4 border-transparent hover-border pr-6"
                             >
@@ -343,6 +368,7 @@ const Routes = (props) => {
                                 {item.extraText}
                               </span>
                             </Link>
+}
                           </div>
                         ))}
                       </React.Fragment>
@@ -386,9 +412,9 @@ const Routes = (props) => {
                   component={ResetPasswordConfirm}
                 />
                 <Route path="/requests" component={PendingRequests} />
-                <Route path="/download" component={Download}/>
               </Switch>
             </div>
+            <iframe name="iframe" style={{display:'none'}}></iframe>
           </div>
         </div>
       </div>
