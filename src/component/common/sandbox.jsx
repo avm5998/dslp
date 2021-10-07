@@ -1,5 +1,6 @@
 import React, { forwardRef, useImperativeHandle, useState, useEffect, useRef } from 'react'
 import { Modal } from '../../util/ui'
+import { Button } from '../../util/ui_components'
 import { fetchByJSON,toUnicode } from '../../util/util'
 
 const getInitialCode = (data, additional) => `import pandas as pd
@@ -88,7 +89,7 @@ export default forwardRef(({ dataset, additional }, ref) => {
   }, [])
 
   return (<Modal
-    fixedModalPosition={{ minWidth: '80vw', height: 'auto', minHeight:'80vh',margin: 'auto' }}
+    fixedModalPosition={{ minWidth: '80vw', height: 'auto', margin: 'auto' }}
     zIndex={50}
     isOpen={codeVisible}
     setIsOpen={setCodeVisible}
@@ -97,8 +98,8 @@ export default forwardRef(({ dataset, additional }, ref) => {
     }}
   >
     <div>
-      <div className='flex flex-col w-full h-full justify-between gap-2 my-4'>
-        <div className="flex w-full justify-center items-center m-0 flex-grow-0 h-20">
+      <div className='flex flex-col w-full h-full justify-between gap-2 mt-2 mb-4'>
+        <div className="flex w-full justify-center items-center m-0 flex-grow-0 h-10">
           <div className="cursor-default">Sandbox status: {statusText}</div>
         </div>
         <div className="flex w-full h-full justify-between flex-grow-1 gap-2">
@@ -111,6 +112,10 @@ export default forwardRef(({ dataset, additional }, ref) => {
           </div>
           <div className="result w-1/2 border-2 m-2 box-content" id="codesandbox_rightPart">
           </div>
+        </div>
+
+        <div className="flex justify-end items-center w-full px-4 box-border">
+          <Button buttonType="normal_r" width="w-32" text="Close" onClick={()=>setCodeVisible(false)}></Button>
         </div>
       </div>
     </div>

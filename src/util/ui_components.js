@@ -98,17 +98,17 @@ const ButtonTypeStyleText = {
   },
   static: {
     default:
-      "text-oneline outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important bg-blue-500 border-transparent border-2 cursor-pointer".split(
         " "
       ),
     hover: [],
   },
   normal_r: {
     default:
-      "text-oneline outline-none px-4 py-1 rounded-md text-white bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important bg-blue-500 border-transparent border-2 cursor-pointer".split(
         " "
       ),
-    hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500".split(
+    hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500 hover:text-blue-500".split(
       " "
     ),
   },
@@ -147,6 +147,7 @@ export const Input = forwardRef(
       placeholder = "",
       onInput = () => {},
       defaultValue = "",
+      className = ""
     },
     ref
   ) => {
@@ -169,7 +170,8 @@ export const Input = forwardRef(
           "rounded-sm",
           "focus:outline-none",
           height,
-          width
+          width,
+          className
         )}
         placeholder={placeholder}
         onInput={(e) => {
@@ -335,7 +337,7 @@ export const MultiSelect = forwardRef(
             "pl-2",
             "w-full",
             "h-full",
-            "bg-white",
+            "bg-white-n-important",
             "border-2",
             "rounded-sm",
             "outline-none",
@@ -345,7 +347,7 @@ export const MultiSelect = forwardRef(
         >
           <div className={cn("flex h-full items-center")}>
             {selected.length ? null : (
-              <div className="flex px-4 items-center outline-none h-full w-full text-gray-400 text-limited">
+              <div className="flex px-4 items-center justify-center outline-none h-full w-full text-gray-400 text-limited">
                 {defaultText}
               </div>
             )}
@@ -360,7 +362,7 @@ export const MultiSelect = forwardRef(
                 "font-medium",
                 "box-border",
                 "px-2",
-                "bg-white",
+                "bg-white-n-important",
                 "rounded-full",
                 "text-blue-700",
                 "border",
@@ -401,7 +403,7 @@ export const MultiSelect = forwardRef(
             "relative",
             "shadow",
             "rounded-b",
-            "bg-white",
+            "bg-white-n-important",
             "overflow-hidden",
             "origin-top",
             "m_transition",
@@ -422,7 +424,7 @@ export const MultiSelect = forwardRef(
                 "leading-6",
                 selected.indexOf(selection) !== -1
                   ? "bg-blue-400 text-gray-100"
-                  : "hover:bg-blue-600 hover:text-gray-100 bg-white text-gray-600"
+                  : "hover:bg-blue-600 hover:text-gray-100 bg-white-n-important text-gray-600"
               )}
               onClick={() =>
                 setSelected((all) => {
@@ -632,7 +634,7 @@ export const DropDown = forwardRef(
             "outline-none",
             "border",
             "px-2",
-            "bg-white",
+            "bg-white-n-important",
             "rounded-sm",
             "flex",
             "items-center",
@@ -662,7 +664,7 @@ export const DropDown = forwardRef(
             "origin-top",
             "m_transition",
             "cursor-pointer",
-            "bg-white"
+            "bg-white-n-important"
           )}
         >
           {
