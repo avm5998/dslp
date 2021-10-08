@@ -14,16 +14,27 @@ import { result } from 'lodash';
 import Sandbox from '../common/sandbox'
 
 const getCodeFromResult = (result)=> function(){
-console.log(result)
-let variable_X = []
+let para = result.result
 let k = 0
-debugger
-for(let key of result){
-    console.log(key)
-    if(key == "variablesx"){
-        variable_X.push[result[key]]
-    }
+let variable_X = []
+let target_Y = ""
+let tech = -1
+let plot_size = -1
+let plot_type = -1
+let specific_inputVal_lowVar = ""
+let specific_inputVal_pca = ""
+for(let key in para){
+    let value = para[key]
+    if(key == "k" && value)k = value
+    if(key == "variablesx")variable_X = value
+    if(key == "targety")target_Y = value
+    if(key == "technique")tech = value
+    if(key == "plotsize" && value)plot_size = value
+    if(key == "plottype" && value)plot_type = value
+    if(key == "specific_inputVal_lowVar" && value)specific_inputVal_lowVar = value
+    if(key == "specific_inputVal_pca" && value)specific_inputVal_pca = value
 }
+debugger
 return `
 if tech in ["Correlation Matrix", 'Principal Component Analysis']:
 if tech == "Correlation Matrix":
