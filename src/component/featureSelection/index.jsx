@@ -13,8 +13,18 @@ import { InlineTip } from '../common/tip';
 import { result } from 'lodash';
 import Sandbox from '../common/sandbox'
 
-const getCodeFromResult = (result)=>{
-  return `
+const getCodeFromResult = (result)=> function(){
+console.log(result)
+let variable_X = []
+let k = 0
+debugger
+for(let key of result){
+    console.log(key)
+    if(key == "variablesx"){
+        variable_X.push[result[key]]
+    }
+}
+return `
 if tech in ["Correlation Matrix", 'Principal Component Analysis']:
 if tech == "Correlation Matrix":
     featureResult = ndf.corr(method ='pearson')  # get correlations of each features in dataset

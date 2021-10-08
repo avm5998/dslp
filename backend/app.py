@@ -1482,7 +1482,11 @@ def cond_select_json():
     Y = params['targety']
     tech = Techniques[int(params['technique'])] if 'technique' in params else 'Correlation Matrix'
     X = params['variablesx']
-    K = int(params['selectkbest']) if params['selectkbest'] else len(X)
+    K = -1
+    try:
+        K = int(params['selectkbest']) 
+    except:
+        K = len(X)
     if Y:
         ndf = pd.concat([ndf[X], ndf[Y]], axis=1)
     else:
