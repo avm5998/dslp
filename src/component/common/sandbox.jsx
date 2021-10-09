@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useState, useEffect, useRef } from 'react'
 import { Modal } from '../../util/ui'
 import { Button } from '../../util/ui_components'
-import { fetchByJSON,toUnicode } from '../../util/util'
+import { fetchByJSON,toUnicode, useCachedData } from '../../util/util'
 
 const getInitialCode = (data, additional) => `import pandas as pd
 from io import StringIO

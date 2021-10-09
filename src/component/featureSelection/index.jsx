@@ -15,7 +15,7 @@ import Sandbox from '../common/sandbox'
 
 const getCodeFromResult = (result)=> function(){
 let para = result.result
-let k = 0
+let k = -1
 let variable_X = []
 let target_Y = ""
 let tech = -1
@@ -34,14 +34,271 @@ for(let key in para){
     if(key == "specific_inputVal_lowVar" && value)specific_inputVal_lowVar = value
     if(key == "specific_inputVal_pca" && value)specific_inputVal_pca = value
 }
-debugger
+if(k === -1){
+    k = "len(X)"
+}
+if(specific_inputVal_lowVar === ""){
+    specific_inputVal_lowVar = 0.3
+}else{
+    specific_inputVal_lowVar = float(specific_inputVal_lowVar)
+}
+if(plot_size === -1){
+    plot_size = "5, 5"
+}
+if(plot_type != -1){
+    let plotTypes = ['bar', 'scatter', 'line', 'heatmap']
+    plot_type = plotTypes[plot_type]
+}else{
+    plot_type = 'bar'
+}
+if(specific_inputVal_pca === -1){
+    specific_inputVal_pca = 2
+}
+if(tech != -1){
+    if(tech === 0){
+    let tech = "Variance Threshold: 1-True, 0-False"
+    return `
+from sklearn.feature_selection import VarianceThreshold
+X = [${variable_X.map(e => `"${e}"`)}]
+Y = "${target_Y}"
+if Y:
+    df = pd.concat([df[X], df[Y]], axis=1)
+else:
+    df = df[X]
+df = df.apply(pd.to_numeric,errors='ignore') # convert data type
+X = df[X]
+Y = df[Y]
+plotSize = (${plot_size})
+plotType = "${plot_type}"
+thresh = float(${specific_inputVal_lowVar})
+k = ${k}
+
+fs = VarianceThreshold(threshold=thresh)
+fs.fit(X)
+featureResult = pd.DataFrame({"Features":X.columns ,"Boolean Result":fs.get_support()})
+x_label, y_label, title = 'Features', 'Boolean Result', '${tech}'
+featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
+featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
+plt.title(title)
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+plt.rcParams["figure.figsize"] = plotSize
+plt.show()
+        `
+    }
+    if(tech === 1){
+    let tech = "Correlation Matrix"
+    return`
+import seaborn as sns
+
+X = [${variable_X.map(e => `"${e}"`)}]
+Y = "${target_Y}"
+if Y:
+    df = pd.concat([df[X], df[Y]], axis=1)
+else:
+    df = df[X]
+df = df.apply(pd.to_numeric,errors='ignore') # convert data type
+X = df[X]
+Y = df[Y]
+plotSize = (${plot_size})
+plotType = "${plot_type}"
+thresh = float(${specific_inputVal_lowVar})
+
+featureResult = df.corr(method ='pearson')  # get correlations of each features in dataset
+featureResult = pd.DataFrame(data=featureResult)
+title = "${tech}"
+x_label, y_label = 'Features', 'Correlation'
+plt.rcParams["figure.figsize"] = plotSize
+if plotType == 'bar':
+    featureResult.plot.bar()
+elif plotType == 'scatter':
+    sns.pairplot(featureResult) 
+elif plotType == 'line':
+    featureResult.plot.line()
+elif plotType == 'heatmap':
+    sns.heatmap(featureResult,annot=True,cmap="RdYlGn")
+plt.title(title)
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+plt.rcParams["figure.figsize"] = plotSize
+plt.show()
+`
+    }
+    if(tech === 2){
+    let tech = "Regression1: Pearson’s Correlation Coefficient"
+    return `
+from sklearn.feature_selection import SelectKBest, f_regression
+
+X = [${variable_X.map(e => `"${e}"`)}]
+Y = "${target_Y}"
+K = ${k}
+if Y:
+    df = pd.concat([df[X], df[Y]], axis=1)
+else:
+    df = df[X]
+df = df.apply(pd.to_numeric,errors='ignore') # convert data type
+X = df[X]
+Y = df[Y]
+plotSize = (${plot_size})
+plotType = "${plot_type}"
+thresh = float(${specific_inputVal_lowVar})
+
+fs = SelectKBest(score_func=f_regression, k=K)
+fit = fs.fit(X, Y.values.ravel())
+featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+featureResult=featureResult.nlargest(K,'Score')  #print k best features
+x_label, y_label, title = 'Features', 'Score', '${tech} Feature Score'
+featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
+plt.title(title)
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+plt.rcParams["figure.figsize"] = plotSize
+plt.show()
+
+`
+    }
+    if(tech === 3){
+    let tech = "Classification1: ANOVA"
+    return`
+
+from sklearn.feature_selection import SelectKBest, f_classif
+
+X = [${variable_X.map(e => `"${e}"`)}]
+Y = "${target_Y}"
+K = ${k}
+if Y:
+    df = pd.concat([df[X], df[Y]], axis=1)
+else:
+    df = df[X]
+df = df.apply(pd.to_numeric,errors='ignore') # convert data type
+X = df[X]
+Y = df[Y]
+plotSize = (${plot_size})
+plotType = "${plot_type}"
+thresh = float(${specific_inputVal_lowVar})
+
+fs = SelectKBest(score_func=f_classif, k=K)
+fit = fs.fit(X, Y.values.ravel())
+featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+featureResult=featureResult.nlargest(K,'Score')  #print k best features
+x_label, y_label, title = 'Features', 'Score', '${tech} Feature Score'
+featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
+plt.title(title)
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+plt.rcParams["figure.figsize"] = plotSize
+plt.show()
+
+
+`
+    }
+    if(tech === 4){
+    let tech = "Classification2: Chi-Squared"
+    return`
+from sklearn.feature_selection import SelectKBest, chi2
+    
+X = [${variable_X.map(e => `"${e}"`)}]
+Y = "${target_Y}"
+K = ${k}
+if Y:
+    df = pd.concat([df[X], df[Y]], axis=1)
+else:
+    df = df[X]
+df = df.apply(pd.to_numeric,errors='ignore') # convert data type
+X = df[X]
+Y = df[Y]
+plotSize = (${plot_size})
+plotType = "${plot_type}"
+thresh = float(${specific_inputVal_lowVar})
+
+fs = SelectKBest(score_func=chi2, k=K)
+fit = fs.fit(X, Y.values.ravel())
+featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+featureResult=featureResult.nlargest(K,'Score')  #print k best features
+x_label, y_label, title = 'Features', 'Score', '${tech} Feature Score'
+featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
+plt.title(title)
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+plt.rcParams["figure.figsize"] = plotSize
+plt.show()
+`
+    }
+    if(tech === 5){
+    let tech = "Classification3: Mutual Information"
+    return`
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
+    
+X = [${variable_X.map(e => `"${e}"`)}]
+Y = "${target_Y}"
+K = ${k}
+if Y:
+    df = pd.concat([df[X], df[Y]], axis=1)
+else:
+    df = df[X]
+df = df.apply(pd.to_numeric,errors='ignore') # convert data type
+X = df[X]
+Y = df[Y]
+plotSize = (${plot_size})
+plotType = "${plot_type}"
+thresh = float(${specific_inputVal_lowVar})
+
+fs = SelectKBest(score_func=mutual_info_classif, k=K)
+fit = fs.fit(X, Y.values.ravel())
+featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+featureResult=featureResult.nlargest(K,'Score')  #print k best features
+x_label, y_label, title = 'Features', 'Score', '${tech} Feature Score'
+featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
+plt.title(title)
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+plt.rcParams["figure.figsize"] = plotSize
+plt.show()
+`
+    }
+    if(tech === 6){
+        let tech = "Principal Component Analysis"
+        return`
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+df = df.apply(pd.to_numeric,errors='ignore') # convert data type
+plotType = "${plot_type}"
+num_comp = int(${specific_inputVal_pca})
+scaled_data = StandardScaler().fit_transform(df)
+pca = PCA(n_components=num_comp)
+pca_res = pca.fit_transform(scaled_data) 
+col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
+pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
+featureResult = pd.concat([pca_df, Y], axis=1)
+title = '${tech}'
+x_label, y_label = 'Features', 'PC'
+if plotType == 'bar':
+    featureResult.plot.bar()
+elif plotType == 'scatter':
+    sns.pairplot(featureResult) 
+elif plotType == 'line':
+    featureResult.plot.line()
+elif plotType == 'heatmap':
+    sns.heatmap(featureResult,annot=True,cmap="RdYlGn")
+plt.title(title)
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+plt.rcParams["figure.figsize"] = plotSize
+plt.show()
+`
+    }
+}
 return `
-if tech in ["Correlation Matrix", 'Principal Component Analysis']:
-if tech == "Correlation Matrix":
-    featureResult = ndf.corr(method ='pearson')  # get correlations of each features in dataset
-    featureResult = pd.DataFrame(data=featureResult)
-    title = tech
-    x_label, y_label = 'Features', 'Correlation'
+# Choose operation to see demo code
+# Otherwise, fell free to play with Sandbox.
+# Have a nice day!
 `
 }
 
@@ -123,7 +380,7 @@ const FeatureSelection = () => {
         </div>
       </div>
     </Modal>
-    <div className="flex flex-row p-4 gap-4 items-center justify-start bg-gray-100 shadow-md">
+    <div className="button-style flex flex-row p-4 gap-4 items-center justify-start bg-gray-100 shadow-md">
       <Button buttonType="normal_r" text="Select operation" width="w-48" onClick={()=>{
         setShowModal(true)
       }}></Button>

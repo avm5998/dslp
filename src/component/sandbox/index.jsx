@@ -1,6 +1,6 @@
 import { Button } from "../../util/ui";
 import React,{ useState, useEffect,useRef } from "react";
-import { fetchByJSON } from '../../util/util'
+import { fetchByJSON, useCachedData } from '../../util/util'
 import { useSelector } from 'react-redux'
 import './index.css'
 

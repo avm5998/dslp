@@ -1522,7 +1522,7 @@ def cond_select_json():
             sns.heatmap(featureResult,annot=True,cmap="RdYlGn")
     else:
         if tech == "Removing Features with Low Variance":
-            thresh = float(params['specifConvertNumericalToCategorical_inputVal_lowVar']) if 'specific_inputVal_lowVar' in params and params['specific_inputVal_lowVar'] else 0.3
+            thresh = float(params['specific_inputVal_lowVar']) if 'specific_inputVal_lowVar' in params and params['specific_inputVal_lowVar'] else 0.3
             fs = VarianceThreshold(threshold=thresh)
             fs.fit(X)
             featureResult = pd.DataFrame({"Features":X.columns ,"Boolean Result":fs.get_support()})

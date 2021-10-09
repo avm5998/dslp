@@ -98,14 +98,14 @@ const ButtonTypeStyleText = {
   },
   static: {
     default:
-      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important border-transparent border-2 cursor-pointer".split(
         " "
       ),
     hover: [],
   },
   normal_r: {
     default:
-      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important bg-blue-500 border-transparent border-2 cursor-pointer".split(
+      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important button-style border-transparent border-2 cursor-pointer".split(
         " "
       ),
     hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500 hover:text-blue-500".split(
