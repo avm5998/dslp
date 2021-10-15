@@ -4,6 +4,16 @@ import { fetchByJSON, useCachedData } from '../../util/util'
 import { useSelector } from 'react-redux'
 import './index.css'
 
+const InitialCode = (code) => `
+import json
+import pandas as pd
+from io import StringIO
+import numpy as np
+MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+data_io = StringIO(r"""${code}""")
+df = pd.read_json(data_io)
+`
+
 //https://stackoverflow.com/questions/3903488/javascript-backslash-in-variables-is-causing-an-error
 const stringEscape = (s)=>{
     return s ? s.replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/\t/g,'\\t').replace(/\v/g,'\\v').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/[\x00-\x1F\x80-\x9F]/g,hex) : s;
@@ -13,6 +23,8 @@ const stringEscape = (s)=>{
 const Page = ()=>{
     let [statusText, setStatusText] = useState('Loading...')
     let mutated = useRef(1)
+    let dataset = useSelector(e=>e.dataset)
+    let kernelRef = useRef(null)
 
     //load components on page loading
     useEffect(()=>{
@@ -21,7 +33,7 @@ const Page = ()=>{
             if (data.status === 'ready') {
                 setStatusText('Ready')
                 document.querySelector('#rightPart').appendChild(document.querySelector('.jp-OutputArea'))
-                
+                kernelRef.current = data.kernel
                 // new MutationObserver(function(mutationsList, observer) {
                 //     for(const mutation of mutationsList) {
                 //         if (mutation.type === 'childList' && mutated.current == 1) {
@@ -45,8 +57,13 @@ const Page = ()=>{
         <div className="flex w-full h-full justify-between flex-grow-1 gap-2">
             <div className="code w-1/2 border-2 m-2 box-content flex flex-col">
                 <div className="flex justify-start items-center bg-gray-400">
-                    <div className='run' onClick={()=>{
+                    <div className='run' onClick={async ()=>{
                         mutated.current = 0
+                        let res = await fetchByJSON('current_data_json', {
+                            filename: dataset.filename
+                        })
+                        let json = await res.json();
+                        let res2 = await kernelRef.current.requestExecute({ code: InitialCode(json.data) }).done
                         document.querySelector('.thebelab-run-button').click()
                     }}>Run</div>
                 </div>

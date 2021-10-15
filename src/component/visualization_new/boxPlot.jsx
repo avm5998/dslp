@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Label, Button, Modal, Checkbox } from '../../util/ui'
+import { MultiSelect,DropDown } from '../../util/ui_components' 
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 import { InlineTip } from '../common/tip'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
@@ -16,9 +17,9 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
             </div>
             <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`}>
                 <Label text='*X Axis:'><InlineTip info={`X Axis`} /></Label>
-                <DropDown defaultText='Select X Axis' customStyle='w-96' showOnHover={false} items={dataset.num_cols} onSelect={e => result.x = e} />
+                <MultiSelect zIndex={100} defaultText='Select X Axis' width='w-96' selections={dataset.num_cols} onSelect={e => result.x = e} />
                 <Label text='*Y Axis:'><InlineTip info={`Y Axis`} /></Label>
-                <DropDown defaultText='Select Y Axis' customStyle='w-96' showOnHover={false} items={dataset.num_cols} onSelect={e => result.y = e} />
+                <DropDown zIndex={99} defaultText='Select Y Axis' width='w-96' items={dataset.num_cols} onSelect={e => result.y = e} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? 'hidden' : 'hidden'}`} style={{
                 gridTemplateColumns: '5vw 1fr 10vw 1fr'
@@ -59,7 +60,8 @@ export const config = {
             }
             postSteps.push(`fig.show()`)
         }else if(result.engine == 'Pandas'){
-            mid = `df.groupby(['${result.x}'])['${result.y}'].sum().plot.box()`
+            let arr = result.x.map(e => `"${e}"`)
+            mid = `df.groupby([${arr}])['${result.y}'].sum().plot.box()`
         }
 
         return `${prevSteps.length ? prevSteps.join('\n') : ''}
