@@ -553,14 +553,19 @@ const Analysis = () => {
         dispatch(OptionActions.setOption(['analysis', option, model, { ...result }]))
         let res = await fetchByJSON(`analysis/${option}`, { ...result, filename: dataset.filename })   //send request
         let json = await res.json()     // receive request
-        setCode(getCodeFromResult(option, model, result))   // demo code
         // console.log(json)
         // json.cond.replace(/&/g, ",  ")
-        $('#display_query').text(json.cond.trim())
-        $('#display_results').html(json.para_result.trim())
-        document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
-        document.querySelector('#model_img_placeholder').classList.add('hidden')
-        setShowSubOptionModal(false)
+        let errorMsg = json['errorMsg']
+        if(errorMsg !== `''`){
+            alert(errorMsg)
+        }else{
+            setCode(getCodeFromResult(option, model, result))   // demo code
+            $('#display_query').text(json.cond.trim())
+            $('#display_results').html(json.para_result.trim())
+            document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
+            document.querySelector('#model_img_placeholder').classList.add('hidden')
+            setShowSubOptionModal(false)
+        }
         // console.log(json)   // print
     }, [result, option, model])
 
@@ -588,7 +593,6 @@ const Analysis = () => {
         dispatch(PresetActions.deletePreset({ userId: user.id, filename: dataset.filename, identifier, presetName }))
         if (currentPresetIndex >= presetsArr.length) setCurrentPresetIndex(presetsArr.length - 1)
     }
-
     return (
         <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 4rem)' }}>
             <Modal fixedModalPosition={{
@@ -641,7 +645,7 @@ const Analysis = () => {
                                 }))} />
                         </div>
                         <div className='w-72 mx-5'>
-                            <DropDown ref={ref} defaultText='Select model' width='w-72' items={
+                            <DropDown ref={ref} zIndex={9} defaultText='Select model' width='w-72' items={
                                 (OptionModels.hasOwnProperty(option) ? Object.keys(OptionModels[option]) : []).map((item, i) => ({
                                     name: item, onClick(e) {
                                         setModel(item)
@@ -653,7 +657,7 @@ const Analysis = () => {
                                 }))} />
                         </div>
                     </div>
-
+                    
                     <div className='w-auto flex justify-center items-center px-1'>
                         <div className={``}>{activateStatus}</div>
                         <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
