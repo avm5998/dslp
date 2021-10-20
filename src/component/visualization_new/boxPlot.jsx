@@ -61,7 +61,8 @@ export const config = {
             postSteps.push(`fig.show()`)
         }else if(result.engine == 'Pandas'){
             let arr = result.x.map(e => `"${e}"`)
-            mid = `df.groupby([${arr}])['${result.y}'].sum().plot.box()`
+            mid = `df.boxplot(column=[${arr}], by='${result.y}')`
+            postSteps.push(`plt.show()`)
         }
 
         return `${prevSteps.length ? prevSteps.join('\n') : ''}
