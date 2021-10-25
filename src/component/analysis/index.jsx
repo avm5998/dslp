@@ -127,7 +127,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = LinearRegression(fit_intercept=True, normalize=False) 

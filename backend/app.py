@@ -1678,7 +1678,7 @@ def cond_Regression_json():
     df = _getCache(user_id, filename)   
     ndf = df.replace(MISSING_VALUES, np.nan)
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
-    X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=False) # with original order
+    X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) # with original order
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\nChoose Test Size(%): " + str(test_size*100)
     if analysis_model == "Linear Regression":
