@@ -155,7 +155,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=3, max_features=None, max_leaf_nodes=None, random_state=None)
@@ -183,7 +183,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = RandomForestRegressor(n_estimators=100, criterion='mse', max_depth=3, max_features='auto', max_leaf_nodes=None, random_state=None)
@@ -210,7 +210,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = SVR(kernel='rbf', gamma=0.01, C=1.0)
@@ -237,7 +237,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = LogisticRegression(solver='lbfgs', C=1.0)
@@ -266,7 +266,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
@@ -294,7 +294,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
@@ -322,7 +322,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = SVC(kernel='rbf', gamma=0.01, C=1.0)
@@ -350,7 +350,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=False)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
 
 # build a model, users can modify parameters
 model = GaussianNB()
