@@ -2172,6 +2172,66 @@ def cond_Classification_json():
         except Exception as e:
             print(analysis_model, e)
             error = e
+    elif analysis_model == 'K Nearest Neighbors Classifier':
+        try:
+            from sklearn.neighbors import KNeighborsClassifier
+            neigbors = params['neighbors'] if params['neighbors'] != "" else 5
+            p = params['p'] if params['p'] != "" else 2
+            algo = params['algorithm'] if params['algorithm'] else 'auto'
+            weight = params['weights'] if params['weights'] else 'uniform'
+            leaf_size = params['leaf_size'] if params['leaf_size'] != "" else 30
+            d_metric = params['d_metric'] if params['d_metric'] != "" else 'minkowski'
+            X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
+            model = KNeighborsClassifier(n_neighbors=neigbors,weights=weight, algorithm=algo, leaf_size=leaf_size, p=p, metric=d_metric)
+            if isTsv:
+                X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
+                Y = df[finalY].values
+                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
+            else:
+                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
+            
+            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+            if metric == "Classification Report":
+                report = classification_report(Y_test, Y_pred)
+                para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+            elif metric == 'ROC Curve':
+                img = BytesIO()
+                plot_roc_curve(model, X_test, Y_test)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            elif metric == 'Confusion Matrix':
+                img = BytesIO()
+                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            cond += "\nModel:" + analysis_model 
+            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+            cond += '\nMetric: ' + metric
+            pred_var = analysis_model + finalVar[0] # initial
+            if pred_var in params and params[pred_var]:  
+                predic_var, input_val = [], []
+                for i in df.columns:
+                    col_temp = analysis_model+i
+                    if col_temp in params and params[col_temp]:
+                        predic_var.append(i)
+                        input_val.append(params[col_temp])
+                if isTsv:
+                    input_val = scaler.transform(input_val).toarray()
+                else:
+                    input_val = np.array([input_val], dtype='float64')
+                result = model.predict(input_val)
+                cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
+                para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
+                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        except Exception as e:
+            print(e)
+            error = e
 
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)))
 
@@ -2180,7 +2240,6 @@ def cond_Classification_json():
 @cross_origin()
 @jwt_required()
 def cond_Clustering_json():
-    error = ""
     cond, para_result, fig_len, fig_wid, threeD_columns_kmeans = '', '', 5, 5,[]
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     user_id = get_jwt_identity()

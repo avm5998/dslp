@@ -20,6 +20,7 @@ import DecisionTreeClassifierOptions from './option/classification/decisiontreeC
 import RandomForestClassifierOptions from './option/classification/randomforestClassifier'
 import SVMClassifierOptions from './option/classification/svmClassifier'
 import NaiveBayesClassifierOptions from './option/classification/bayesClassifier'
+import KNeighborsClassifier from './option/classification/kNeighborsClassifier';
 import KMeansOptions from './option/clustering/kmeans'
 import AgglomerativeOptions from './option/clustering/agglomerative'
 import AprioriOptions from './option/associate_rule/apriori'
@@ -30,7 +31,7 @@ import authHeader from "../../services/auth-header";
 //cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css
 const OptionModels = {
     regression: { 'Linear Regression': LinearRegressionOptions, 'Decision Tree Regression': DecisionTreeRegressionOptions, 'Random Forests Regression': RandomForestsRegressionOptions, 'SVM Regression': SVMRegressionOptions }, //DecisionTreeOptions, RandomForestsOptions, SuportVectorMachineOptions
-    classification: { 'Logistic Regression': LogisticRegressionOptions, 'Decision Tree Classifier': DecisionTreeClassifierOptions, 'Random Forests Classifier': RandomForestClassifierOptions, 'SVM Classifier': SVMClassifierOptions, 'Naive Bayes Classifier': NaiveBayesClassifierOptions },
+    classification: { 'Logistic Regression': LogisticRegressionOptions, 'Decision Tree Classifier': DecisionTreeClassifierOptions, 'Random Forests Classifier': RandomForestClassifierOptions, 'SVM Classifier': SVMClassifierOptions, 'Naive Bayes Classifier': NaiveBayesClassifierOptions, 'K Nearest Neighbors Classifier': KNeighborsClassifier },
     clustering: { 'K-means': KMeansOptions },//, 'Agglometrative': AgglomerativeOptions},
     associate_rule: { 'Apriori': AprioriOptions },
     time_series_analysis: { 'Seasonal ARIMA': SARIMAOptions }
@@ -364,7 +365,49 @@ report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
     ,
+    'K Nearest Neighbors Classifier': function(code){
+        let neighbors = 5;
+        let weights = "uniform";
+        let algorithm = "auto";
+        let leaf_size = 30;
+        let p = 2;
+        let d_metric = "minkowski";
+        if (code.neighbors !== ""){neighbors = code.neighbors}
+        if (code.weights !== ""){weights = code.weights}
+        if (code.algorithm !== ""){algorithm = code.algorithm}
+        if (code.leaf_size !== ""){leaf_size = code.leaf_size}
+        if (code.p !== ""){p = code.p}
+        if (code.d_metric !== ""){d_metric = code.d_metric}
+    return `
+# Demo of K Nearest Neighbors Classifier
+# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
+# other parameters are just example.
+    
+# import libraries
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import classification_report
+from sklearn.neighbors import KNeighborsClassifier
 
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+# split the dataset into two parts: training dataset and testing dataset
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+    
+# build a model, users can modify parameters
+model = KNeighborsClassifier(n_neighbors=${neighbors},weights="${weights}", algorithm="${algorithm}", leaf_size=${leaf_size}, p=${p}, metric="${d_metric}")
+    
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+print("Print predicted results of testing dataset: ", Y_pred)
+    
+ # measure performance of model with metric
+report = classification_report(Y_test, Y_pred)
+print("Measure performance of model with Classification Report: ", report)
+`
+    }
+
+    ,
     'K-means': code => `
 # Demo of K-means
 # Note: Only one variable "X" is changed automatically based on user's option,
