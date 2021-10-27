@@ -2177,8 +2177,8 @@ def cond_Classification_json():
             from sklearn.neighbors import KNeighborsClassifier
             neigbors = params['neighbors'] if params['neighbors'] != "" else 5
             p = params['p'] if params['p'] != "" else 2
-            algo = params['algorithm'] if params['algorithm'] else 'auto'
-            weight = params['weights'] if params['weights'] else 'uniform'
+            algo = params['algorithm'] if params['algorithm'] != "" else 'auto'
+            weight = params['weights'] if params['weights'] != "" else 'uniform'
             leaf_size = params['leaf_size'] if params['leaf_size'] != "" else 30
             d_metric = params['d_metric'] if params['d_metric'] != "" else 'minkowski'
             X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
