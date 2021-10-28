@@ -1461,7 +1461,7 @@ def cond_eng_json():
             para_result += '\nTF-IDF Vectorizer After fit_transform: \n' + str(tfidf)
     _setCache(user_id,filename,ndf)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(ndf) # update num_col and cate_col
-    return jsonify(data=ndf.to_json(), cols = cols, num_cols = num_cols, cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists, para_result=para_result, plot_url=plotUrl)
+    return jsonify(data=ndf.to_json(), cols = cols, num_cols = num_cols, cate_cols = cate_cols, cate_lists = cate_lists, num_lists = num_lists, col_lists=col_lists,para_result=para_result, plot_url=plotUrl)
 
     
 @app.route('/feature_selection', methods=['POST'])

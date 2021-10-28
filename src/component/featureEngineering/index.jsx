@@ -444,6 +444,7 @@ const FeatureEngineering = () => {
                             cate_cols: json.cate_cols,
                             num_lists: json.num_lists,
                             cate_lists: json.cate_lists,
+                            col_lists: json.cate_lists,
                         }))
                         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
                     }} />
