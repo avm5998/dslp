@@ -1883,6 +1883,8 @@ def cond_Classification_json():
     else:
         kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
+    print(X_train.dtypes, X_test.dtypes)
+    print("===================")
 
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\nChoose Test Size(%): " + str(test_size*100)
@@ -2125,8 +2127,6 @@ def cond_Classification_json():
                 X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
                 Y = df[finalY].values
                 X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
-            else:
-                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
 
             Y_pred = model.fit(X_train, Y_train).predict(X_test) 
             if text_data_feat_model == '--':
@@ -2175,22 +2175,16 @@ def cond_Classification_json():
     elif analysis_model == 'K Nearest Neighbors Classifier':
         try:
             from sklearn.neighbors import KNeighborsClassifier
-            neigbors = params['neighbors'] if params['neighbors'] != "" else 5
-            p = params['p'] if params['p'] != "" else 2
+            neigbors = int(params['neighbors']) if params['neighbors'] != "" else 5
+            p = int(params['p']) if params['p'] != "" else 2
             algo = params['algorithm'] if params['algorithm'] != "" else 'auto'
             weight = params['weights'] if params['weights'] != "" else 'uniform'
-            leaf_size = params['leaf_size'] if params['leaf_size'] != "" else 30
+            leaf_size = int(params['leaf_size']) if params['leaf_size'] != "" else 30
             d_metric = params['d_metric'] if params['d_metric'] != "" else 'minkowski'
-            X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
             model = KNeighborsClassifier(n_neighbors=neigbors,weights=weight, algorithm=algo, leaf_size=leaf_size, p=p, metric=d_metric)
-            if isTsv:
-                X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
-                Y = df[finalY].values
-                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
-            else:
-                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
-            
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+            model.fit(X_train, Y_train)
+            Y_pred = model.predict(X_test.values)
+            print('Y_pred= ', Y_pred)
             if metric == "Classification Report":
                 report = classification_report(Y_test, Y_pred)
                 para_result += "\nClassification Report of " + analysis_model + ":\n" + report
