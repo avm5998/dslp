@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { connect } from "react-redux";
 
-import { Route, Router, Switch, Link, Redirect } from "react-router-dom";
+import { Route, Router, Switch, Link, Redirect,useLocation } from "react-router-dom";
 import { createBrowserHistory } from "history";
 import Home from "./component/home";
 import Summary from "./component/summary";
@@ -131,6 +131,7 @@ const Routes = (props) => {
   let [menuData, setMenuData] = useState(Menu);
   let [toggle, setToggle] = useState(false);
   useCachedData()
+  let location = useLocation();
 
   if (currentUser && currentUser.role === "admin") {
     const found = Menu["Main"].some((el) => el.text === "Requests");
@@ -226,7 +227,7 @@ const Routes = (props) => {
                 <div className="flex items-center justify-center h-20 heading">
                 <DATA_MINING_SVG/>
                 <Idle></Idle>
-                  <div className="ml-2 router-left-title">Data Science Learning Platform</div>
+                  <div className="m-2 text-xl router-left-title">Data Science Learning Platform</div>
                 </div>
 
                 <div className="overflow-y-auto overflow-x-hidden flex-grow sidebar">
@@ -299,7 +300,7 @@ const Routes = (props) => {
                   </div>
 
                   <hr className="hor-row" />
-                  <ul className="flex flex-col py-4 space-y-1 sidebar-hover">
+                  <ul className="flex flex-col py-4 sidebar-hover">
                     {Object.keys(menuData).map((menu) => (
                       <React.Fragment key={menu}>
                         {menu != "User" && toggle ? (
@@ -316,7 +317,9 @@ const Routes = (props) => {
 
                         {Menu[menu].map((item) => (
                           <div
-                            className={`${
+                            className={`
+                            ${location.pathname === item.to?'menu-list-active':''}
+                            ${
                               menu == "Main" || toggle
                                 ? "menu-list-user-show"
                                 : "menu-list-user-hidden"

@@ -1,5 +1,21 @@
 .menu-list{
+  box-sizing: border-box;
+  padding:2px 0;
   transform-origin:left;
+}
+
+.menu-list-active{
+  background:rgba(30,97,116,1);
+  border-left-width:.6rem;
+  border-color:rgba(3, 41, 46, 0.8);
+}
+
+.menu-list a:hover{
+  text-decoration: none;
+}
+.menu-list:hover{
+  color:rgba(29,96,105,1);
+  background-color: #eee;
 }
 
 .menu-list-user-hidden{
@@ -166,6 +182,5 @@ arrow-span {
 }
 
 .router-left-title {
-  font-size: 24px;
   font-weight: bold;
 }
