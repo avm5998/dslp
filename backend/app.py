@@ -388,6 +388,16 @@ def register_user_from_pending(email, login_url, by_admin=False):
                                                             role=user['roles'][0], url=login_url),
                             html_body=render_template('register/register.html',
                                                             role=user['roles'][0], url=login_url))
+            if user['roles'] and user['roles'][0] == 'Instructor':
+                user.save()
+                pending_requests_collection.remove({"email":email})
+                send_email('[Awesome data mining] Register Successfull',
+                            sender='awesomedatamining@gmail.com',
+                            recipients=[email],
+                            text_body=render_template('register/register.txt',
+                                                            role=user['roles'][0], url=login_url),
+                            html_body=render_template('register/register.html',
+                                                            role=user['roles'][0], url=login_url))
     except UnauthorizedError:
         raise UnauthorizedError('Invalid role to grant instructor access')
     except UserDoesNotExistsError:
