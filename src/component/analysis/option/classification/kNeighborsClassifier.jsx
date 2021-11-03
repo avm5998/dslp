@@ -80,7 +80,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }/> */}
 
                 <Label text='Metrics of Model:'><InlineTip info="Assess model performance. Default: Classification Report"/></Label>
-                <DropDown defaultText={'Classification Report'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['Classification Report', 'Confusion Matrix', 'ROC Curve']}
+                <DropDown defaultText={'Classification Report'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['Classification Report', 'Confusion Matrix','Confusion Matrix (Without Normalization)', 'ROC Curve']}
                     onSelect={name => {
                         result.metric = name
                     }} />

@@ -66,7 +66,7 @@ export default function ({ dataset, result, submit, visibleTabs}) {
                 }/>
 
                 <Label text='Metrics of Model:'><InlineTip info="Assess model performance. Default: Classification Report"/></Label>
-                <DropDown defaultValue={''} defaultText={'Classification Report'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['Classification Report', 'Confusion Matrix', 'ROC Curve', 'Visualize Tree: Text Graph', 'Visualize Tree: Flowchart']}
+                <DropDown defaultValue={''} defaultText={'Classification Report'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['Classification Report', 'Confusion Matrix', 'Confusion Matrix (Without Normalization)','ROC Curve', 'Visualize Tree: Text Graph', 'Visualize Tree: Flowchart']}
                     onSelect={name => {
                         result.metric = name
                     }} />
