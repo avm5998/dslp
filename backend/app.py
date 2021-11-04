@@ -892,7 +892,7 @@ def update_instructor(user_id, new_instructor_email):
     try:
         new_instructor_students = user_collection.find_one({"email":new_instructor_email}, {"students":1})['students'] 
     except KeyError:
-        print('No Students')  
+        print('N Students')  
     new_instructor_students.append(ObjectId(user_id))             
     user_collection.update_one({"email":new_instructor_email}, {'$set':{'students':new_instructor_students}})
     user_collection.update_one({"_id":ObjectId(user_id)}, {'$set':{'report_to':new_instructor_email}})

@@ -35,7 +35,7 @@ export default function ({ dataset, result, submit }) {
 
 
                 <Label customStyle={``} text='Clustering Plot' ><InlineTip info="Plot clusters in dataset. If do PCA plot, go to 'Advanced Option' do PCA first.  Default: all attributes: 2D plot"/></Label>
-                <DropDown defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={["check clusters in dataset", 'all attributes: 2D plot', 'three attributes: 3D plot', 'PCA: 2D plot', "PCA: 3D plot"]} 
+                <DropDown zIndex={3} defaultText={'Select type'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={["check clusters in dataset", 'all attributes: 2D plot', 'three attributes: 3D plot', 'PCA: 2D plot', "PCA: 3D plot"]} 
                     onSelect={e => {
                         result.clustering_plot = e
                     } 
@@ -43,7 +43,7 @@ export default function ({ dataset, result, submit }) {
                 
 
                 <Label text='Metrics of Model:'><InlineTip info="Assess model performance.  Default: centroid. , 'inertia': calculates the sum of distances of all the points within a cluster from the centroid of that cluster. 'centroid' is a data point at the center of a cluster. 'silhouette' is a measure of how similar an object is to its own cluster (cohesion) compared to other clusters (separation)."/></Label>
-                <DropDown defaultText={'Select metric'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['inertia', 'centroid', 'number of iterations', 'silhouette']}
+                <DropDown zIndex={3} defaultText={'Select metric'} customStyle={`w-64`} customUlStyle={`w-64`} showOnHover={false} items={['inertia', 'centroid', 'number of iterations', 'silhouette']}
                     onSelect={name => {
                         result.metric = name
                     }
