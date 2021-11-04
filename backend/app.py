@@ -388,6 +388,16 @@ def register_user_from_pending(email, login_url, by_admin=False):
                                                             role=user['roles'][0], url=login_url),
                             html_body=render_template('register/register.html',
                                                             role=user['roles'][0], url=login_url))
+            if user['roles'] and user['roles'][0] == 'Instructor':
+                user.save()
+                pending_requests_collection.remove({"email":email})
+                send_email('[Awesome data mining] Register Successfull',
+                            sender='awesomedatamining@gmail.com',
+                            recipients=[email],
+                            text_body=render_template('register/register.txt',
+                                                            role=user['roles'][0], url=login_url),
+                            html_body=render_template('register/register.html',
+                                                            role=user['roles'][0], url=login_url))
     except UnauthorizedError:
         raise UnauthorizedError('Invalid role to grant instructor access')
     except UserDoesNotExistsError:
@@ -658,7 +668,7 @@ def reset_link():
         if 'reset_token' in body:
             reset_token = body.get('reset_token')
             # print("toke: "+str(reset_token))
-            print(request.url)
+            # print(request.url)
             password = body.get('new_password')
 
             if not reset_token or not password:
@@ -882,7 +892,7 @@ def update_instructor(user_id, new_instructor_email):
     try:
         new_instructor_students = user_collection.find_one({"email":new_instructor_email}, {"students":1})['students'] 
     except KeyError:
-        print('NO Students')  
+        print('N Students')  
     new_instructor_students.append(ObjectId(user_id))             
     user_collection.update_one({"email":new_instructor_email}, {'$set':{'students':new_instructor_students}})
     user_collection.update_one({"_id":ObjectId(user_id)}, {'$set':{'report_to':new_instructor_email}})
@@ -1883,6 +1893,7 @@ def cond_Classification_json():
     else:
         kfold = KFold(n_splits=10, random_state=7, shuffle=True)
         X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
+    print("===================")
 
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     cond += "\nChoose Test Size(%): " + str(test_size*100)
@@ -1910,6 +1921,14 @@ def cond_Classification_json():
             elif metric == 'Confusion Matrix':
                 img = BytesIO()
                 skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            elif metric == 'Confusion Matrix (Without Normalization)':
+                img = BytesIO()
+                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
                 plt.savefig(img, format='png') 
                 plt.clf()
                 img.seek(0)
@@ -1961,6 +1980,14 @@ def cond_Classification_json():
             elif metric == 'Confusion Matrix':
                 img = BytesIO()
                 skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            elif metric == 'Confusion Matrix (Without Normalization)':
+                img = BytesIO()
+                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
                 plt.savefig(img, format='png') 
                 plt.clf()
                 img.seek(0)
@@ -2044,6 +2071,14 @@ def cond_Classification_json():
                 img.seek(0)
                 plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
                 img.close()
+            elif metric == 'Confusion Matrix (Without Normalization)':
+                img = BytesIO()
+                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
             cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
             cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
             cond += '\nMetric: ' + metric
@@ -2096,6 +2131,14 @@ def cond_Classification_json():
                 img.seek(0)
                 plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
                 img.close()
+            elif metric == 'Confusion Matrix (Without Normalization)':
+                img = BytesIO()
+                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
             cond += "\nModel:" + analysis_model + "\nSet Parameters:  gamma=" + str(param_gamma) + ", C=" + str(param_C) + ", kernel=" + str(param_kernel)
             cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
             cond += '\nMetric: ' + metric
@@ -2125,8 +2168,6 @@ def cond_Classification_json():
                 X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
                 Y = df[finalY].values
                 X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
-            else:
-                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
 
             Y_pred = model.fit(X_train, Y_train).predict(X_test) 
             if text_data_feat_model == '--':
@@ -2145,6 +2186,14 @@ def cond_Classification_json():
             elif metric == 'Confusion Matrix':
                 img = BytesIO()
                 skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            elif metric == 'Confusion Matrix (Without Normalization)':
+                img = BytesIO()
+                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
                 plt.savefig(img, format='png') 
                 plt.clf()
                 img.seek(0)
@@ -2175,22 +2224,16 @@ def cond_Classification_json():
     elif analysis_model == 'K Nearest Neighbors Classifier':
         try:
             from sklearn.neighbors import KNeighborsClassifier
-            neigbors = params['neighbors'] if params['neighbors'] != "" else 5
-            p = params['p'] if params['p'] != "" else 2
+            neigbors = int(params['neighbors']) if params['neighbors'] != "" else 5
+            p = int(params['p']) if params['p'] != "" else 2
             algo = params['algorithm'] if params['algorithm'] != "" else 'auto'
             weight = params['weights'] if params['weights'] != "" else 'uniform'
-            leaf_size = params['leaf_size'] if params['leaf_size'] != "" else 30
+            leaf_size = int(params['leaf_size']) if params['leaf_size'] != "" else 30
             d_metric = params['d_metric'] if params['d_metric'] != "" else 'minkowski'
-            X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
             model = KNeighborsClassifier(n_neighbors=neigbors,weights=weight, algorithm=algo, leaf_size=leaf_size, p=p, metric=d_metric)
-            if isTsv:
-                X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
-                Y = df[finalY].values
-                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
-            else:
-                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
-            
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+            model.fit(X_train, Y_train)
+            Y_pred = model.predict(X_test.values)
+            # print('Y_pred= ', Y_pred)
             if metric == "Classification Report":
                 report = classification_report(Y_test, Y_pred)
                 para_result += "\nClassification Report of " + analysis_model + ":\n" + report
@@ -2205,6 +2248,14 @@ def cond_Classification_json():
             elif metric == 'Confusion Matrix':
                 img = BytesIO()
                 skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            elif metric == 'Confusion Matrix (Without Normalization)':
+                img = BytesIO()
+                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
                 plt.savefig(img, format='png') 
                 plt.clf()
                 img.seek(0)
@@ -2264,7 +2315,7 @@ def cond_Clustering_json():
 
     cond += "\nFinal Independent Variables: " + str(finalVar)
     X_train = ndf[finalVar]
-    print('X_train------------',X_train.values)
+    # print('X_train------------',X_train.values)
     cond += '\n' + clustering_plot
     cond = "\nK-Means Set Parameters: \n  n_clusters=" + str(param_n_clusters) + ", init=" + str(param_init) + ", algorithm=" + str(param_algorithm)+ ", random_state=" + str(param_random_state)
     img = BytesIO()
@@ -2360,7 +2411,7 @@ def cond_Clustering_json():
         fig = plt.figure(1, figsize=(4, 3))
         ax = fig.add_subplot(111, projection='3d')
         labels = model.labels_
-        print('scaled_data= ',scaled_data)
+        # print('scaled_data= ',scaled_data)
         x=[row[0] for row in scaled_data]
         y=[row[1] for row in scaled_data]
         z=[row[2] for row in scaled_data]
@@ -2422,20 +2473,20 @@ def cond_associateRule_json():
         if val >= 1:
             return 1
     basket_sets = basket_data.applymap(transform_transaction)
-    print('basket_sets=', basket_sets)
+    # print('basket_sets=', basket_sets)
     frequent_itemsets = apriori(basket_sets, min_support=params_support_min_thresh, use_colnames=params_use_colnames)
-    print(frequent_itemsets)
+    # print(frequent_itemsets)
     rules = association_rules(frequent_itemsets, metric='support', min_threshold=params_support_min_thresh)
     rules["antecedent_length"] = rules["antecedents"].apply(lambda x: len(x))
     rules = rules[ (rules['antecedent_length'] >= params_antecedent_len) & (rules['confidence'] > params_confidence_min_thresh) & (rules['lift'] > params_lift_min_thresh) ]
-    print(rules)
+    # print(rules)
     if param_specific_item:
         para_result = "\nAssociate Rule for Specific Item"
         frequent_itemsets = frequent_itemsets[frequent_itemsets['itemsets'].astype(str).str.contains(param_specific_item)]
         rules = rules[(rules['consequents'].astype(str).str.contains(param_specific_item)) | (rules['antecedents'].astype(str).str.contains(param_specific_item))]        
 
     if metrics_apriori == '1.Transaction Format Table':
-        print("inside metrics_apriori")
+        # print("inside metrics_apriori")
         para_result = "\nConvert to Transaction Format:\n"
         para_result += basket_sets.to_html()
     elif metrics_apriori in ['2.Support Itemsets: list all items', '3.Support Itemsets: list specified items']:
@@ -2503,7 +2554,7 @@ def cond_timeSeries_json():
             metric = "check residual"
             cond += 'Model Parameters: order=' + str(order_param) + ';  \nseasonal_order=' + str(seasonal_order_param) + "; \nMetric: " + metric
             model = sm.tsa.statespace.SARIMAX(time_series, order=order_param, seasonal_order=seasonal_order_param).fit()
-            print(model.summary())
+            # print(model.summary())
             para_result += "\nSummary of Model -- " + analysis_model + ":\n" + str(model.summary())
             if metric == 'check residual':
                 img = BytesIO()
