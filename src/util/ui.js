@@ -503,6 +503,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
         let nright = (rightValue - min) / (max - min) * 100
         setRight(nright)
         setRightText(getText(Number(min + (max - min) * nright / 100)))
+        onEnd(leftValue, rightValue)
     }
 
     const dragComplete = () => {
