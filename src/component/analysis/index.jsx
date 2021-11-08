@@ -599,7 +599,7 @@ const Analysis = () => {
         // console.log(json)
         // json.cond.replace(/&/g, ",  ")
         let errorMsg = json['errorMsg']
-        if(errorMsg){
+        if(errorMsg && errorMsg != "''"){
             alert(errorMsg)
         }else{
             setCode(getCodeFromResult(option, model, result))   // demo code
