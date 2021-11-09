@@ -2291,7 +2291,6 @@ def cond_Classification_json():
 @cross_origin()
 @jwt_required()
 def cond_Clustering_json():
-    err = ""
     cond, para_result, fig_len, fig_wid, threeD_columns_kmeans = '', '', 5, 5,[]
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     user_id = get_jwt_identity()
@@ -2350,25 +2349,21 @@ def cond_Clustering_json():
         plt.legend()
         labeledData = ndf
     elif clustering_plot == 'PCA: 2D plot':
-        try:
-            reduced_data = PCA(n_components=2).fit_transform(scaled_data) 
-            PCA_components = pd.DataFrame(reduced_data)
-            pca_model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
-            pred = pca_model.fit(PCA_components.iloc[:,:2])
-            labels = pca_model.predict(PCA_components.iloc[:,:2])
-            ndf['Clusters'] = pd.DataFrame(pred.labels_)
-            count_val = ndf['Clusters'].value_counts()
-            para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")        
-            labeledData = pd.concat((X_train, ndf['Clusters']), axis=1)
-            fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange',6:'gray',7:'black',8:'pink',9:'purple',10:'violet'}
-            km_colors = [fte_colors[label] for label in pca_model.labels_]
-            plt.scatter(PCA_components[0], PCA_components[1], c=km_colors)
-            plt.xlabel("PC1")
-            plt.ylabel("PC2")
-            plt.title(analysis_model + ' Clustering with 2 PCAs')
-        except Exception as e:
-            print(e)
-            err = e
+        reduced_data = PCA(n_components=2).fit_transform(scaled_data) 
+        PCA_components = pd.DataFrame(reduced_data)
+        pca_model = KMeans(n_clusters=param_n_clusters, init=param_init, algorithm=param_algorithm, random_state=param_random_state)
+        pred = pca_model.fit(PCA_components.iloc[:,:2])
+        labels = pca_model.predict(PCA_components.iloc[:,:2])
+        ndf['Clusters'] = pd.DataFrame(pred.labels_)
+        count_val = ndf['Clusters'].value_counts()
+        para_result = "\nNumber of Points in Each Cluster:\n" + count_val.to_json(orient="columns")        
+        labeledData = pd.concat((X_train, ndf['Clusters']), axis=1)
+        fte_colors = {0: "red",1: "blue",2:'green',3:'yellow',4:'brown',5:'orange',6:'gray',7:'black',8:'pink',9:'purple',10:'violet'}
+        km_colors = [fte_colors[label] for label in pca_model.labels_]
+        plt.scatter(PCA_components[0], PCA_components[1], c=km_colors)
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title(analysis_model + ' Clustering with 2 PCAs')
     elif clustering_plot == 'PCA: 3D plot':
         reduced_data = PCA(n_components=3).fit_transform(scaled_data) 
         PCA_components = pd.DataFrame(reduced_data)
@@ -2424,6 +2419,9 @@ def cond_Clustering_json():
         ax.set_xlabel(finalVar[0])
         ax.set_ylabel(finalVar[1])
         ax.set_zlabel(finalVar[2])
+    
+    if clustering_plot in ["PCA: 2D plot", "PCA: 3D plot"]:
+        model = pca_model
 
     if metric == 'inertia':
         para_result += '\nInertia -- The Lowest SSE value: \n' + str(model.inertia_)
@@ -2441,7 +2439,7 @@ def cond_Clustering_json():
     plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
     img.close()
 
-    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(err)))
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
 
 
 @app.route('/analysis/associate_rule', methods=['POST']) 
