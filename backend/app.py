@@ -1697,8 +1697,23 @@ def cond_Regression_json():
             param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
             model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
             Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
             metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+            # get new plot
+            if plotType == "regressionplot":
+                img = BytesIO()
+                plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+                plt.title(f"{analysis_model} Result")
+                if len(finalVar) == 1:
+                    sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+                else:
+                    sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)                
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            else:
+                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
             cond += "\nModel: Linear Regression \nSet Parameters:  fit_intercept=" + str(param_fit_intercept_lr) + ", normalize=" + str(param_normalize_lr)
             cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
             cond += '\nMetric: ' + metric
@@ -1718,7 +1733,22 @@ def cond_Regression_json():
         find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
         model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
         Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+        #new plot
+        if plotType == "regressionplot":
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+            plt.title(f"{analysis_model} Result")
+            if len(finalVar) == 1:
+                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+            else:
+                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        else:
+            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
        
         if metric == 'Visualize Tree: Text Graph':
             para_result = '\n' + tree.export_text(model) + '\n'
@@ -1769,41 +1799,55 @@ def cond_Regression_json():
         #         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
 
     elif analysis_model == 'Random Forests Regression':
-        try:
-            param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
-            param_n_estimators = 100 if (not params['param_n_estimators'].strip())  else int(params['param_n_estimators'])
-            find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else 3
-            find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
-            param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
-            param_max_features = params['param_max_features'] if 'param_max_features' in params else 'auto'
-            param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
-            param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
-            model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+        # try:
+        param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
+        param_n_estimators = 100 if (not params['param_n_estimators'].strip())  else int(params['param_n_estimators'])
+        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else 3
+        find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
+        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+        param_max_features = params['param_max_features'] if 'param_max_features' in params else 'auto'
+        param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
+        param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
+        model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
+        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+        metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+        if plotType == "regressionplot":
+            img = BytesIO()
+            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+            plt.title(f"{analysis_model} Result")
+            if len(finalVar) == 1:
+                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+            else:
+                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)
+            plt.savefig(img, format='png') 
+            plt.clf()
+            img.seek(0)
+            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            img.close()
+        else:
             plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType )
-            cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
-            cond += "\nPlot Predicted vs. Observed Target Variable:  Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
-            if find_max_depth or find_n_estimators:
-                if find_max_depth and find_n_estimators:
-                    tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
-                elif find_max_depth:
-                    tuned_para = [{'max_depth': find_max_depth}]
-                elif find_n_estimators:
-                    tuned_para = [{'n_estimators': find_n_estimators}]
-                cond = "\nFind Parameter for Random Forests Regressor: " + str(tuned_para)
-                MSE_rfr = ['mean_squared_error(Y_test, Y_pred']
-                for value in MSE_rfr:
-                    reg_rfr = GridSearchCV(RandomForestRegressor(), tuned_para, cv=4)
-                    reg_rfr.fit(X_train, Y_train)
-                    Y_true, Y_pred = Y_test, reg_rfr.predict(X_test)
-                    para_result = 'The best hyper-parameters for Random Forests are: ' + str(reg_rfr.best_params_)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-        except Exception as e:
-            print(analysis_model, e)
-            error = e
+        cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
+        cond += "\nPlot Predicted vs. Observed Target Variable:  Plot Type: " + plotType
+        cond += '\nMetric: ' + metric
+        para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+        if find_max_depth or find_n_estimators:
+            if find_max_depth and find_n_estimators:
+                tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
+            elif find_max_depth:
+                tuned_para = [{'max_depth': find_max_depth}]
+            elif find_n_estimators:
+                tuned_para = [{'n_estimators': find_n_estimators}]
+            cond = "\nFind Parameter for Random Forests Regressor: " + str(tuned_para)
+            MSE_rfr = ['mean_squared_error(Y_test, Y_pred']
+            for value in MSE_rfr:
+                reg_rfr = GridSearchCV(RandomForestRegressor(), tuned_para, cv=4)
+                reg_rfr.fit(X_train, Y_train)
+                Y_true, Y_pred = Y_test, reg_rfr.predict(X_test)
+                para_result = 'The best hyper-parameters for Random Forests are: ' + str(reg_rfr.best_params_)
+            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+        # except Exception as e:
+        #     print(analysis_model, e)
+        #     error = e
     
     elif analysis_model == 'SVM Regression':
         try:
@@ -1814,7 +1858,21 @@ def cond_Regression_json():
             param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
             model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
             Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+            if plotType == "regressionplot":
+                img = BytesIO()
+                plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+                plt.title(f"{analysis_model} Result")
+                if len(finalVar) == 1:
+                    sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+                else:
+                    sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)                
+                plt.savefig(img, format='png') 
+                plt.clf()
+                img.seek(0)
+                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                img.close()
+            else:
+                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
             metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
             cond += "\nModel: SVM Regressor \nSet Parameters:   kernel=" + str(param_kernel) + ", gamma=" + str(param_gamma) + ", C=" + str(param_C)
             cond += "\nPlot Predicted vs. Observed Target Variable:    Plot Type: " + plotType

@@ -43,7 +43,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }} width={`w-64`} attrs={{ list: 'test_size_lr_list' }} />
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset."/></Label>
-                <DropDown defaultValue={option.pre_obs_plotType} defaultText={'line'}  width='w-64' items={['bar', 'scatter', 'line', 'heatmap']} 
+                <DropDown defaultValue={option.pre_obs_plotType} defaultText={'line'}  width='w-64' items={['bar', 'scatter', 'line', 'heatmap', 'regressionplot']} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
                     } 
