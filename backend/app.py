@@ -1704,7 +1704,7 @@ def cond_Regression_json():
                 plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
                 plt.title(f"{analysis_model} Result")
                 if len(finalVar) == 1:
-                    sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+                    sns.regplot(data=ndf,x=finalVar[0], y=finalY)
                 else:
                     sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)                
                 plt.savefig(img, format='png') 
