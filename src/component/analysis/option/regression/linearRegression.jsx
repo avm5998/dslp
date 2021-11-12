@@ -9,12 +9,16 @@ const DataLists = {
     C_logr_list: [0.1, 0.2, 0.3],
 }
 
+const s1 = ['bar', 'scatter', 'line', 'heatmap', 'regressionplot']
+const s2 = ['bar', 'scatter', 'line', 'heatmap']
+
 export default function ({ dataset, result, submit, visibleTabs }) {
     let [activeTab, setActiveTab] = useState(0)
     let option = useSelector(state=>state.option).analysis.regression['Linear Regression'] || {}
     useEffect(()=>{
         setActiveTab(visibleTabs[0])
     },[visibleTabs])
+    let [dropselections,setdropselections] = useState(s2)
 
     return (
         <div className='p-4'>
@@ -28,7 +32,14 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }}>
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
                 <MultiSelect zIndex={30} defaultValue={option.finalVar} width='w-64' defaultText='select one/multi-column' selections={dataset.cols} 
-                    onSelect={e=>result.finalVar = e}/>
+                    onSelect={e=>{
+                        result.finalVar = e
+                        if(e.length>1){
+                            setdropselections(s2)
+                        }else{
+                            setdropselections(s1)
+                        }
+                    }}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
                 <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'}  width='w-64' items={dataset.cols} 
@@ -43,12 +54,12 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 }} width={`w-64`} attrs={{ list: 'test_size_lr_list' }} />
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset."/></Label>
-                <DropDown defaultValue={option.pre_obs_plotType} defaultText={'line'}  width='w-64' items={['bar', 'scatter', 'line', 'heatmap', 'regressionplot']} 
-                    onSelect={e => {
-                        result.pre_obs_plotType = e
+
+                <DropDown defaultValue={option.pre_obs_plotType} defaultText={'line'}  width='w-64' items={dropselections} 
+                onSelect={e => {
+                    result.pre_obs_plotType = e
                     } 
                 }/>
-
                 <Label text='Metrics of Model:'><InlineTip info="Assess model performance. 'explained variance' is used to measure the discrepancy between a model and actual data. 'neg_mean_absolute_error' measures the mean absolute error. 'neg_mean_squared_error' measures the mean squared error. 'r2' means proportion of the information in the data explained by the model. 'neg_mean_poisson_deviance' is equivalent to the Tweedie deviance with the power parameter power=1. 'neg_mean_gamma_deviance' is equivalent to the Tweedie deviance with the power parameter power=2."/></Label>
                 <DropDown defaultValue={option.metric} defaultText={'neg_mean_squared_error'} width='w-64'  items={['explained_variance', 'neg_mean_absolute_error', 'neg_mean_squared_error', 'r2', 'neg_mean_poisson_deviance', 'neg_mean_gamma_deviance']}
                     onSelect={name => {

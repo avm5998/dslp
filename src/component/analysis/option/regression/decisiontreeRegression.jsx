@@ -14,9 +14,13 @@ const DataLists = {
 
 }
 
+const s1 = ['bar', 'scatter', 'line', 'heatmap', 'regressionplot']
+const s2 = ['bar', 'scatter', 'line', 'heatmap']
+
 export default function ({ dataset, result, submit, visibleTabs }) {
     let [activeTab, setActiveTab] = useState(0)
     let option = useSelector(state=>state.option).analysis.regression['Decision Tree Regression'] || {}
+    let [dropselections,setdropselections] = useState(s2)
     useEffect(()=>{
         setActiveTab(visibleTabs[0])
     },[visibleTabs])
@@ -34,7 +38,15 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect zIndex={30} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                <MultiSelect zIndex={30} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} 
+                onSelect={e=>{
+                    result.finalVar = e
+                    if(e.length>1){
+                        setdropselections(s2)
+                    }else{
+                        setdropselections(s1)
+                    }
+                }}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
                 <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
@@ -55,7 +67,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
 
 
                 <Label customStyle={``} text='Predicted vs. Observed' ><InlineTip info="Plot prediction in Test Dataset. Note: Set 'Visualize Tree=No Plot'; Default:line"/></Label>
-                <DropDown defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={['bar', 'scatter', 'line', 'heatmap', 'regressionplot']} 
+                <DropDown defaultText={'line'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dropselections} 
                     onSelect={e => {
                         result.pre_obs_plotType = e
                     } 
