@@ -55,7 +55,7 @@ export default function ({ dataset, result, submit }) {
                         result.find_n_clusters = name  
                 }} />
 
-                <Label text='Find the Best Hyper-Parameters for PCA: n_clusters'><InlineTip info="Input the result in 'set parameter: n_clusters'"/></Label>
+                <Label text='Find the Best Hyper-Parameters for PCA: n_clusters'><InlineTip info="Input the result in 'set parameter: n_clusters'. If selected, the dimension will reduce to two."/></Label>
                 <DropDown defaultText={'Select method'} showOnHover={false} customStyle={`w-64`} customUlStyle='w-64' items={['elbow method', 'None']}
                     onSelect={name => {
                         result.find_n_clusters_pca = name  
