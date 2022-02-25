@@ -273,6 +273,8 @@ const FeatureEngineering = () => {
     let codeParent = useRef()
     const [code, setCode] = useState('')
     const [activateStatus, setActivateStatus] = useState('Loading...')
+    let [previousCondition, setPreviousCondition] = useState({})
+    let [currentCondition, setCurrentCondition] = useState({})
 
     useEffect(() => {
         if (!code) return
@@ -429,6 +431,14 @@ const FeatureEngineering = () => {
 
                 <div className="flex justify-end mt-10">
                     <Button text='Confirm' width='w-24' customStyle={{padding:'auto'}} onClick={async () => {
+                        if (JSON.stringify(previousCondition)==="{}") {
+                            let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
+                            let prevjson = await prevres.json()
+                            setPreviousCondition(JSON.parse(prevjson.data))
+                        } else {
+                            setPreviousCondition(currentCondition)
+                        }
+
                         setShowOptionModal(false)
                         let res = await fetchByJSON('featureEngineering', { subOption:{...subOption.current},...{
                             activeOption:option,
@@ -447,6 +457,8 @@ const FeatureEngineering = () => {
                             col_lists: json.cate_lists,
                         }))
                         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+
+                        setCurrentCondition(JSON.parse(json.data))
                     }} />
                 </div>
             </div>
@@ -487,6 +499,10 @@ const FeatureEngineering = () => {
                 runCode()
             }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
                 ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
+            <Button text="Undo" width={'w-24'} onClick={() => {
+                dispatch(DataSetActions.setTableData(previousCondition))
+                setCurrentCondition(previousCondition)
+            }}/>
 
         </div>
 

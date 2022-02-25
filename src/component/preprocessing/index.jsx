@@ -242,6 +242,8 @@ const Preprocessing = () => {
     let { getData, result, input } = useSimpleForm({
         default_key: 'default_value'
     })
+    let [previousCondition, setPreviousCondition] = useState({})
+    let [currentCondition, setCurrentCondition] = useState({})
 
     useEffect(() => {
         if (!code) return
@@ -358,6 +360,14 @@ const Preprocessing = () => {
 
 
     const onConfirm = async (e) => {
+        if (JSON.stringify(previousCondition)==="{}") {
+            let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
+            let prevjson = await prevres.json()
+            setPreviousCondition(JSON.parse(prevjson.data))
+        } else {
+            setPreviousCondition(currentCondition)
+        }
+
         let requestData = {}
         if(option!==0)
             eval(`requestData = getData${option}()`)
@@ -372,6 +382,13 @@ const Preprocessing = () => {
         $('#display_cond').text(json.cond)
         $('#display_para_result').html(json.para_result)
         setShowSubOptionModal(false)
+
+        setCurrentCondition(JSON.parse(json.data))
+    }
+
+    const onUndo = (e) => {
+        dispatch(DataSetActions.setTableData(previousCondition))
+        setCurrentCondition(previousCondition)
     }
 
     let dispatch = useDispatch()
@@ -506,7 +523,7 @@ const Preprocessing = () => {
                     runCode()
                 }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
                     ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
-                    
+                <Button text="undo" onClick={onUndo} disable={JSON.stringify(previousCondition)==="{}"}/>   
                 
                 
                 {/* <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
