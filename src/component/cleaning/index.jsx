@@ -74,10 +74,12 @@ const Cleaning = ({ location }) => {
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let dispatch = useDispatch()
     let sandboxRef = useRef(null)
+    // let [previousCleaners, setPreviousCleaners] = useState([])
+    let [currentCleaners, setCurrentCleaners] = useState([])
 
-    useEffect(() => {
-        queryCleaner()
-    }, [dataset.dataCleaners])
+    // useEffect(() => {
+    //     queryCleaner()
+    // }, [dataset.dataCleaners])
 
     const onConfirm = (e) => {
         if (option === -1) return
@@ -94,8 +96,39 @@ const Cleaning = ({ location }) => {
         if (guideStep == 2) {
             setGuideStep(3)
         }
+        setCurrentCleaners(cleaners)
 
         dispatch(DataSetActions.setCleaners(cleaners))
+    }
+
+    // const onRemove = async (e) => {
+    //     let cleaners = []
+    //     dispatch(DataSetActions.setCleaners(cleaners))
+    //     setCurrentCleaners([])
+    //     let res = await fetchByJSON('cleanEditedCache', {
+    //         filename: dataset.filename
+    //     })
+    // }
+
+    // const onUndo = (e) => {
+    //     // setChoice(1)
+    //     dataset = previousDataset
+    //     dispatch(DataSetActions.setCleaners(previousCleaners))
+    //     dispatch(DataSetActions.setData(previousDataset))
+    // }
+
+    const onUndo = async (e) => {
+        let res = await fetchByJSON('cleanEditedCache', {
+            filename: dataset.filename
+        })
+        let json = await res.json()
+        if (json.success) {
+            let previous = currentCleaners.slice(0, -1)
+            dispatch(DataSetActions.setCleaners(previous))
+            setCurrentCleaners(previous)
+            // dispatch(DataSetActions.setCleaners(previousCleaners))
+            // setCurrentCleaners(previousCleaners)
+        }
     }
 
     const [guideStep, setGuideStep] = useState(0)
@@ -242,6 +275,14 @@ const Cleaning = ({ location }) => {
                             sandboxRef.current.setCode(getCodeFromConditions({ conditions: dataset.dataCleaners }))
                             sandboxRef.current.show()
                         }
+                    }, 
+                    // {
+                    //     text: 'Remove',
+                    //     onClick: onRemove
+                    // }, 
+                    {
+                        text: 'Undo',
+                        onClick: onUndo
                     }
                     ]}
                 />
