@@ -4,7 +4,8 @@ import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
-import { Checkbox, Label, Modal, Button, MultiSelect, DropDown } from '../../util/ui'
+import { MultiSelect, DropDown,Button } from '../../util/ui_components'
+import { Checkbox, Label, Modal } from '../../util/ui'
 import Table from '../common/table'
 import { InlineTip } from '../common/tip';
 import { func } from 'prop-types';
@@ -436,7 +437,7 @@ const Preprocessing = () => {
                 </div> : ''}
 
                 {option === 2 ? <div className='grid grid-cols-1'>
-                    <MultiSelect selections={dataset.cols} onSelect={(e) => {
+                    <MultiSelect defaultOpen={false} selections={dataset.cols} onSelect={(e) => {
                         result2.cols = e
                     }} />
                 </div> : ''}
@@ -487,34 +488,29 @@ const Preprocessing = () => {
 
                
                 <div>
-                <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={onConfirm}/>
+                <Button text={'Confirm'} onClick={onConfirm}/>
                 </div>
             </div>
         </Modal>
 
-        <div className="flex flex-row h-auto w-full items-start justify-start bg-gray-100 shadow-lg">
-            <div className='mx-5 my-5 w-8/12 flex justify-start'>
-                <div className='w-96'>
-                    <DropDown text={optionText} customStyle='h-10 w-96' customUlStyle={'w-96'} items={
-                        // , 'Text Data: Check New Features', 'Text Data: Preprocessing'
-                        ['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in One Column', 'Remove Outliers'].map((item, i) => ({
-                            name: item, onClick(e) {
-                                {/*   0                                              1                            2                               3                                4                                       5                            6*/ }
-                                setOption(i)
-                                setOptionText(item)
-                                if(i===0 || i === 1 ||i === 2 ||i === 3 ||i === 4 || i===5 ||i===6){
-                                    setShowSubOptionModal(true)
-                                }
-                            }
-                        }))} />
-                </div>
-
+        <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-lg">
+              <div className='mx-5 w-3/12 flex justify-start items-center'>
+                <DropDown text={optionText} width='w-96' height='h-10' items={['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in One Column', 'Remove Outliers']}
+                onSelect={(item,i)=>{
+                    setOption(i)
+                    setOptionText(item)
+                    if(i===0 || i === 1 ||i === 2 ||i === 3 ||i === 4 || i===5 ||i===6)
+                        setShowSubOptionModal(true)
+                }}/>
+              </div>
+              <div className='mx-5 w-3/12 flex justify-start items-center'>
                 <div className='w-auto flex justify-center items-center px-1'>
                     <div className={``}>{activateStatus}</div>
                     <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
                 </div>
-
-                <Button text={subOptionText} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
+              </div>
+              <div className='mx-5 w-6/12 flex justify-end items-center'>
+                <Button text={subOptionText} width='w-32' onClick={()=>{
                     if(option>-1){
                         setShowSubOptionModal(true)
                     }
@@ -523,12 +519,11 @@ const Preprocessing = () => {
                     runCode()
                 }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
                     ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
-                <Button text="undo" onClick={onUndo} disable={JSON.stringify(previousCondition)==="{}"}/>   
+                <Button text="undo" width='w-32 mx-3' onClick={onUndo} disable={JSON.stringify(previousCondition)==="{}"}/>   
                 
-                
+              </div>
                 {/* <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{
                 }}/> */}
-            </div>
             {/* <div className='mx-5 my-10 w-3/12'>
                 <MultiSelect selections={dataset.dataPreprocessing} passiveMode={true} />
             </div> */}
@@ -537,13 +532,31 @@ const Preprocessing = () => {
 
             <div className="w-full flex flex-nowrap">
                 <div className='w-1/2 text-gray-500 font-semibold'>
-                    <div className='scroll'>
-                        <Label text="Preprocessing Conditions:" className='w-300'>
+                    <div className='scroll w-full flex justify-center items-center' style={{height:'100%'}}>
+                        <div className="flex gap-10">
+                          <div className=" flex items-start flex-col justify-center">
+                            <div>
+                            Preprocessing Conditions:
+                            </div>
+                            <div id = "display_cond" style={{ whiteSpace: 'pre-wrap' }}>
+                              Select an operation to see conditions
+                            </div>
+                          </div>
+                          <div className=" flex items-start flex-col justify-center">
+                            <div>
+                            Preprocessing Results:
+                            </div>
+                            <div id = "display_para_result" style={{ whiteSpace: 'pre-wrap' }}>
+                              Select an operation to see preprocessed results
+                            </div>
+                          </div>
+                        </div>
+                        {/* <Label text="Preprocessing Conditions:" className='w-300'>
                             <div id = "display_cond" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see conditions</div>
-                        </Label>
-                        <Label text="Preprocessing Results:">
+                        </Label> */}
+                        {/* <Label text="Preprocessing Results:">
                             <div id = "display_para_result" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see preprocessed results</div>
-                        </Label>
+                        </Label> */}
                     </div>
                 </div>
                 {/* Demo code */}

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo, useCachedData, useSimpleForm } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo, useCachedData, useSimpleForm,toUnicode } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -244,7 +244,12 @@ if 'Extract Model2: TfidfVectorizer' in text_feateng_option:
 `},
 }
 
-const getInitialCode = (option) => `
+const getInitialCode = (option,dfJSON) => `
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import plotly.express as px
+
 import pandas as pd
 from io import StringIO
 from sklearn.preprocessing import LabelEncoder
@@ -257,7 +262,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 nltk.download('punkt')`: ``}
 
-data_io = StringIO(r"""${code}""")
+data_io = StringIO(r"""${toUnicode(dfJSON)}""")
 df = pd.read_json(data_io)
 `
 
@@ -272,6 +277,7 @@ const FeatureEngineering = () => {
     let kernelRef = useRef()
     let codeParent = useRef()
     const [code, setCode] = useState('')
+    const dfJSON = useRef()
     const [activateStatus, setActivateStatus] = useState('Loading...')
     let [previousCondition, setPreviousCondition] = useState({})
     let [currentCondition, setCurrentCondition] = useState({})
@@ -295,6 +301,7 @@ const FeatureEngineering = () => {
     }, [code])
 
     useEffect(() => {
+      console.log('XXX',dfJSON.current)
         if (!dataset.filename) {
             setActivateStatus('No data')
             return
@@ -304,14 +311,17 @@ const FeatureEngineering = () => {
 
         //excute code in advance on thebelab to import libraries and set dataframe variable
         thebelab.on("status", async function (evt, data) {
-            if (data.status === 'ready' && dataset.filename) {
+          if (data.status === 'ready' && dataset.filename) {
                 let res = await fetchByJSON('current_data_json', {
                     filename: dataset.filename
                 })
 
                 let g = await res.json()
+                if(!dfJSON.current && g.data){
+                  dfJSON.current = g.data
+                }
                 kernelRef.current = data.kernel
-                data.kernel.requestExecute({ code: getInitialCode[option] })
+                data.kernel.requestExecute({ code:getInitialCode(option,dfJSON.current) })
                 setActivateStatus('Ready')
             }
         })
@@ -324,8 +334,7 @@ const FeatureEngineering = () => {
         })
 
         let json = await res.json();
-
-        let res2 = await kernelRef.current.requestExecute({ code: InitialCode[option](json.data) }).done
+        // let res2 = await kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) }).done
 
         document.querySelector('.thebelab-run-button').click()
     }
@@ -454,7 +463,7 @@ const FeatureEngineering = () => {
                             cate_cols: json.cate_cols,
                             num_lists: json.num_lists,
                             cate_lists: json.cate_lists,
-                            col_lists: json.cate_lists,
+                            col_lists: json.col_lists,
                         }))
                         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
 
@@ -499,7 +508,8 @@ const FeatureEngineering = () => {
                 runCode()
             }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
                 ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
-            <Button text="Undo" width={'w-24'} onClick={() => {
+            <Button text="Undo" width={'w-24 ml-3'} onClick={() => {
+                kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) })
                 dispatch(DataSetActions.setTableData(previousCondition))
                 setCurrentCondition(previousCondition)
             }}/>
@@ -508,12 +518,12 @@ const FeatureEngineering = () => {
 
         <div className="w-full flex flex-nowrap">
             <div className='w-1/2 text-gray-500 font-semibold'>
-                <div className='scroll'>
+                <div className='scroll w-full flex justify-center items-center' style={{height:'100%'}}>
 
                     <Label text="Results:">
                         <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see preprocessed results</div>
                     </Label>
-                    <Label text="Plot:">
+                    <Label text="">
                         <img id="img" src="" />
                     </Label>
                 </div>
