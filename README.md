@@ -214,10 +214,45 @@ sudo chgrp -R admins /home/lz3519/data_mining_main/awesome-data-mining/.git
 
 ### New admin users
 - Remember the users are responsable for what they do! Administering the code base requires effective root access via sudo, so always think twice before trying any major changes.
-1. setup nvm (you can copy .nvm from another user and change permissions)
-2. setup git for the user (user need to do it by themselves with the keypar for the RIT repository)
-3. add to admins group
-4. add to sudo group 
+
+1. Check if the user doesn't already exist, add the user, add it to the admin groups
+```
+getent passwd  
+sudo adduser cz3348 
+sudo getent group
+sudo addgroup cz3348 pm2
+sudo addgroup cz3348 admins
+sudo addgroup cz3348 sudo
+```
+
+2. Copy a valid nvm configuration to the new user (just pick any previously configured user). Dont forget to fix the permissions. In this example we are creating the user cz3348 and copying from ecl7037.
+```
+cd /home/cz3348/
+sudo cp -r ~/.nvm/ .
+cd /home/cz3348/
+sudo chown -R cz3348.pm2 .nvm/
+```
+
+3. Copy a valid bashrc and profile from another user.
+```
+  914  sudo cp .bashrc /home/cz3348/
+  915  sudo cp .profile /home/cz3348/
+```
+  4. Make sure the pm2daemon is fixed as well. Every now and then it loses the group permissions.
+```
+cd /var/pm2daemon/
+sudo chgrp -R pm2 pm2daemon 
+```
+
+5. Copy your key pair over the network to the server and fix permissions, I suggest using PSCP on Windows or SCP on Linux/Mac. Make sure to save it under ~/.ssh/. Also, this key files need to be configured in the repository on git.cs.rit.edu.
+```
+<copy the files from your local machine to the server, lets say they are called id_rsa and id_rsa.pub, using pscp/scp>
+sudo chown -R cz3348.cz3348 .ssh
+sudo su -
+cd /home/cz3348/.ssh
+chmod 600 id_rsa
+chmod 644 id_rsa.pub 
+```
 
 ### MongoDB installation as a service
 ```
