@@ -103,3 +103,9 @@ Werkzeug==1.0.1
 widgetsnbextension==3.5.1
 WTForms==2.3.3
 yellowbrick==1.2
+scikit-plot=0.3.7
+mlxtend=0.19.0
+nltk=3.7
+wordcloud=1.8.1
+contractions=0.1.68
+statsmodels=0.13.2
