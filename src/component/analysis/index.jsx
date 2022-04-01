@@ -141,6 +141,35 @@ print("Print predicted results of testing dataset: ", Y_pred)
 print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
 `),
 
+'Linear Regression Prediction': code => `
+# Prediction of Linear Regression
+
+# import libraries
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+from sklearn.linear_model import LinearRegression
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+# split the dataset into two parts: training dataset and testing dataset
+# X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+
+# build a model, users can modify parameters
+model = LinearRegression(fit_intercept=True, normalize=False) 
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Linear Regression${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+
+# measure performance of model with metric
+# print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
+`,
+
     'Decision Tree Regression': code => `
 # Demo of Decision Tree Regression
 # Note: Only two variables "X" and "Y" are changed automatically based on user's option,
@@ -490,6 +519,7 @@ const Analysis = () => {
     let [option, setOption] = useState(-1)
     let [model, setModel] = useState(-1)
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
+    // let [predictCode, setPredictCode] = useState(false)
     let [visibleModalTabs, setVisibleModalTabs] = useState([0, 1])
     let [optionButtonVisibility, setOptionButtonVisibility] = useState([1, 1, 1])
     let [currentPresetIndex, setCurrentPresetIndex] = useState(-1)
@@ -612,6 +642,23 @@ const Analysis = () => {
         // console.log(json)   // print
     }, [result, option, model])
 
+    // let onPredict = useCallback(async () => {
+    //     dispatch(OptionActions.setOption(['analysis', option, model, { ...result }]))
+    //     let res = await fetchByJSON(`analysis/${option}/predict`, {...result, filename:dataset.filename})
+    //     let json = await res.json()
+    //     console.log(json)
+    //     let errorMsg = json['errorMsg']
+    //     if(errorMsg && errorMsg != "''"){
+    //         alert(errorMsg)
+    //     } else {
+    //         setCode(getCodeFromResult(option, model+' Prediction', result))
+    //         $('#display_query').text(json.cond.trim())
+    //         $('#display_results').html(json.predict_result.trim())
+    //         setShowSubOptionModal(false)
+    //     }
+    // }, [result, option, model])
+
+
     let OptionView = OptionModels.hasOwnProperty(option) && OptionModels[option].hasOwnProperty(model) ? OptionModels[option][model] : e => <div></div>
     let currentPreset = currentPresetIndex > -1 && currentPresetIndex < presetsArr.length ? presetsArr[currentPresetIndex] : null;
 
@@ -724,7 +771,7 @@ const Analysis = () => {
                                     if (model) {
                                         setOptionButtonVisibility([0, 0, 0])
                                         setShowSubOptionModal(true)
-                                        setVisibleModalTabs([2]);
+                                        setVisibleModalTabs([2])
                                     }
                                 },
                             },
