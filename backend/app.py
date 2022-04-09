@@ -2014,6 +2014,7 @@ def cond_Regression_json():
 @jwt_required()
 def cond_Classification_json():
     error = ""
+    test = "?"
     cond, para_result, fig_len, fig_wid, isTsv = '', '', 5, 5, False
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
     user_id = get_jwt_identity()
@@ -2057,6 +2058,7 @@ def cond_Classification_json():
             model = LogisticRegression(solver=param_solver, C=param_C)
             # for training model
             if params[analysis_model+finalVar[0]] == '':
+                test = "training"
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 if text_data_feat_model == '--':
                     plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -2108,6 +2110,7 @@ def cond_Classification_json():
                     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
             # for making prediction (no plot)
             else:
+                test = "prediction"
                 pred_dict = {}
                 for x in finalVar:
                     current = params[analysis_model+x]
@@ -2512,7 +2515,7 @@ def cond_Classification_json():
             print(e)
             error = e
 
-    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)))
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)), test=test)
 
 
 @app.route('/analysis/clustering', methods=['POST']) 
