@@ -2057,68 +2057,68 @@ def cond_Classification_json():
             param_C = 1.0 if params['param_C']=='None' or (not params['param_C'].strip()) else float(params['param_C'])
             model = LogisticRegression(solver=param_solver, C=param_C)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
-                test = "training"
-                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-                if text_data_feat_model == '--':
-                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-                if metric == "Classification Report":
-                    report = classification_report(Y_test, Y_pred)
-                    para_result += "\nClassification Report of " + analysis_model + ":\n" + report
-                elif metric == 'ROC Curve':
-                    img = BytesIO()
-                    plot_roc_curve(model, X_test, Y_test)
-                    plt.savefig(img, format='png') 
-                    plt.clf()
-                    img.seek(0)
-                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                    img.close()
-                elif metric == 'Confusion Matrix':
-                    img = BytesIO()
-                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
-                    plt.savefig(img, format='png') 
-                    plt.clf()
-                    img.seek(0)
-                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                    img.close()
-                elif metric == 'Confusion Matrix (Without Normalization)':
-                    img = BytesIO()
-                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
-                    plt.savefig(img, format='png') 
-                    plt.clf()
-                    img.seek(0)
-                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                    img.close()
-                cond += "\nChoose Test Size(%): " + str(test_size*100)
-                cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
-                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-                cond += '\nMetric: ' + metric
-                if find_solver or find_C:
-                    if find_solver and find_C:
-                        tuned_para = [{'solver': find_solver, 'C': find_C}]
-                    elif find_solver:
-                        tuned_para = [{'solver': find_solver}]
-                    elif find_C:
-                        tuned_para = [{'C': find_C}]
-                    cond = "\nFind Parameter for Logisitic Regression: " + str(tuned_para)
-                    MSE = ['mean_squared_error(Y_test, Y_pred']
-                    for value in MSE:
-                        model = GridSearchCV(LogisticRegression(), tuned_para, cv=4)
-                        model.fit(X_train, Y_train)
-                        Y_true, Y_pred = Y_test, model.predict(X_test)
-                        para_result += 'The best hyper-parameters for Logisitic Regression are: ' + str(model.best_params_)
-                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-            # for making prediction (no plot)
-            else:
-                test = "prediction"
-                pred_dict = {}
-                for x in finalVar:
-                    current = params[analysis_model+x]
-                    pred_dict[x] = [float(current)]
-                    cond += '\n' + x + ': ' + current
-                X_pred = pd.DataFrame(pred_dict)
-                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
-                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
+            # if params[analysis_model+finalVar[0]] == '':
+            #     test = "training"
+            #     Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+            #     if text_data_feat_model == '--':
+            #         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+            #     if metric == "Classification Report":
+            #         report = classification_report(Y_test, Y_pred)
+            #         para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+            #     elif metric == 'ROC Curve':
+            #         img = BytesIO()
+            #         plot_roc_curve(model, X_test, Y_test)
+            #         plt.savefig(img, format='png') 
+            #         plt.clf()
+            #         img.seek(0)
+            #         plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            #         img.close()
+            #     elif metric == 'Confusion Matrix':
+            #         img = BytesIO()
+            #         skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+            #         plt.savefig(img, format='png') 
+            #         plt.clf()
+            #         img.seek(0)
+            #         plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            #         img.close()
+            #     elif metric == 'Confusion Matrix (Without Normalization)':
+            #         img = BytesIO()
+            #         skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+            #         plt.savefig(img, format='png') 
+            #         plt.clf()
+            #         img.seek(0)
+            #         plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+            #         img.close()
+            #     cond += "\nChoose Test Size(%): " + str(test_size*100)
+            #     cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
+            #     cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+            #     cond += '\nMetric: ' + metric
+            #     if find_solver or find_C:
+            #         if find_solver and find_C:
+            #             tuned_para = [{'solver': find_solver, 'C': find_C}]
+            #         elif find_solver:
+            #             tuned_para = [{'solver': find_solver}]
+            #         elif find_C:
+            #             tuned_para = [{'C': find_C}]
+            #         cond = "\nFind Parameter for Logisitic Regression: " + str(tuned_para)
+            #         MSE = ['mean_squared_error(Y_test, Y_pred']
+            #         for value in MSE:
+            #             model = GridSearchCV(LogisticRegression(), tuned_para, cv=4)
+            #             model.fit(X_train, Y_train)
+            #             Y_true, Y_pred = Y_test, model.predict(X_test)
+            #             para_result += 'The best hyper-parameters for Logisitic Regression are: ' + str(model.best_params_)
+            #         plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # # for making prediction (no plot)
+            # else:
+            #     test = "prediction"
+            #     pred_dict = {}
+            #     for x in finalVar:
+            #         current = params[analysis_model+x]
+            #         pred_dict[x] = [float(current)]
+            #         cond += '\n' + x + ': ' + current
+            #     X_pred = pd.DataFrame(pred_dict)
+            #     Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+            #     para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
