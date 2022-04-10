@@ -1690,161 +1690,210 @@ def cond_Regression_json():
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
     X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) # with original order
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
-    cond += "\nChoose Test Size(%): " + str(test_size*100)
+    
     if analysis_model == "Linear Regression":
+        # for training model
+        if params[analysis_model+finalVar[0]] == '':
+            try:
+                param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
+                param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
+                model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+                # get new plot
+                if plotType == "regressionplot":
+                    img = BytesIO()
+                    plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+                    plt.title(f"{analysis_model} Result")
+                    sns.regplot(data=ndf,x=finalVar[0], y=finalY)             
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                else:
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel: Linear Regression \nSet Parameters:  fit_intercept=" + str(param_fit_intercept_lr) + ", normalize=" + str(param_normalize_lr)
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                para_result += "\nMetric:  " + metric + "\nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+            except Exception as e:
+                print(analysis_model, e)
+                error = e
+        # for making prediction (no plot)
+        else:
+            try:
+                param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
+                param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
+                model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr)
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
+            except Exception as e:
+                print(analysis_model, e)
+                error = e
+
+    elif analysis_model == "Decision Tree Regression":
         try:
-            param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
-            param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
-            model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
-            # get new plot
-            if plotType == "regressionplot":
-                img = BytesIO()
-                plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-                plt.title(f"{analysis_model} Result")
-                sns.regplot(data=ndf,x=finalVar[0], y=finalY)             
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
+            param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+            param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
+            # param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else 3
+            param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
+            param_max_features = params['param_max_features'] if 'param_max_features' in params else None
+            param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
+            param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
+            find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
+            model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                #new plot
+                if plotType == "regressionplot":
+                    img = BytesIO()
+                    plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+                    plt.title(f"{analysis_model} Result")
+                    if len(finalVar) == 1:
+                        sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+                    else:
+                        sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                else:
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+            
+                if metric == 'Visualize Tree: Text Graph':
+                    para_result = '\n' + tree.export_text(model) + '\n'
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+                elif metric == 'Visualize Tree: Flowchart':
+                    img = BytesIO()
+                    plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+                    class_names = list(str(i) for i in ndf[finalY].unique())
+                    tree.plot_tree(model, feature_names=finalVar, class_names=class_names, filled=True)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                else:
+                    metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+                    para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel: Decision Tree Regression \nSet Parameters: criterion=" + str(param_criterion) + ", splitter=" + str(param_splitter) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes="+ str(param_max_leaf_nodes)+ ", random_state=" + str(param_random_state) 
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                if find_max_depth:
+                    tuned_para = [{'max_depth': find_max_depth}]
+                    cond = "\nFind Parameter for Decision Tree Regression" + str(tuned_para)
+                    MSE_dtr = ['mean_squared_error(Y_test, Y_pred']
+                    for value in MSE_dtr:
+                        reg_dtr = GridSearchCV(DecisionTreeRegressor(), tuned_para, cv=4)
+                        reg_dtr.fit(X_train, Y_train)
+                        Y_true, Y_pred = Y_test, reg_dtr.predict(X_test)
+                        para_result = '\nThe best hyper-parameter for Decision Tree is: ' + str(reg_dtr.best_params_)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+                # if 'visual_tree' in params:
+                #     visual_type = params['visual_tree']
+                #     cond += "\nVisualize Tree:" + visual_type
+                #     if  visual_type == 'Text Graph':
+                #         para_result = '\n' + tree.export_text(model) + '\n'
+                #         plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+                #     elif visual_type == 'Flowchart':
+                #         img = BytesIO()
+                #         plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+                #         tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
+                #         plt.savefig(img, format='png') 
+                #         plt.clf()
+                #         img.seek(0)
+                #         plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                #         img.close()
+                #     else:
+                #         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+            # for making prediction (no plot)
             else:
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-            cond += "\nModel: Linear Regression \nSet Parameters:  fit_intercept=" + str(param_fit_intercept_lr) + ", normalize=" + str(param_normalize_lr)
-            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            para_result += "\nMetric:  " + metric + "\nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
 
-    elif analysis_model == "Decision Tree Regression":
-        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
-        param_splitter = params['param_splitter'] if 'param_splitter' in params else 'best'
-        # param_max_depth = int(params['param_max_depth']) if 'param_max_depth' in params else 3
-        param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
-        param_max_features = params['param_max_features'] if 'param_max_features' in params else None
-        param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
-        param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
-        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
-        model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        #new plot
-        if plotType == "regressionplot":
-            img = BytesIO()
-            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-            plt.title(f"{analysis_model} Result")
-            if len(finalVar) == 1:
-                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
-            else:
-                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
-        else:
-            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-       
-        if metric == 'Visualize Tree: Text Graph':
-            para_result = '\n' + tree.export_text(model) + '\n'
-            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-        elif metric == 'Visualize Tree: Flowchart':
-            img = BytesIO()
-            plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
-            class_names = list(str(i) for i in ndf[finalY].unique())
-            tree.plot_tree(model, feature_names=finalVar, class_names=class_names, filled=True)
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
-        else:
-            metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
-            para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
-
-        cond += "\nModel: Decision Tree Regression \nSet Parameters: criterion=" + str(param_criterion) + ", splitter=" + str(param_splitter) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes="+ str(param_max_leaf_nodes)+ ", random_state=" + str(param_random_state) 
-        cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-        cond += '\nMetric: ' + metric
-        if find_max_depth:
-            tuned_para = [{'max_depth': find_max_depth}]
-            cond = "\nFind Parameter for Decision Tree Regression" + str(tuned_para)
-            MSE_dtr = ['mean_squared_error(Y_test, Y_pred']
-            for value in MSE_dtr:
-                reg_dtr = GridSearchCV(DecisionTreeRegressor(), tuned_para, cv=4)
-                reg_dtr.fit(X_train, Y_train)
-                Y_true, Y_pred = Y_test, reg_dtr.predict(X_test)
-                para_result = '\nThe best hyper-parameter for Decision Tree is: ' + str(reg_dtr.best_params_)
-            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-        # if 'visual_tree' in params:
-        #     visual_type = params['visual_tree']
-        #     cond += "\nVisualize Tree:" + visual_type
-        #     if  visual_type == 'Text Graph':
-        #         para_result = '\n' + tree.export_text(model) + '\n'
-        #         plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-        #     elif visual_type == 'Flowchart':
-        #         img = BytesIO()
-        #         plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
-        #         tree.plot_tree(model, feature_names=finalVar, class_names=list(finalY), filled=True)
-        #         plt.savefig(img, format='png') 
-        #         plt.clf()
-        #         img.seek(0)
-        #         plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-        #         img.close()
-        #     else:
-        #         plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-
     elif analysis_model == 'Random Forests Regression':
-        # try:
-        param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
-        param_n_estimators = 100 if (not params['param_n_estimators'].strip())  else int(params['param_n_estimators'])
-        find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else 3
-        find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
-        param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
-        param_max_features = params['param_max_features'] if 'param_max_features' in params else 'auto'
-        param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
-        param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
-        model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
-        Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-        metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
-        if plotType == "regressionplot":
-            img = BytesIO()
-            plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-            plt.title(f"{analysis_model} Result")
-            if len(finalVar) == 1:
-                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+        try:
+            param_max_depth = None if params['param_max_depth']=='None' or (not params['param_max_depth'].strip()) else int(params['param_max_depth'])
+            param_n_estimators = 100 if (not params['param_n_estimators'].strip())  else int(params['param_n_estimators'])
+            find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else 3
+            find_n_estimators = [int(x) for x in params['find_n_estimators'].split(',') if params['find_n_estimators']] if 'find_n_estimators' in params else None
+            param_criterion = params['param_criterion'] if 'param_criterion' in params else 'mse'
+            param_max_features = params['param_max_features'] if 'param_max_features' in params else 'auto'
+            param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
+            param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
+            model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+                if plotType == "regressionplot":
+                    img = BytesIO()
+                    plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+                    plt.title(f"{analysis_model} Result")
+                    if len(finalVar) == 1:
+                        sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+                    else:
+                        sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                else:
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType )
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
+                cond += "\nPlot Predicted vs. Observed Target Variable:  Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+                if find_max_depth or find_n_estimators:
+                    if find_max_depth and find_n_estimators:
+                        tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
+                    elif find_max_depth:
+                        tuned_para = [{'max_depth': find_max_depth}]
+                    elif find_n_estimators:
+                        tuned_para = [{'n_estimators': find_n_estimators}]
+                    cond = "\nFind Parameter for Random Forests Regressor: " + str(tuned_para)
+                    MSE_rfr = ['mean_squared_error(Y_test, Y_pred']
+                    for value in MSE_rfr:
+                        reg_rfr = GridSearchCV(RandomForestRegressor(), tuned_para, cv=4)
+                        reg_rfr.fit(X_train, Y_train)
+                        Y_true, Y_pred = Y_test, reg_rfr.predict(X_test)
+                        para_result = 'The best hyper-parameters for Random Forests are: ' + str(reg_rfr.best_params_)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
             else:
-                sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)
-            plt.savefig(img, format='png') 
-            plt.clf()
-            img.seek(0)
-            plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-            img.close()
-        else:
-            plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType )
-        cond += "\nModel: Random Forests Regressor \nSet Parameters:    n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_depth=" + str(param_max_depth) + ", max_features=" + str(param_max_features) + ", max_leaf_nodes=" + str(param_max_leaf_nodes) + ", random_state=" + str(param_random_state)
-        cond += "\nPlot Predicted vs. Observed Target Variable:  Plot Type: " + plotType
-        cond += '\nMetric: ' + metric
-        para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
-        if find_max_depth or find_n_estimators:
-            if find_max_depth and find_n_estimators:
-                tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
-            elif find_max_depth:
-                tuned_para = [{'max_depth': find_max_depth}]
-            elif find_n_estimators:
-                tuned_para = [{'n_estimators': find_n_estimators}]
-            cond = "\nFind Parameter for Random Forests Regressor: " + str(tuned_para)
-            MSE_rfr = ['mean_squared_error(Y_test, Y_pred']
-            for value in MSE_rfr:
-                reg_rfr = GridSearchCV(RandomForestRegressor(), tuned_para, cv=4)
-                reg_rfr.fit(X_train, Y_train)
-                Y_true, Y_pred = Y_test, reg_rfr.predict(X_test)
-                para_result = 'The best hyper-parameters for Random Forests are: ' + str(reg_rfr.best_params_)
-            plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-        # except Exception as e:
-        #     print(analysis_model, e)
-        #     error = e
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
+        except Exception as e:
+            print(analysis_model, e)
+            error = e
     
     elif analysis_model == 'SVM Regression':
         try:
@@ -1854,62 +1903,109 @@ def cond_Regression_json():
             find_gamma  = [float(x) for x in params['find_gamma'].split(',') if params['find_gamma']] if 'find_gamma' in params else None
             param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
             model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            if plotType == "regressionplot":
-                img = BytesIO()
-                plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
-                plt.title(f"{analysis_model} Result")
-                if len(finalVar) == 1:
-                    sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                if plotType == "regressionplot":
+                    img = BytesIO()
+                    plt.rcParams["figure.figsize"] = (fig_len, fig_wid)
+                    plt.title(f"{analysis_model} Result")
+                    if len(finalVar) == 1:
+                        sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[0],hue=finalY, height=5)
+                    else:
+                        sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)                
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
                 else:
-                    sns.lmplot(data=ndf,x=finalVar[0], y=finalVar[1],hue=finalY, height=5)                
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+                metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel: SVM Regressor \nSet Parameters:   kernel=" + str(param_kernel) + ", gamma=" + str(param_gamma) + ", C=" + str(param_C)
+                cond += "\nPlot Predicted vs. Observed Target Variable:    Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
+                    
+                if find_C or find_gamma:
+                    if find_C and find_gamma:
+                        tuned_para = [{'C': find_C, 'gamma': find_gamma}]
+                    elif find_C:
+                        tuned_para = [{'C': find_C}]
+                    elif find_gamma:
+                        tuned_para = [{'gamma': find_gamma}]
+                    cond = "\nFind Parameter for Support Vector Machine (SVM) Regressor" + str(tuned_para)        
+                    MSE_svm = ['mean_squared_error(Y_test, Y_pred']
+                    for value in MSE_svm:
+                        reg_svm = GridSearchCV(SVR(), tuned_para, cv=4)
+                        reg_svm.fit(X_train, Y_train)
+                        Y_true, Y_pred = Y_test, reg_svm.predict(X_test)
+                        para_result = 'The best hyper-parameters for SVR are: ' + str(reg_svm.best_params_)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+                pred_var = analysis_model + finalVar[0] 
+                if pred_var in params and params[pred_var]:  
+                    predic_var, input_val = [], []
+                    for i in df.columns:
+                        col_temp = analysis_model + i
+                        if col_temp in params and params[col_temp]:
+                            predic_var.append(i)
+                            input_val.append(params[col_temp])
+                    Class_input_val = [input_val]
+                    input_val = np.array(Class_input_val, dtype='float64')
+                    result = model.predict(input_val)
+                    cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
+                    para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
             else:
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-            metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
-            cond += "\nModel: SVM Regressor \nSet Parameters:   kernel=" + str(param_kernel) + ", gamma=" + str(param_gamma) + ", C=" + str(param_C)
-            cond += "\nPlot Predicted vs. Observed Target Variable:    Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            para_result += "\nMetric:  " + metric + ": \nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
-                
-            if find_C or find_gamma:
-                if find_C and find_gamma:
-                    tuned_para = [{'C': find_C, 'gamma': find_gamma}]
-                elif find_C:
-                    tuned_para = [{'C': find_C}]
-                elif find_gamma:
-                    tuned_para = [{'gamma': find_gamma}]
-                cond = "\nFind Parameter for Support Vector Machine (SVM) Regressor" + str(tuned_para)        
-                MSE_svm = ['mean_squared_error(Y_test, Y_pred']
-                for value in MSE_svm:
-                    reg_svm = GridSearchCV(SVR(), tuned_para, cv=4)
-                    reg_svm.fit(X_train, Y_train)
-                    Y_true, Y_pred = Y_test, reg_svm.predict(X_test)
-                    para_result = 'The best hyper-parameters for SVR are: ' + str(reg_svm.best_params_)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-            pred_var = analysis_model + finalVar[0] 
-            if pred_var in params and params[pred_var]:  
-                predic_var, input_val = [], []
-                for i in df.columns:
-                    col_temp = analysis_model + i
-                    if col_temp in params and params[col_temp]:
-                        predic_var.append(i)
-                        input_val.append(params[col_temp])
-                Class_input_val = [input_val]
-                input_val = np.array(Class_input_val, dtype='float64')
-                result = model.predict(input_val)
-                cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
-                para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
 
     return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)))
+
+# @app.route('/analysis/regression/predict', methods=['POST'])
+# @cross_origin()
+# @jwt_required()
+# def cond_Regression_predict_json():
+#     error = ""
+#     cond = ''
+#     predict_result = ''
+#     user_id = get_jwt_identity()
+#     params = request.json
+#     filename = params['filename']
+#     print(params)
+#     analysis_model = params['analysis_model']
+#     finalVar = params['finalVar']  
+#     finalY = params['finalY']
+#     df = _getCache(user_id, filename)
+#     ndf = df.replace(MISSING_VALUES, np.nan)
+#     result_value = []
+#     if analysis_model == "Linear Regression":
+#         try:
+#             model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr)
+#             pred_dict = {}
+#             for x in finalVar:
+#                 current = float(params[analysis_model+x])
+#                 pred_dict[x] = [current]
+#                 cond += '\n' + x + ': ' + current
+#             X_pred = pd.DataFrame(pred_dict)
+#             Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+#             result_value = Y_pred
+#             predict_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(result_value)
+#         except Exception as e:
+#             print(analysis_model, e)
+#             error = e
+#     return jsonify(data=ndf.to_json(), cond=cond, predict_result=predict_result, errorMsg=str(repr(error)))
 
 
 
@@ -1951,7 +2047,7 @@ def cond_Classification_json():
     print("===================")
 
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
-    cond += "\nChoose Test Size(%): " + str(test_size*100)
+    
     if analysis_model == "Logistic Regression":
         try:
             find_solver = [x for x in params['find_solver'].split(',') if params['find_solver']] if 'find_solver' in params else None
@@ -1959,54 +2055,67 @@ def cond_Classification_json():
             param_solver = params['param_solver'] if 'param_solver' in params else 'lbfgs'
             param_C = 1.0 if params['param_C']=='None' or (not params['param_C'].strip()) else float(params['param_C'])
             model = LogisticRegression(solver=param_solver, C=param_C)
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            if text_data_feat_model == '--':
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-            if metric == "Classification Report":
-                report = classification_report(Y_test, Y_pred)
-                para_result += "\nClassification Report of " + analysis_model + ":\n" + report
-            elif metric == 'ROC Curve':
-                img = BytesIO()
-                plot_roc_curve(model, X_test, Y_test)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix (Without Normalization)':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
-            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            if find_solver or find_C:
-                if find_solver and find_C:
-                    tuned_para = [{'solver': find_solver, 'C': find_C}]
-                elif find_solver:
-                    tuned_para = [{'solver': find_solver}]
-                elif find_C:
-                    tuned_para = [{'C': find_C}]
-                cond = "\nFind Parameter for Logisitic Regression: " + str(tuned_para)
-                MSE = ['mean_squared_error(Y_test, Y_pred']
-                for value in MSE:
-                    model = GridSearchCV(LogisticRegression(), tuned_para, cv=4)
-                    model.fit(X_train, Y_train)
-                    Y_true, Y_pred = Y_test, model.predict(X_test)
-                    para_result += 'The best hyper-parameters for Logisitic Regression are: ' + str(model.best_params_)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                if text_data_feat_model == '--':
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+                if metric == "Classification Report":
+                    report = classification_report(Y_test, Y_pred)
+                    para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+                elif metric == 'ROC Curve':
+                    img = BytesIO()
+                    plot_roc_curve(model, X_test, Y_test)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix (Without Normalization)':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel: Logistic Regression \nSet Parameters:  solver=" + str(param_solver) + ", C=" + str(param_C)
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                if find_solver or find_C:
+                    if find_solver and find_C:
+                        tuned_para = [{'solver': find_solver, 'C': find_C}]
+                    elif find_solver:
+                        tuned_para = [{'solver': find_solver}]
+                    elif find_C:
+                        tuned_para = [{'C': find_C}]
+                    cond = "\nFind Parameter for Logisitic Regression: " + str(tuned_para)
+                    MSE = ['mean_squared_error(Y_test, Y_pred']
+                    for value in MSE:
+                        model = GridSearchCV(LogisticRegression(), tuned_para, cv=4)
+                        model.fit(X_train, Y_train)
+                        Y_true, Y_pred = Y_test, model.predict(X_test)
+                        para_result += 'The best hyper-parameters for Logisitic Regression are: ' + str(model.best_params_)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
+            else:
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
@@ -2018,62 +2127,75 @@ def cond_Classification_json():
             param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
             param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
             model = DecisionTreeClassifier(criterion=param_criterion, max_depth=param_max_depth, max_leaf_nodes=param_max_leaf_nodes) 
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            if text_data_feat_model == '--':
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-            if metric == "Classification Report":
-                report = classification_report(Y_test, Y_pred)
-                para_result += "\nClassification Report of " + analysis_model + ":\n" + report
-            elif metric == 'ROC Curve':
-                img = BytesIO()
-                plot_roc_curve(model, X_test, Y_test)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix (Without Normalization)':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Visualize Tree: Text Graph':
-                para_result = '\n' + tree.export_text(model) + '\n'
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
-            elif metric == 'Visualize Tree: Flowchart':
-                img = BytesIO()
-                plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
-                class_names = list(str(i) for i in ndf[finalY].unique())
-                tree.plot_tree(model, feature_names=finalVar, class_names=class_names, filled=True)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            cond += "\nModel: Decision Tree Classifier \nSet Parameters:  max_depth=" + str(param_max_depth) + ", criterion=" + str(param_criterion)  + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
-            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            if find_max_depth:
-                tuned_para = [{'max_depth': find_max_depth}]
-                cond = "\nFind Parameter for Decision Tree Classifier: " + str(tuned_para)
-                MSE = ['mean_squared_error(Y_test, Y_pred']
-                for value in MSE:
-                    grid_model = GridSearchCV(DecisionTreeClassifier(), tuned_para, cv=4)
-                    grid_model.fit(X_train, Y_train)
-                    Y_true, Y_pred = Y_test, grid_model.predict(X_test)
-                    para_result = 'The best hyper-parameters for Decision Tree Classifier are: ' + str(grid_model.best_params_)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                if text_data_feat_model == '--':
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+                if metric == "Classification Report":
+                    report = classification_report(Y_test, Y_pred)
+                    para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+                elif metric == 'ROC Curve':
+                    img = BytesIO()
+                    plot_roc_curve(model, X_test, Y_test)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix (Without Normalization)':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Visualize Tree: Text Graph':
+                    para_result = '\n' + tree.export_text(model) + '\n'
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+                elif metric == 'Visualize Tree: Flowchart':
+                    img = BytesIO()
+                    plt.figure(figsize=(fig_len,fig_wid), dpi=200) #(fig_len,fig_wid))
+                    class_names = list(str(i) for i in ndf[finalY].unique())
+                    tree.plot_tree(model, feature_names=finalVar, class_names=class_names, filled=True)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel: Decision Tree Classifier \nSet Parameters:  max_depth=" + str(param_max_depth) + ", criterion=" + str(param_criterion)  + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                if find_max_depth:
+                    tuned_para = [{'max_depth': find_max_depth}]
+                    cond = "\nFind Parameter for Decision Tree Classifier: " + str(tuned_para)
+                    MSE = ['mean_squared_error(Y_test, Y_pred']
+                    for value in MSE:
+                        grid_model = GridSearchCV(DecisionTreeClassifier(), tuned_para, cv=4)
+                        grid_model.fit(X_train, Y_train)
+                        Y_true, Y_pred = Y_test, grid_model.predict(X_test)
+                        para_result = 'The best hyper-parameters for Decision Tree Classifier are: ' + str(grid_model.best_params_)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
+            else:
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
@@ -2104,54 +2226,67 @@ def cond_Classification_json():
             param_criterion = params['param_criterion'] if 'param_criterion' in params else 'gini'
             param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
             model = RandomForestClassifier(max_depth=param_max_depth, n_estimators=param_n_estimators, criterion=param_criterion, max_leaf_nodes=param_max_leaf_nodes)
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            if text_data_feat_model == '--':
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-            if metric == "Classification Report":
-                report = classification_report(Y_test, Y_pred)
-                para_result += "\nClassification Report of " + analysis_model + ":\n" + report
-            elif metric == 'ROC Curve':
-                img = BytesIO()
-                plot_roc_curve(model, X_test, Y_test)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix (Without Normalization)':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
-            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            if find_max_depth or find_n_estimators:
-                if find_max_depth and find_n_estimators:
-                    tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
-                elif find_max_depth:
-                    tuned_para = [{'max_depth': find_max_depth}]
-                elif find_n_estimators:
-                    tuned_para = [{'n_estimators': find_n_estimators}]
-                cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
-                MSE = ['mean_squared_error(Y_test, Y_pred']
-                for value in MSE:
-                    grid_model = GridSearchCV(RandomForestClassifier(), tuned_para, cv=4)
-                    grid_model.fit(X_train, Y_train)
-                    Y_true, Y_pred = Y_test, grid_model.predict(X_test)
-                    para_result = "The best hyper-parameters for " + analysis_model + " are: " + str(grid_model.best_params_)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                if text_data_feat_model == '--':
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+                if metric == "Classification Report":
+                    report = classification_report(Y_test, Y_pred)
+                    para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+                elif metric == 'ROC Curve':
+                    img = BytesIO()
+                    plot_roc_curve(model, X_test, Y_test)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix (Without Normalization)':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel:" + analysis_model + "\nSet Parameters:  max_depth=" + str(param_max_depth) + ", n_estimators=" + str(param_n_estimators) + ", criterion=" + str(param_criterion) + ", max_leaf_nodes=" + str(param_max_leaf_nodes)
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                if find_max_depth or find_n_estimators:
+                    if find_max_depth and find_n_estimators:
+                        tuned_para = [{'max_depth': find_max_depth, 'n_estimators': find_n_estimators}]
+                    elif find_max_depth:
+                        tuned_para = [{'max_depth': find_max_depth}]
+                    elif find_n_estimators:
+                        tuned_para = [{'n_estimators': find_n_estimators}]
+                    cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
+                    MSE = ['mean_squared_error(Y_test, Y_pred']
+                    for value in MSE:
+                        grid_model = GridSearchCV(RandomForestClassifier(), tuned_para, cv=4)
+                        grid_model.fit(X_train, Y_train)
+                        Y_true, Y_pred = Y_test, grid_model.predict(X_test)
+                        para_result = "The best hyper-parameters for " + analysis_model + " are: " + str(grid_model.best_params_)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
+            else:
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
@@ -2164,54 +2299,67 @@ def cond_Classification_json():
             param_gamma = 0.01 if params['param_gamma']=='None' or (not params['param_gamma'].strip()) else float(params['param_gamma'])
             param_kernel = params['param_kernel'] if 'param_kernel' in params else 'rbf'
             model = SVC(C=param_C, gamma=param_gamma, kernel=param_kernel)
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            if text_data_feat_model == '--':
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-            if metric == "Classification Report":
-                report = classification_report(Y_test, Y_pred)
-                para_result += "\nClassification Report of " + analysis_model + ":\n" + report
-            elif metric == 'ROC Curve':
-                img = BytesIO()
-                plot_roc_curve(model, X_test, Y_test)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix (Without Normalization)':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            cond += "\nModel:" + analysis_model + "\nSet Parameters:  gamma=" + str(param_gamma) + ", C=" + str(param_C) + ", kernel=" + str(param_kernel)
-            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            if find_C or find_gamma:
-                if find_C and find_gamma:
-                    tuned_para = [{'C': find_C, 'gamma': find_gamma}]
-                elif find_C:
-                    tuned_para = [{'C': find_C}]
-                elif find_gamma:
-                    tuned_para = [{'gamma': find_gamma}]
-                cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
-                MSE = ['mean_squared_error(Y_test, Y_pred']
-                for value in MSE:
-                    grid_model = GridSearchCV(SVC(), tuned_para, cv=4)
-                    grid_model.fit(X_train, Y_train)
-                    Y_true, Y_pred = Y_test, grid_model.predict(X_test)
-                    para_result = "The best hyper-parameters for " + analysis_model + " are: " + str(grid_model.best_params_)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                if text_data_feat_model == '--':
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+                if metric == "Classification Report":
+                    report = classification_report(Y_test, Y_pred)
+                    para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+                elif metric == 'ROC Curve':
+                    img = BytesIO()
+                    plot_roc_curve(model, X_test, Y_test)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix (Without Normalization)':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel:" + analysis_model + "\nSet Parameters:  gamma=" + str(param_gamma) + ", C=" + str(param_C) + ", kernel=" + str(param_kernel)
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                if find_C or find_gamma:
+                    if find_C and find_gamma:
+                        tuned_para = [{'C': find_C, 'gamma': find_gamma}]
+                    elif find_C:
+                        tuned_para = [{'C': find_C}]
+                    elif find_gamma:
+                        tuned_para = [{'gamma': find_gamma}]
+                    cond = "\nFind Parameter for " + analysis_model + ": " + str(tuned_para)
+                    MSE = ['mean_squared_error(Y_test, Y_pred']
+                    for value in MSE:
+                        grid_model = GridSearchCV(SVC(), tuned_para, cv=4)
+                        grid_model.fit(X_train, Y_train)
+                        Y_true, Y_pred = Y_test, grid_model.predict(X_test)
+                        para_result = "The best hyper-parameters for " + analysis_model + " are: " + str(grid_model.best_params_)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
+            else:
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
@@ -2219,60 +2367,73 @@ def cond_Classification_json():
     elif analysis_model == 'Naive Bayes Classifier':
         try:
             model = GaussianNB()
-            if isTsv:
-                X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
-                Y = df[finalY].values
-                X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
-
-            Y_pred = model.fit(X_train, Y_train).predict(X_test) 
-            if text_data_feat_model == '--':
-                plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
-            if metric == "Classification Report":
-                report = classification_report(Y_test, Y_pred)
-                para_result += "\nClassification Report of " + analysis_model + ":\n" + report
-            elif metric == 'ROC Curve':
-                img = BytesIO()
-                plot_roc_curve(model, X_test, Y_test)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix (Without Normalization)':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            cond += "\nModel:" + analysis_model 
-            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            pred_var = analysis_model + finalVar[0] # initial
-            if pred_var in params and params[pred_var]:  
-                predic_var, input_val = [], []
-                for i in df.columns:
-                    col_temp = analysis_model+i
-                    if col_temp in params and params[col_temp]:
-                        predic_var.append(i)
-                        input_val.append(params[col_temp])
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
                 if isTsv:
-                    input_val = scaler.transform(input_val).toarray()
-                else:
-                    input_val = np.array([input_val], dtype='float64')
-                result = model.predict(input_val)
-                cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
-                para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+                    X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
+                    Y = df[finalY].values
+                    X_train, X_test, Y_train, Y_test = train_test_split(ndf[finalVar], ndf[finalY], test_size=test_size, random_state=0, shuffle=True) 
+
+                Y_pred = model.fit(X_train, Y_train).predict(X_test) 
+                if text_data_feat_model == '--':
+                    plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
+                if metric == "Classification Report":
+                    report = classification_report(Y_test, Y_pred)
+                    para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+                elif metric == 'ROC Curve':
+                    img = BytesIO()
+                    plot_roc_curve(model, X_test, Y_test)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix (Without Normalization)':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel:" + analysis_model 
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                pred_var = analysis_model + finalVar[0] # initial
+                if pred_var in params and params[pred_var]:  
+                    predic_var, input_val = [], []
+                    for i in df.columns:
+                        col_temp = analysis_model+i
+                        if col_temp in params and params[col_temp]:
+                            predic_var.append(i)
+                            input_val.append(params[col_temp])
+                    if isTsv:
+                        input_val = scaler.transform(input_val).toarray()
+                    else:
+                        input_val = np.array([input_val], dtype='float64')
+                    result = model.predict(input_val)
+                    cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
+                    para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
+            else:
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(analysis_model, e)
             error = e
@@ -2286,55 +2447,67 @@ def cond_Classification_json():
             leaf_size = int(params['leaf_size']) if params['leaf_size'] != "" else 30
             d_metric = params['d_metric'] if params['d_metric'] != "" else 'minkowski'
             model = KNeighborsClassifier(n_neighbors=neigbors,weights=weight, algorithm=algo, leaf_size=leaf_size, p=p, metric=d_metric)
-            model.fit(X_train, Y_train)
-            Y_pred = model.predict(X_test.values)
-            # print('Y_pred= ', Y_pred)
-            if metric == "Classification Report":
-                report = classification_report(Y_test, Y_pred)
-                para_result += "\nClassification Report of " + analysis_model + ":\n" + report
-            elif metric == 'ROC Curve':
-                img = BytesIO()
-                plot_roc_curve(model, X_test, Y_test)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            elif metric == 'Confusion Matrix (Without Normalization)':
-                img = BytesIO()
-                skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
-                plt.savefig(img, format='png') 
-                plt.clf()
-                img.seek(0)
-                plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-                img.close()
-            cond += "\nModel:" + analysis_model 
-            cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
-            cond += '\nMetric: ' + metric
-            pred_var = analysis_model + finalVar[0] # initial
-            if pred_var in params and params[pred_var]:  
-                predic_var, input_val = [], []
-                for i in df.columns:
-                    col_temp = analysis_model+i
-                    if col_temp in params and params[col_temp]:
-                        predic_var.append(i)
-                        input_val.append(params[col_temp])
-                if isTsv:
-                    input_val = scaler.transform(input_val).toarray()
-                else:
-                    input_val = np.array([input_val], dtype='float64')
-                result = model.predict(input_val)
-                cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
-                para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
-                plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for training model
+            if params[analysis_model+finalVar[0]] == '':
+                Y_pred = model.fit(X_train, Y_train).predict(X_test)
+                print('Y_pred= ', Y_pred)
+                if metric == "Classification Report":
+                    report = classification_report(Y_test, Y_pred)
+                    para_result += "\nClassification Report of " + analysis_model + ":\n" + report
+                elif metric == 'ROC Curve':
+                    img = BytesIO()
+                    plot_roc_curve(model, X_test, Y_test)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=True) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                elif metric == 'Confusion Matrix (Without Normalization)':
+                    img = BytesIO()
+                    skplt.metrics.plot_confusion_matrix(Y_test, Y_pred, normalize=False) #figsize=(10,10)
+                    plt.savefig(img, format='png') 
+                    plt.clf()
+                    img.seek(0)
+                    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+                    img.close()
+                cond += "\nChoose Test Size(%): " + str(test_size*100)
+                cond += "\nModel:" + analysis_model 
+                cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
+                cond += '\nMetric: ' + metric
+                pred_var = analysis_model + finalVar[0] # initial
+                if pred_var in params and params[pred_var]:  
+                    predic_var, input_val = [], []
+                    for i in df.columns:
+                        col_temp = analysis_model+i
+                        if col_temp in params and params[col_temp]:
+                            predic_var.append(i)
+                            input_val.append(params[col_temp])
+                    if isTsv:
+                        input_val = scaler.transform(input_val).toarray()
+                    else:
+                        input_val = np.array([input_val], dtype='float64')
+                    result = model.predict(input_val)
+                    cond = "\n".join("{}: {}".format(x, y) for x, y in zip(predic_var, input_val.flatten()))
+                    para_result = "\n Model: " + analysis_model + "  \nPredicted Result:" + str(result)
+                    plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
+            # for making prediction (no plot)
+            else:
+                pred_dict = {}
+                for x in finalVar:
+                    current = params[analysis_model+x]
+                    pred_dict[x] = [float(current)]
+                    cond += '\n' + x + ': ' + current
+                X_pred = pd.DataFrame(pred_dict)
+                Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
+                para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
         except Exception as e:
             print(e)
             error = e
