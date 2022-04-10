@@ -228,9 +228,9 @@ export default function ({ location }) {
             }
         </Modal>
 
-        <div className='flex justify-between items-center w-full h-auto box-border py-2 px-4' style={{ zIndex: 10 }}>
+        <div className='flex justify-between items-center w-full h-20 box-border py-2 px-4 shadow-md' style={{ zIndex: 10 }}>
             <div className='w-72 px-1'>
-                <MultiSelect id="functionSelection" ref={ref} defaultText='Select what you need from a graph' selections={Functions} onSelect={e => {
+                <MultiSelect id="functionSelection" ref={ref} defaultText='Select graph property' selections={Functions} onSelect={e => {
                     setPlotsByFunctions(e)
                     if (guideStep == 1) setGuideStep(2)
                 }} customStyle={{ fontSize: 'medium' }} />

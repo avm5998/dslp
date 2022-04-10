@@ -115,7 +115,7 @@ const Page = () => {
     return (<>
         <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`}/>
         <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 0rem)' }}>
-            <div className="flex my-2 py-4 flex-row h-auto w-full items-center justify-between shadow-sm bg-gray-100">
+            <div className="flex flex-row h-20 w-full items-center justify-between bg-gray-100 shadow-md">
 
                 <div className='mx-5'>
                     <DropDown width={'w-72'} defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({

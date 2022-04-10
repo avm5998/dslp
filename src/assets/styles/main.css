@@ -3,6 +3,25 @@
 @tailwind utilities;
 
 @layer utilities {
+  .option-bg{
+    background:#abd1c6;
+  }
+
+  .normal-btn{
+    background:#f9bc60;
+    color:#001e1d;
+  }
+
+  .disabled-btn{
+    background:#abd1c6;
+    color:#001e1d;
+  }
+
+  .warning-btn{
+    background:#e16162;
+    color:#001e1d;
+  }
+
   .text-limited{
     white-space:nowrap;
     text-overflow:ellipsis;

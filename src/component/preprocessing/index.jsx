@@ -493,9 +493,9 @@ const Preprocessing = () => {
             </div>
         </Modal>
 
-        <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-lg">
+        <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
               <div className='mx-5 w-3/12 flex justify-start items-center'>
-                <DropDown text={optionText} width='w-96' height='h-10' items={['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in One Column', 'Remove Outliers']}
+                <DropDown text={optionText} width='w-72' height='h-10' items={['Convert All Data Types Automatically', 'Convert Data Type One by One Manually', 'Remove Columns', 'Remove Useless Characters in Columns', 'Remove Rows Containing Specific Values', 'Remove Specific Words in One Column', 'Remove Outliers']}
                 onSelect={(item,i)=>{
                     setOption(i)
                     setOptionText(item)
@@ -517,9 +517,9 @@ const Preprocessing = () => {
                 }}/>
                 <Button onClick={() => {
                     runCode()
-                }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
+                }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5 w-32 px-4 py-1 rounded font-semibold border focus:outline-none text-black ${!code
                     ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
-                <Button text="undo" width='w-32 mx-3' onClick={onUndo} disable={JSON.stringify(previousCondition)==="{}"}/>   
+                <Button text="Undo" width='w-32 mx-3' onClick={onUndo} disable={JSON.stringify(previousCondition)==="{}"}/>   
                 
               </div>
                 {/* <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{

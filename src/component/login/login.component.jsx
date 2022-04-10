@@ -92,13 +92,14 @@ const Login = (props) => {
         <Form onSubmit={handleLogin} ref={form}>
           <div className="grid grid-cols-2" >
             <div className="form-label-group col-span-2">
-              <label style={{ position: 'absolute', display: usernameLabelShow ? 'inherit' : 'none' }} htmlFor="username" id="userNameLabel">Username</label>
+              {/* <label style={{ position: 'absolute', display: usernameLabelShow ? 'inherit' : 'none' }} htmlFor="username" id="userNameLabel">Username</label> */}
               <Input
                 type="text"
                 name="username"
                 className="form-control"
                 value={username}
                 id={`userNameInput`}
+                placeholder="Username"
                 onChange={onChangeUsername}
                 onInput={e => { if (!e.target.value ^ usernameLabelShow) setUsernameLabelShow(e.target.value ? 0 : 1) }}
                 validations={[required]}
@@ -106,9 +107,10 @@ const Login = (props) => {
             </div>
 
             <div className="form-label-group col-span-2">
-              <label style={{ position: 'absolute', display: passwordLabelShow ? 'inherit' : 'none' }} htmlFor="password" id="userNameLabel">Password</label>
+              {/* <label style={{ position: 'absolute', display: passwordLabelShow ? 'inherit' : 'none' }} htmlFor="password" id="userNameLabel">Password</label> */}
               <Input
                 id="passwordInput"
+                placeholder="Password"
                 type="password"
                 className="form-control"
                 name="password"

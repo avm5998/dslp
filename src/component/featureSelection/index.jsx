@@ -368,7 +368,7 @@ const FeatureSelection = () => {
           ]} onSelect={(e, i) => result.current.plottype = i} />
         </div>
         <div className="flex justify-end mt-10">
-          <Button buttonType="normal_r" text='Confirm' width="w-64" onClick={async ()=>{
+          <Button text='Confirm' width="w-64" onClick={async ()=>{
             setShowModal(false)
 
             console.log(result.current);
@@ -381,10 +381,10 @@ const FeatureSelection = () => {
       </div>
     </Modal>
     <div className="button-style flex flex-row p-4 gap-4 items-center justify-start bg-gray-100 shadow-md">
-      <Button buttonType="normal_r" text="Select operation" width="w-48" onClick={()=>{
+      <Button text="Select operation" width="w-48" onClick={()=>{
         setShowModal(true)
       }}></Button>
-      <Button buttonType="normal_r" disabled={true} text="Show code" width="w-48" onClick={()=>{
+      <Button disabled={true} text="Show code" width="w-48" onClick={()=>{
           sandboxRef.current.setCode(getCodeFromResult({ result: result.current }))
           sandboxRef.current.show()
       }}></Button>

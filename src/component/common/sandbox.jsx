@@ -115,7 +115,7 @@ export default forwardRef(({ dataset, additional }, ref) => {
         </div>
 
         <div className="flex justify-end items-center w-full px-4 box-border">
-          <Button buttonType="normal_r" width="w-32" text="Close" onClick={()=>setCodeVisible(false)}></Button>
+          <Button width="w-32" text="Close" onClick={()=>setCodeVisible(false)}></Button>
         </div>
       </div>
     </div>

@@ -33,7 +33,7 @@
   font-size: smaller;
 }
 
-.form-label-group input::-webkit-input-placeholder {
+/* .form-label-group input::-webkit-input-placeholder {
   color: transparent;
 }
 
@@ -51,12 +51,12 @@
 
 .form-label-group input::placeholder {
   color: transparent;
-}
+} */
 
 .form-label-group input:not(:placeholder-shown) {
   box-sizing: border-box;
-  padding-top: 1.25rem;
-  padding-bottom: 0.25rem;
+  /* padding-top: 1.25rem;
+  padding-bottom: 0.25rem; */
 }
 
 .form-label-group input:not(:placeholder-shown) ~ label {

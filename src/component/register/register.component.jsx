@@ -148,7 +148,7 @@ const Register = (props) => {
             <div className="grid grid-cols-2">
 
               <div className="form-label-group col-span-2">
-                <label style={{ position: 'absolute', display: fullnameLabelShow ? 'inherit' : 'none' }} htmlFor="fullname">Full name</label>
+                {/* <label style={{ position: 'absolute', display: fullnameLabelShow ? 'inherit' : 'none' }} htmlFor="fullname">Full name</label> */}
                 <Input
                   type="text"
                   className="form-control"
@@ -156,11 +156,12 @@ const Register = (props) => {
                   value={fullname}
                   onChange={onChangeFullname}
                   validations={[required, vfullname]}
+                  placeholder="Full name"
                   onInput={e => { if (!e.target.value ^ fullnameLabelShow) setFullnameLabelShow(e.target.value ? 0 : 1) }}
                 />
               </div>
               <div className="form-label-group col-span-2">
-                <label style={{ position: 'absolute', display: usernameLabelShow ? 'inherit' : 'none' }} htmlFor="username">Username</label>
+                {/* <label style={{ position: 'absolute', display: usernameLabelShow ? 'inherit' : 'none' }} htmlFor="username">Username</label> */}
                 <Input
                   type="text"
                   className="form-control"
@@ -168,12 +169,13 @@ const Register = (props) => {
                   value={username}
                   onChange={onChangeUsername}
                   validations={[required, vusername]}
+                  placeholder="Username"
                   onInput={e => { if (!e.target.value ^ usernameLabelShow) setUsernameLabelShow(e.target.value ? 0 : 1) }}
                 />
               </div>
 
               <div className="form-label-group col-span-2">
-                <label style={{ position: 'absolute', display: emailLabelShow ? 'inherit' : 'none' }} htmlFor="email">Email</label>
+                {/* <label style={{ position: 'absolute', display: emailLabelShow ? 'inherit' : 'none' }} htmlFor="email">Email</label> */}
                 <Input
                   type="text"
                   className="form-control"
@@ -181,12 +183,13 @@ const Register = (props) => {
                   value={email}
                   onChange={onChangeEmail}
                   validations={[required, validEmail]}
+                  placeholder="Email"
                   onInput={e => { if (!e.target.value ^ emailLabelShow) setEmailLabelShow(e.target.value ? 0 : 1) }}
                 />
               </div>
 
               <div className="form-label-group col-span-2">
-                <label style={{ position: 'absolute', display: passwordLabelShow ? 'inherit' : 'none' }} htmlFor="password">Password</label>
+                {/* <label style={{ position: 'absolute', display: passwordLabelShow ? 'inherit' : 'none' }} htmlFor="password">Password</label> */}
                 <Input
                   type="password"
                   className="form-control"
@@ -194,6 +197,7 @@ const Register = (props) => {
                   value={password}
                   onChange={onChangePassword}
                   validations={[required, vpassword]}
+                  placeholder="Password"
                   onInput={e => { if (!e.target.value ^ passwordLabelShow) setPasswordLabelShow(e.target.value ? 0 : 1) }}
                 />
 

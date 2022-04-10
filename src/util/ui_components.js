@@ -89,26 +89,26 @@ const ButtonTypeStyleText = {
   },
   normal: {
     default:
-      "text-oneline box-border outline-none px-fill py-1 rounded-md text-blue-500 bg-gray-100 border-blue-500 border-2 cursor-pointer".split(
+      "font-medium text-oneline box-border outline-none px-4 py-1 rounded-md text-gray-100 bg-blue-500 border-blue-500 border-2 cursor-pointer".split(
         " "
       ),
-    hover: "hover:text-white hover:bg-blue-500 hover:border-transparent".split(
+    hover: "hover:bg-blue-800".split(
       " "
     ),
   },
   static: {
     default:
-      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important border-transparent border-2 cursor-pointer".split(
+      "font-medium text-oneline outline-none px-4 py-1 rounded-md text-white-n-important border-transparent border-2 cursor-pointer".split(
         " "
       ),
     hover: [],
   },
   normal_r: {
     default:
-      "text-oneline outline-none px-4 py-1 rounded-md text-white-n-important button-style border-transparent border-2 cursor-pointer".split(
+      "font-medium text-oneline outline-none px-4 py-1 rounded-md text-white-n-important button-style bg-blue-300 border-blue-300 border-2 cursor-pointer".split(
         " "
       ),
-    hover: "hover:text-blue-500 hover:bg-gray-100 hover:border-blue-500 hover:text-blue-500".split(
+    hover: "hover:bg-blue-500 hover:border-blue-500".split(
       " "
     ),
   },

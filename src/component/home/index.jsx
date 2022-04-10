@@ -396,7 +396,7 @@ const Home = ({location}) => {
           <input className="hidden" disabled={dataset.loading || useRecommended} id="file" onChange={uploadFile} type="file" name="file" />
         </label>
 
-        <Button buttonType="normal_r" text='Revert data' width="w-64 mt-4" disabled={false} onClick={async () => {
+        <Button text='Revert data' width="w-64 mt-4" disabled={false} onClick={async () => {
           if (dataset.filename) {
             let res = await fetchByJSON('cleanEditedCache', {
               filename: dataset.filename
