@@ -626,7 +626,7 @@ const Analysis = () => {
         dispatch(OptionActions.setOption(['analysis', option, model, { ...result }]))
         let res = await fetchByJSON(`analysis/${option}`, { ...result, filename: dataset.filename })   //send request
         let json = await res.json()     // receive request
-        console.log(json)
+        // console.log(json)
         // json.cond.replace(/&/g, ",  ")
         let errorMsg = json['errorMsg']
         if(errorMsg && errorMsg != "''"){
