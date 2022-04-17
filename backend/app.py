@@ -1333,7 +1333,7 @@ def cond_eng_json():
                 continue
             col_bins = prop['bins'].replace("[", "").replace("]","")
             col_labels = prop['label'].replace("[", "").replace("]","")
-            ndf[col] = pd.cut(ndf[col].astype(float), bins=list(map(int, col_bins.split(","))), labels=list(col_labels.split(",")),right=False)
+            ndf[col] = pd.cut(ndf[col].astype(float), bins=list(map(float, col_bins.split(","))), labels=list(col_labels.split(",")),right=False)
     elif option == 'Create Features by Arithmetic Operations':
         subOption = params['subOption']
         col1_arithmetic = subOption['col1_arithmetic']
