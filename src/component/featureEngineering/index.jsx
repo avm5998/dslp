@@ -369,7 +369,7 @@ const FeatureEngineering = () => {
                     <div className='grid grid-cols-3 gap-2'>
                         {dataset.num_cols.map((col, i) => <React.Fragment key={i}>
                             <Checkbox label={col} onChange={(e, checked) => assignSubOption(col, { checked })} name='suboption_checked' item={col} />
-                            <input className='Bins mx-3 px-1 focus:outline-none rounded-full' placeholder='Bins: int list' onChange={e => assignSubOption(col, { bins: e.target.value })} />
+                            <input className='Bins mx-3 px-1 focus:outline-none rounded-full' placeholder='Bins: int or float list' onChange={e => assignSubOption(col, { bins: e.target.value })} />
                             <input className='mx-3 px-1 focus:outline-none rounded-full' placeholder='Labels: string list' onChange={e => assignSubOption(col, { label: e.target.value })} />
                         </React.Fragment>)}
                         <Label customStyleText={`w-100 mr-0`} text="eg. column 'Age', Bins=[0,2,17,65,99], Labels=[Toddler,Child,Adult,Elderly]" />
