@@ -43,33 +43,45 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
 export const config = {
     name: 'Bar Chart',
     function: ['Comparisons', 'Patterns'],
+//     getCode: (result, dataset) => {
+//         let plotOptions = {
+//             x: `"${result.x}"`,
+//             y: `"${result.y}"`,
+//         }
+//         let prevSteps = [], postSteps = []
+//         setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
+
+//         let dfplotArgs = []
+//         for (let k in plotOptions) {
+//             dfplotArgs.push(`${k}=${plotOptions[k]}`)
+//         }
+
+//         if(result.engine == 'Pandas'){
+//             return `${prevSteps.length ? prevSteps.join('\n') : ''}
+// df.plot.bar(${dfplotArgs.join(',')})
+// ${postSteps.length ? postSteps.join('\n') : ''}
+// `
+// }else if(result.engine == 'Plotly'){
+//     postSteps.push(`fig.show()`)
+//             return `${prevSteps.length ? prevSteps.join('\n') : ''}
+// fig = px.bar(df, x='${result.x}', y='${result.y}')
+// ${postSteps.length ? postSteps.join('\n') : ''}
+// `
+//         }
+//     }
+//     ,
     getCode: (result, dataset) => {
-        let plotOptions = {
-            x: `"${result.x}"`,
-            y: `"${result.y}"`,
-        }
+        let plotOptions = {}
         let prevSteps = [], postSteps = []
         setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
 
-        let dfplotArgs = []
-        for (let k in plotOptions) {
-            dfplotArgs.push(`${k}=${plotOptions[k]}`)
-        }
-
-        if(result.engine == 'Pandas'){
+        if (result.engine == 'Pandas') {
             return `${prevSteps.length ? prevSteps.join('\n') : ''}
-df.plot.bar(${dfplotArgs.join(',')})
-${postSteps.length ? postSteps.join('\n') : ''}
-`
-}else if(result.engine == 'Plotly'){
-    postSteps.push(`fig.show()`)
-            return `${prevSteps.length ? prevSteps.join('\n') : ''}
-fig = px.bar(df, x='${result.x}', y='${result.y}')
-${postSteps.length ? postSteps.join('\n') : ''}
-`
+df = df.groupby('${result.x}').count()
+df['${result.y}'].plot.bar()
+${postSteps.length ? postSteps.join('\n') : ''}`
         }
-    }
-    ,
+    },
     getOperation: ({ aggregatedDataset, dataset, options }) => {
         let res = {}, hasRes = true
         if (options.x && options.y) {
