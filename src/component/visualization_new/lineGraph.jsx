@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Input,Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Input,Label, Modal, Checkbox } from '../../util/ui'
+import { MultiSelect, DropDown, Button } from '../../util/ui_components' 
 import { InlineTip } from '../common/tip'
 import CommonOption,{setCommonCode,DEFAULT_RESULT} from './commonOption'
 const defaultResult = {...DEFAULT_RESULT,...{}}
@@ -7,6 +8,7 @@ const defaultResult = {...DEFAULT_RESULT,...{}}
 
 export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
     let [activeTab, setActiveTab] = useState(0)
+    let defaultx = ['--']
 
     return <>
         <div className='p-4'>
@@ -18,14 +20,10 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
             <div className={`grid gap-4 p-8 w-auto ${activeTab==0?'':'hidden'}`} style={{
                 gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
-                <Label text='X Axis:'><InlineTip info={`*Required\nThe data on X Axis`}/></Label>
-                <DropDown defaultText='Select X Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.x = e}/>
-                <Label text='Y Axis:'><InlineTip info={`*Required\nThe data on Y Axis`}/></Label>
-                <DropDown defaultText='Select Y Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e=>result.y = e}/>
-                <Label text='Transformation column:'><InlineTip info={`Apply transformation function to a column, the code are straight forward and you can modify the code to transform more columns `}/></Label>
-                <DropDown defaultText='Column' customStyle='w-60' showOnHover={false} blankOption={'Do not transform'} items={dataset.cols} onSelect={(e,i)=>result.trans_col = e}/>
-                <Label text='Transformation function:'><InlineTip info={`Transformation type, Logarithm function is: f(x)=log10(x), Exponential function is: f(x)=e^x`}/></Label>
-                <DropDown defaultText='Convert type' customStyle='w-60' showOnHover={false} items={['Logarithm','Square root','Exponential','Logit']} onSelect={(e,i)=>result.trans_fn = e}/>
+                <Label text='X Axis:'><InlineTip info={`*Optional. Must be int or float type\nData distributed on selected column. Recommend using a column with distinct and continuous values (such as index, id, etc.).`}/></Label>
+                <DropDown defaultText='Select X Axis' width='w-60' showOnHover={false} items={[...defaultx, ...dataset.num_cols]} onSelect={e=>result.x = e=='--'?null:e} zIndex={100} />
+                <Label text='Y Axis:'><InlineTip info={`*Required. Must be int or float type\nThe data displayed on Y Axis.`}/></Label>
+                <DropDown defaultText='Select Y Axis' width='w-60' showOnHover={false} items={dataset.num_cols} onSelect={e=>result.y = e} zIndex={100} />
         
             </div>
 
@@ -42,7 +40,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <Button onClick={e=>{
                     showOptions(0)
                     setCode(config.getCode({...defaultResult,...result}, dataset))
-                }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`}/>
+                }} width={`w-48 justify-self-end`} text={`Confirm`}/>
             </div>
 
         </div>
@@ -55,9 +53,13 @@ export const config = {
     function: ['Patterns', 'Change over Time'],
     getCode: (result,dataset)=>{
         let plotOptions = {
-            x:`"${result.x}"`,
-            y:`"${result.y}"`,
+            // x:`"${result.x}"`,
+            // y:`"${result.y}"`,
         }
+        if (result.x) {
+            plotOptions['x'] = `"${result.x}"`
+        }
+        plotOptions['y'] = `"${result.y}"`
         let prevSteps=[],postSteps = []
         setCommonCode({dataset,result,plotOptions,postSteps,prevSteps})
         

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, Modal, Checkbox } from '../../util/ui'
-import { MultiSelect,DropDown } from '../../util/ui_components' 
+import { Label, Modal, Checkbox } from '../../util/ui'
+import { MultiSelect, DropDown, Button } from '../../util/ui_components' 
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 import { InlineTip } from '../common/tip'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
@@ -15,11 +15,13 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <div className={`ml-4 hidden ${activeTab == 1 ? 'border-b-2 font-bold cursor-default' : 'cursor-pointer'}`} onClick={e => setActiveTab(1)}>Advanced Options</div>
                 <div className={`ml-4 ${activeTab == 2 ? 'border-b-2 font-bold cursor-default' : 'cursor-pointer'}`} onClick={e => setActiveTab(2)}>Common Options</div>
             </div>
-            <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`}>
-                <Label text='*X Axis:'><InlineTip info={`X Axis`} /></Label>
-                <MultiSelect zIndex={100} defaultText='Select X Axis' width='w-96' selections={dataset.num_cols} onSelect={e => result.x = e} />
-                <Label text='*Y Axis:'><InlineTip info={`Y Axis`} /></Label>
-                <DropDown zIndex={99} defaultText='Select Y Axis' width='w-96' items={dataset.num_cols} onSelect={e => result.y = e} />
+            <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
+                gridTemplateColumns:'10vw 1fr 10vw 1fr'
+            }}>
+                <Label text='X Axis:'><InlineTip info={`*Required. Must be string or object type\nData will be grouped by the selected column. Each object/value in the selected column will have a distinct box of distribution.`} /></Label>
+                <DropDown zIndex={100} defaultText='Select X Axis' width='w-60' items={dataset.cate_cols} onSelect={e => result.x = e} />
+                <Label text='Y Axis:'><InlineTip info={`*Required. Must be int or float type\nThe distribution result of the selected columns.\nIf you select more than one numerical column, the columns you selected are better to have similar meanings and ranges`} /></Label>
+                <MultiSelect zIndex={99} defaultText='Select Y Axis' width='w-60' selections={dataset.num_cols} onSelect={e => result.y = e} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? 'hidden' : 'hidden'}`} style={{
                 gridTemplateColumns: '5vw 1fr 10vw 1fr'
@@ -36,7 +38,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                     showOptions(0)
                     // confirmOption()
                     setCode(config.getCode({...defaultResult,...result}, dataset))
-                }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`}/>
+                }} width={`w-48 justify-self-end`} text={`Confirm`}/>
             </div>
         </div>
     </>
@@ -60,8 +62,12 @@ export const config = {
             }
             postSteps.push(`fig.show()`)
         }else if(result.engine == 'Pandas'){
-            let arr = result.x.map(e => `"${e}"`)
-            mid = `df.boxplot(column=[${arr}], by='${result.y}')`
+            let dfplotArgs = []
+            for (let k in plotOptions){
+                dfplotArgs.push(`${k}=${plotOptions[k]}`)
+            }
+            let arr = result.y.map(e => `"${e}"`)
+            mid = `df.boxplot(column=[${arr}], by='${result.x}', ${dfplotArgs.join(',')})`
             postSteps.push(`plt.show()`)
         }
 

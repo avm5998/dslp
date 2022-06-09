@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { Label, Button, DropDown, MultiSelect, Modal, Checkbox } from '../../util/ui'
+import { Label, Modal, Checkbox } from '../../util/ui'
+import { DropDown, MultiSelect, Button } from  '../../util/ui_components'
 import { InlineTip } from '../common/tip'
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
@@ -17,13 +18,13 @@ export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, resul
             <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
-                <Label text='X Axis:'><InlineTip info={`*Required\nThe data on X Axis`} /></Label>
-                <DropDown defaultText='Select X Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e => {
+                <Label text='X Axis:'><InlineTip info={`*Required. Any type\nThe data distributed on selected columnon.`} /></Label>
+                <DropDown defaultText='Select X Axis' width='w-60' showOnHover={false} items={dataset.cols} onSelect={e => {
                     result.x = e
                     if(guideStep == 4) setGuideStep(5)
                 }} />
-                <Label text='Y Axis:'><InlineTip info={`*Required\nThe data on Y Axis`} /></Label>
-                <DropDown defaultText='Select Y Axis' customStyle='w-60' showOnHover={false} items={dataset.cols} onSelect={e => {
+                <Label text='Y Axis:'><InlineTip info={`*Required. Any type\nThe data value displayed on Y-axis.`} /></Label>
+                <DropDown defaultText='Select Y Axis' width='w-60' showOnHover={false} items={dataset.cols} onSelect={e => {
                     result.y = e
                     if(guideStep == 5) setGuideStep(6)
                 }} />
@@ -43,7 +44,7 @@ export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, resul
                     if (guideStep == 6) setGuideStep(7)
                     // confirmOption()
                     setCode(config.getCode({ ...defaultResult, ...result }, dataset))
-                }} customStyle={`w-48 h-10 justify-self-end`} text={`Confirm`} />
+                }} width={`w-48 justify-self-end`} text={`Confirm`} />
             </div>
         </div>
 

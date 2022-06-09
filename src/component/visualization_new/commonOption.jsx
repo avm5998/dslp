@@ -50,7 +50,7 @@ export const setCommonCode = ({ dataset, result, plotOptions, postSteps, prevSte
         }
 
         if (result.figureTitle) {
-            plotOptions.title = `(${result.figureTitle})`
+            plotOptions.title = `"${result.figureTitle}"`
         }
 
         if (result.xlabel) {
@@ -117,16 +117,16 @@ export default function ({ dataset, result, options = { engine:['Pandas', 'Plotl
         <Label text='Drop NA Columns:'><InlineTip info={`Drop column with empty data`} /></Label>
         <Checkbox label='Drop NA Columns' onChange={e => result.dropna_col = e.target.checked} />
         <Label text='Transformation column:'><InlineTip info={`Apply transformation function to a column, the code are straight forward and you can modify the code to transform more columns `} /></Label>
-        <DropDown defaultText='Column' width='w-60' blankOption={'Do not transform'} items={dataset.cols} onSelect={(e, i) => result.trans_col = e} />
+        <DropDown defaultText='Column' width='w-60' blankOption={'Do not transform'} items={dataset.num_cols} onSelect={(e, i) => result.trans_col = e} zIndex={3} />
         <Label text='Transformation function:'><InlineTip info={`Transformation type, Logarithm function is: f(x)=log10(x), Exponential function is: f(x)=e^x`} /></Label>
-        <DropDown defaultText='Convert type' width='w-60' items={['Logarithm', 'Square root', 'Exponential', 'Logit']} onSelect={(e, i) => result.trans_fn = e} />
+        <DropDown defaultText='Convert type' width='w-60' items={['Logarithm', 'Square root', 'Exponential', 'Logit']} onSelect={(e, i) => result.trans_fn = e} zIndex={3} />
 
         {/* <Label text='Sort data:'><InlineTip info={`Here you can only sort by one column\nbut you can modify this behavior by modifying the code`}/></Label>
         <DropDown defaultText='Sort' customStyle='w-60' showOnHover={false} blankOption={'Do not sort'} items={dataset.cols} onSelect={(e,i)=>result.sortColumnIndex = i-1}/> */}
         {/* <Label text='Sort direction'></Label>
         <DropDown defaultText='Select Sort direction' customStyle='w-60' showOnHover={false} items={['Ascending','Descending']} onSelect={(e,i)=>result.sortAscending= 1-i}/> */}
         <Label {...visibility.legendPosition} text='Legend Position:' />
-        <DropDown {...visibility.legendPosition} defaultText='Select Legend Position' width='w-60' items={LegendOptions} onSelect={e => result.legend = e} />
+        <DropDown {...visibility.legendPosition} defaultText='Select Legend Position' width='w-60' items={LegendOptions} onSelect={e => result.legend = e} zIndex={2}/>
         <Label {...visibility.figureSize} text='Figure Size:' />
         <Input {...visibility.figureSize} attrs={{ list: "common_options_figure_size_data" }} placeholder="Please input the figure size" onInput={(e,v) => result.figureSize = v} />
         <datalist id="common_options_figure_size_data"><option value="5,5" /><option value="10,10" /><option value="15,15" /><option value="20,20" /></datalist>
@@ -135,9 +135,9 @@ export default function ({ dataset, result, options = { engine:['Pandas', 'Plotl
         <Label {...visibility.yLabel} text='Y label:'><InlineTip info={`The label on Y Axis`} /></Label>
         <Input {...visibility.yLabel} width={'w-60'} placeholder='Y label' onInput={(e,v) => result.ylabel = v} />
         <Label text='Filter column'><InlineTip info={`Filter of some specific data, specified by a column name and a condition`} /></Label>
-        <DropDown defaultText='Select X Axis' width='w-60' items={dataset.cols} onSelect={e => result.filter_col = e} blankOption={'No column'} />
+        <DropDown defaultText='Select X Axis' width='w-60' items={dataset.num_cols} onSelect={e => result.filter_col = e} blankOption={'No column'} zIndex={1}/>
         <Label text='Filter operator'></Label>
-        <DropDown defaultText='Select operator' width='w-60' items={['=', '<', '>']} onSelect={e => result.filter_operator = e} />
+        <DropDown defaultText='Select operator' width='w-60' items={['=', '!=', '<', '>', '<=', '>=']} onSelect={e => result.filter_operator = e} zIndex={1}/>
         <Label text='Filter value'></Label>
         <Input placeholder="Please input filter value" onInput={(e,v) => result.filter_value = v} />
     </>)

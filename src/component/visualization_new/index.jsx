@@ -144,7 +144,7 @@ export default function ({ location }) {
         let res = await kernelRef.current.requestExecute({ code: initialCode(dfJSON) }).done
         if(guideStep == 7) setGuideStep(8)
         // console.log(res);
-        // console.log(result)
+        console.log(result)
         document.querySelector('.thebelab-run-button').click()
     }
 
@@ -220,7 +220,7 @@ export default function ({ location }) {
             left: '20vw',
             top: '10vh',
             width: 'fit-content'
-        }} zIndex={11} isOpen={optionsVisible} onClose={() => { }} setIsOpen={showOptions} onClose={() => {
+        }} zIndex={11} isOpen={optionsVisible} setIsOpen={showOptions} onClose={() => {
             showOptions(0)
             // setCode(GraphConfigs[currentPlot].getCode(result), dataset)
         }}>
@@ -242,6 +242,9 @@ export default function ({ location }) {
                     if (guideStep == 2) setGuideStep(3)
                 }} />
             </div>
+            {/* <div className='w-auto flex justify-center items-center px-1'>
+                <InlineTip info='<Type description>' />
+            </div> */}
             <div className='w-auto flex justify-center items-center px-1'>
                 <div className={``}>{activateStatus}</div>
                 <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
