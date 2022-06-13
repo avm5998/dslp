@@ -441,14 +441,20 @@ export const DropDown = forwardRef(({
 export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (number) => {
     return `${number.toFixed(2)}`
 } }) {
+    // relative position on a scale of 100
     let [left, setLeft] = useState(0)
     let [right, setRight] = useState(100)
+    // query value changed by dragbar or input
     let [leftText, setLeftText] = useState(`${min}`)
     let [rightText, setRightText] = useState(`${max}`)
+    // position on pixel
     let [leftX, setLeftX] = useState(-1)
     let [rightX, setRightX] = useState(-1)
     let [showMaxInput, setShowMaxInput] = useState(false)
     let [showMinInput, setShowMinInput] = useState(false)
+    // length of dragbar
+    let [leftLength, setLeftLength] = useState(16)
+    let [rightLength, setRightLength] = useState(16)
 
     useEffect(() => {
         setLeftText(getText(min))
@@ -499,7 +505,7 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
         else v = Number(v)
 
         let rightValue = v, leftValue = min + left / 100 * (max - min)
-        rightValue = Math.min(Math.max(rightValue, leftValue), 100)
+        rightValue = Math.max(Math.min(rightValue, max), leftValue)
         let nright = (rightValue - min) / (max - min) * 100
         setRight(nright)
         setRightText(getText(Number(min + (max - min) * nright / 100)))
@@ -512,6 +518,8 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
         let leftValue = min + (max - min) * left / 100
         let rightValue = min + (max - min) * right / 100
         onEnd(leftValue, rightValue)
+        setLeftLength(leftValue.length)
+        setRightLength(rightValue.length)
     }
 
     const dragStart = e => {
@@ -534,8 +542,11 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
                     <div className="relative -mt-2 w-1">
                         <div className="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(-50%)' }}>
                             <div className="relative shadow-md" data-text onDoubleClick={() => setShowMinInput(true)}>
-                                {showMinInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-3 left-0 w-16 absolute truncate rounded bg-black text-white text-xs py-1 px-4" onBlur={confirmMinInput} onKeyDown={e => e.keyCode === 13 ? confirmMinInput(e) : ''} /> : ''}
-                                <div className="bg-black -mt-8 -ml-3 text-white truncate text-xs rounded py-1 px-3 w-16 text-center">{leftText}</div>
+                                {showMinInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-3 left-0 w-32 absolute truncate rounded bg-black text-white text-xs py-1 px-4" placeholder={leftText} onBlur={confirmMinInput} onKeyDown={e => {
+                                    e.keyCode === 13 ? confirmMinInput(e) : ''
+                                    setLeftLength(e.length)}
+                                    } /> : ''}
+                                <div className={`bg-black -mt-8 -ml-3 text-white truncate text-xs rounded py-1 px-3 w-${leftLength} text-center`}>{leftText}</div>
                                 <svg className="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255">
                                     <polygon className="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
                                 </svg>
@@ -549,8 +560,11 @@ export function RangeSelector({ disabledRef = {}, min, max, onEnd, getText = (nu
                     <div className="relative -mt-2 w-1">
                         <div className="absolute z-40 opacity-100 mb-2 left-0 min-w-full" style={{ transform: 'translateX(-50%)' }}>
                             <div className="relative shadow-md" data-text onDoubleClick={() => setShowMaxInput(true)}>
-                                {showMaxInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-2 left-0 w-16 absolute truncate rounded bg-black text-white text-xs py-1 px-4" onBlur={confirmMaxInput} onKeyDown={e => e.keyCode === 13 ? confirmMaxInput(e) : ''} /> : ''}
-                                <div className="bg-black mt-4 -ml-2 text-white truncate text-xs rounded py-1 px-3 w-16 text-center">{rightText}</div>
+                                {showMaxInput ? <input ref={ref => ref ? ref.focus() : ''} className="-ml-2 left-0 w-32 absolute truncate rounded bg-black text-white text-xs py-1 px-4" placeholder={rightText} onBlur={confirmMaxInput} onKeyDown={e => {
+                                    e.keyCode === 13 ? confirmMaxInput(e) : ''
+                                    setRightLength(e.length)}
+                                    } /> : ''}
+                                <div className={`bg-black mt-4 -ml-2 text-white truncate text-xs rounded py-1 px-3 w-${rightLength} text-center`}>{rightText}</div>
                                 <svg className="absolute text-black w-full h-2 left-0" x="0px" y="0px" viewBox="0 0 255 255" style={{ top: '-0.25rem' }}>
                                     <polygon className="fill-current" points="0,127.5 127.5,0, 255,127.5"></polygon>
                                 </svg>

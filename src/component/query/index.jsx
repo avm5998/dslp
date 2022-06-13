@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { pythonEscape, fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { useTable, usePagination, useSortBy } from 'react-table'
+import { InlineTip } from '../common/tip';
 import Table from '../common/table'
 import './index.css'
 import Help from '../common/help'
@@ -114,7 +115,7 @@ const Page = () => {
 
     return (<>
         <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`}/>
-        <div className='flex flex-col bg-gray-100' style={{ height: 'calc(100% - 0rem)' }}>
+        <div className='flex flex-col bg-gray-100' >
             <div className="flex flex-row h-20 w-full items-center justify-between bg-gray-100 shadow-md">
 
                 <div className='mx-5'>
@@ -130,13 +131,19 @@ const Page = () => {
 
                 <div className='mx-5 text-center'>
                     {queryType === QueryType.Numerical && dataset.num_lists[searchColumn].max!==undefined && dataset.num_lists[searchColumn].min!==undefined ?
-                        <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
-                            Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
-                        }} />
-                        : queryType === QueryType.Categorical ?
-                            <MultiSelect width={'w-72'} selections={dataset.cate_lists[searchColumn] ? dataset.cate_lists[searchColumn] : []} onSelect={(e) => {
-                                categoricalRef.current = e
+                        <div className='w-auto gap-8 flex justify-center items-center px-1'>
+                            <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
+                                Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
                             }} />
+                            <InlineTip info='Drag the sliding bars to change query window or double click them to manually input query value.' />
+                        </div>
+                        : queryType === QueryType.Categorical ?
+                            <div className='w-auto flex justify-center items-center px-1'>
+                                <MultiSelect width={'w-72'} selections={dataset.cate_lists[searchColumn] ? dataset.cate_lists[searchColumn] : []} onSelect={(e) => {
+                                    categoricalRef.current = e
+                                }} />
+                                <InlineTip info='Select value(s) from the dropdown options.' />
+                            </div>
                             : ''}
                 </div>
 
