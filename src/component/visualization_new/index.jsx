@@ -144,7 +144,7 @@ export default function ({ location }) {
         let res = await kernelRef.current.requestExecute({ code: initialCode(dfJSON) }).done
         if(guideStep == 7) setGuideStep(8)
         // console.log(res);
-        console.log(result)
+        // console.log(result)
         document.querySelector('.thebelab-run-button').click()
     }
 

@@ -7,6 +7,7 @@ const defaultResult = { ...DEFAULT_RESULT, ...{} }
 
 export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
     let [activeTab, setActiveTab] = useState(0)
+    let defaultx = ['--']
 
     return <>
         <div className='p-4'>
@@ -19,8 +20,8 @@ export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, resul
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
                 <Label text='X Axis:'><InlineTip info={`*Required. Any type\nThe data distributed on selected columnon.`} /></Label>
-                <DropDown defaultText='Select X Axis' width='w-60' showOnHover={false} items={dataset.cols} onSelect={e => {
-                    result.x = e
+                <DropDown defaultText='Select X Axis' width='w-60' showOnHover={false} items={[...defaultx, ...dataset.cols]} onSelect={e => {
+                    result.x = e=='--'?'index':e
                     if(guideStep == 4) setGuideStep(5)
                 }} />
                 <Label text='Y Axis:'><InlineTip info={`*Required. Any type\nThe data value displayed on Y-axis.`} /></Label>
@@ -59,6 +60,10 @@ export const config = {
             x: `"${result.x}"`,
             y: `"${result.y}"`,
         }
+        // if (result.x) {
+        //     plotOptions['x'] = `"${result.x}"`
+        // } 
+        // plotOptions['y'] = `"${result.y}"`
         let prevSteps = [], postSteps = []
         setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
 
@@ -68,7 +73,7 @@ export const config = {
         }
 if(result.engine == 'Pandas'){
     return `${prevSteps.length ? prevSteps.join('\n') : ''}
-df.plot.scatter(${dfplotArgs.join(',')})
+df${result.x=='index'?".reset_index()":""}.plot.scatter(${dfplotArgs.join(',')})
 ${postSteps.length ? postSteps.join('\n') : ''}
 `
 }else if(result.engine == 'Plotly'){

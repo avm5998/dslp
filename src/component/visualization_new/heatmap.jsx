@@ -19,7 +19,8 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
                 <Label text='X Axis:'><InlineTip info={`*Required. Must be string or object type\nFirst categorical variable that displayed as x-axis.`} /></Label>
-                <DropDown defaultText='Select variable' width='w-60' items={dataset.cate_cols} onSelect={e => result.x = e} zIndex={100} />
+                <MultiSelect defaultText='Select variable' width='w-60' selections={dataset.num_cols} onSelect={e => result.x = e} />
+                {/* <DropDown defaultText='Select variable' width='w-60' items={dataset.cate_cols} onSelect={e => result.x = e} zIndex={100} /> */}
                 <Label text='Y Axis:'><InlineTip info={`*Required. Must be string or object type\nSecond categorical variable that displayed as y-axis.`} /></Label>
                 <DropDown defaultText='Select variable' width='w-60' items={dataset.cate_cols} onSelect={e => result.y = e} zIndex={99} />
             </div>
@@ -50,13 +51,10 @@ export const config = {
         let prevSteps = [], postSteps = []
         setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
         if(result.engine == 'Pandas'){
-            return `df = df.groupby(['${result.y}','${result.x}'])[df.columns[0]].count().unstack()
-plt.subplots()
-plt.imshow(df, interpolation='nearest')
-plt.colorbar()
-plt.xticks(range(len(df.columns)), df.columns)
-plt.yticks(range(len(df.index)), df.index)
-plt.show()`
+            return `import seaborn as sns
+${prevSteps.length?prevSteps.join('\n'):''}
+sns.heatmap(df.groupby('${result.y}').sum().loc[:,(${result.x.map(item=>`'${item}'`).join(',')})]${result.x.length===1?'.to_frame()':''})
+${postSteps.length?postSteps.join('\n'):''}`
         }else if(result.engine == 'Plotly'){
             return `ndf = df[['${result.x}', '${result.y}']].value_counts().reset_index()
 fig = px.density_heatmap(ndf,x='${result.x}',y='${result.y}',z=0)
