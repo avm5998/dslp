@@ -46,7 +46,7 @@ import arrow from "./assets/images/arrow.svg";
 
 import { history } from "./store";
 import "./route.css";
-import logo from './assets/images/logo.png'
+import logo from './assets/images/rit_logo.svg'
 
 import Idle from './Idle'
 //add all solid icon-fonts
@@ -183,7 +183,12 @@ const Routes = (props) => {
         {!currentUser && (
           <section className="navigation">
             <div className="nav-container">
-              <div className="logo">
+              <div className="logo flex">
+                <nav>
+                  <div>
+                    <img src={logo} width="70" height="70"></img>
+                  </div>
+                </nav>
                 <Link to={"/"}>
                   <div className="flex justify-center items-center">
                     <DATA_MINING_SVG />
@@ -204,6 +209,9 @@ const Routes = (props) => {
                   </li>
                   <li>
                     <Link to={"/register"}>Register</Link>
+                  </li>
+                  <li>
+                    <Link to={{pathname:"https://www.youtube.com/channel/UCFrjZE5lzonruR_3kmN4_zQ/videos"}} target="_blank">Tutorial</Link>
                   </li>
                 </ul>
               </nav>
