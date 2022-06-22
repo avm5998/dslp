@@ -19,7 +19,7 @@ export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, resul
             <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
             }}>
-                <Label text='X Axis:'><InlineTip info={`*Required. Any type\nThe data distributed on selected columnon.`} /></Label>
+                <Label text='X Axis:'><InlineTip info={`*Required. Any type\nThe data distributed on selected columnon. Default choosing '--' as representing index`} /></Label>
                 <DropDown defaultText='Select X Axis' width='w-60' showOnHover={false} items={[...defaultx, ...dataset.cols]} onSelect={e => {
                     result.x = e=='--'?'index':e
                     if(guideStep == 4) setGuideStep(5)

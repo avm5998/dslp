@@ -18,10 +18,10 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
             <div className={`grid grid-cols-2 gap-4 p-8 w-auto ${activeTab == 0 ? '' : 'hidden'}`} style={{
                 gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
-                <Label text='X Axis:'><InlineTip info={`*Required. Must be string or object type\nFirst categorical variable that displayed as x-axis.`} /></Label>
+                <Label text='X Axis:'><InlineTip info={`*Required. Must be int or float type\nCategorical variables that displayed as x-axis.\nIf you select more than one numerical column, the columns you selected are better to have similar meanings and ranges`} /></Label>
                 <MultiSelect defaultText='Select variable' width='w-60' selections={dataset.num_cols} onSelect={e => result.x = e} />
                 {/* <DropDown defaultText='Select variable' width='w-60' items={dataset.cate_cols} onSelect={e => result.x = e} zIndex={100} /> */}
-                <Label text='Y Axis:'><InlineTip info={`*Required. Must be string or object type\nSecond categorical variable that displayed as y-axis.`} /></Label>
+                <Label text='Y Axis:'><InlineTip info={`*Required. Must be string or object type\nThis categorical variable will be displayed as y-axis.`} /></Label>
                 <DropDown defaultText='Select variable' width='w-60' items={dataset.cate_cols} onSelect={e => result.y = e} zIndex={99} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab==1?'hidden':'hidden'}`} style={{
