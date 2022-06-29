@@ -24,6 +24,8 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <DropDown defaultText='Select X Axis' width='w-60' showOnHover={false} items={[...defaultx, ...dataset.num_cols]} onSelect={e=>result.x = e=='--'?null:e} zIndex={100} />
                 <Label text='Y Axis:'><InlineTip info={`*Required. Must be int or float type\nThe data displayed on Y Axis.`}/></Label>
                 <DropDown defaultText='Select Y Axis' width='w-60' showOnHover={false} items={dataset.num_cols} onSelect={e=>result.y = e} zIndex={100} />
+                <Label text='Sorted:'><InlineTip info={`*Optional. Whether sorting x axis value.`} /></Label>
+                <Checkbox label={``} defaultChecked={false} onChange={e=>result.sorted = e.target.checked}/>
         
             </div>
 
@@ -62,6 +64,9 @@ export const config = {
         plotOptions['y'] = `"${result.y}"`
         let prevSteps=[],postSteps = []
         setCommonCode({dataset,result,plotOptions,postSteps,prevSteps})
+        if (result.sorted) {
+            prevSteps.push(`df = df.sort_values(by=['${result.x}'])`)
+        }
         
         let dfplotArgs = []
         for (let k in plotOptions){

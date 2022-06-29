@@ -29,6 +29,8 @@ export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, resul
                     result.y = e
                     if(guideStep == 5) setGuideStep(6)
                 }} />
+                <Label text='Sorted:'><InlineTip info={`*Optional. Whether sorting x axis value.`} /></Label>
+                <Checkbox label={``} defaultChecked={false} onChange={e=>result.sorted = e.target.checked}/>
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 1 ? 'hidden' : 'hidden'}`} style={{
                 gridTemplateColumns: '5vw 1fr 10vw 1fr'
@@ -66,6 +68,9 @@ export const config = {
         // plotOptions['y'] = `"${result.y}"`
         let prevSteps = [], postSteps = []
         setCommonCode({ dataset, result, plotOptions, postSteps, prevSteps })
+        if (result.sorted) {
+            prevSteps.push(`df = df.sort_values(by=['${result.x}'])`)
+        }
 
         let dfplotArgs = []
         for (let k in plotOptions) {
