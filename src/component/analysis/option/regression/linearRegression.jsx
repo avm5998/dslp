@@ -72,14 +72,14 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Set Parameters: fit_intercept'><InlineTip info="Default=True. Whether to calculate the intercept for this model. If set to False, no intercept will be used in calculations. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
-                <DropDown zIndex={28} defaultValue={option.param_fit_intercept_lr} defaultText={'True'}  width='w-64' items={['True', 'False']}
+                <DropDown zIndex={28} defaultValue={option.param_fit_intercept_lr} defaultText={'True'} width='w-64' items={['True', 'False']}
                     onSelect={name => {
                         result.param_fit_intercept_lr = name
                 }} />
                 <Label customStyle={``} text='Set Parameters: normalize'><InlineTip info="Default=False. If True, the regressors X will be normalized before regression. Details see https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"/></Label>
                 <DropDown zIndex={27} defaultValue={option.param_normalize_lr} defaultText={'False'}  width='w-64' items={['True', 'False']}
                     onSelect={name => {
-                        result.param_normalize_lr = name  
+                        result.param_normalize_lr = name
                 }} />
             </div>
             <div className={`grid gap-4 p-8 w-auto ${activeTab == 2 ? '' : 'hidden'}`} style={{

@@ -1685,6 +1685,7 @@ def cond_Regression_json():
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
     finalVar = params['finalVar']  
     finalY = params['finalY'] 
+    do_training = True if analysis_model+finalVar[0] not in params or params[analysis_model+finalVar[0]] == '' else False
     df = _getCache(user_id, filename)   
     ndf = df.replace(MISSING_VALUES, np.nan)
     kfold = KFold(n_splits=10, random_state=7, shuffle=True)
@@ -1692,12 +1693,11 @@ def cond_Regression_json():
     cond += "\nFinal Independent Variables: " + str(finalVar) + "\nFinal Dependent Variable: "+ str(finalY)
     
     if analysis_model == "Linear Regression":
-        # for training model
-        if params[analysis_model+finalVar[0]] == '':
-            try:
-                param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
-                param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
-                model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
+        try:
+            param_fit_intercept_lr = params['param_fit_intercept_lr']=='True' if 'param_fit_intercept_lr' in params else True
+            param_normalize_lr = params['param_normalize_lr']=='True' if 'param_normalize_lr' in params else False
+            model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr) 
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
                 # get new plot
@@ -1718,15 +1718,7 @@ def cond_Regression_json():
                 cond += "\nPlot Predicted vs. Observed Target Variable: Plot Type: " + plotType
                 cond += '\nMetric: ' + metric
                 para_result += "\nMetric:  " + metric + "\nmean=" + str(metric_res.mean()) + "; \nstandard deviation=" + str(metric_res.std())
-            except Exception as e:
-                print(analysis_model, e)
-                error = e
-        # for making prediction (no plot)
-        else:
-            try:
-                param_fit_intercept_lr = params['param_fit_intercept_lr'] if 'param_fit_intercept_lr' in params else True
-                param_normalize_lr = params['param_normalize_lr'] if 'param_normalize_lr' in params else False
-                model = LinearRegression(fit_intercept=param_fit_intercept_lr, normalize=param_normalize_lr)
+            else:
                 pred_dict = {}
                 for x in finalVar:
                     current = params[analysis_model+x]
@@ -1735,9 +1727,9 @@ def cond_Regression_json():
                 X_pred = pd.DataFrame(pred_dict)
                 Y_pred = model.fit(df[finalVar], df[finalY]).predict(X_pred)
                 para_result += '\nModel: ' + analysis_model + '\nPredicted Result: ' + str(Y_pred)
-            except Exception as e:
-                print(analysis_model, e)
-                error = e
+        except Exception as e:
+            print(analysis_model, e)
+            error = e
 
     elif analysis_model == "Decision Tree Regression":
         try:
@@ -1751,7 +1743,7 @@ def cond_Regression_json():
             find_max_depth = [int(x) for x in params['find_max_depth'].split(',') if params['find_max_depth']] if 'find_max_depth' in params else None
             model = DecisionTreeRegressor(criterion=param_criterion, splitter=param_splitter, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 #new plot
                 if plotType == "regressionplot":
@@ -1843,7 +1835,7 @@ def cond_Regression_json():
             param_random_state = None if params['param_random_state']=='None' or (not params['param_random_state'].strip()) else  int(params['param_random_state'])
             model = RandomForestRegressor(n_estimators=param_n_estimators, criterion=param_criterion, max_depth=param_max_depth, max_features=param_max_features, max_leaf_nodes=param_max_leaf_nodes, random_state=param_random_state)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 metric_res = cross_val_score(model, df[finalVar], df[finalY], cv=kfold, scoring=metric)
                 if plotType == "regressionplot":
@@ -1904,7 +1896,7 @@ def cond_Regression_json():
             param_kernel = params['param_kernel'] if 'param_kernel' in params else "rbf"
             model = SVR(kernel=param_kernel, gamma=param_gamma, C=param_C)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 if plotType == "regressionplot":
                     img = BytesIO()
@@ -1971,7 +1963,7 @@ def cond_Regression_json():
             print(analysis_model, e)
             error = e
 
-    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)))
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)), do_training=do_training)
 
 # @app.route('/analysis/regression/predict', methods=['POST'])
 # @cross_origin()
@@ -2026,6 +2018,7 @@ def cond_Classification_json():
     plotType = params['pre_obs_plotType'] if 'pre_obs_plotType' in params else 'line'
     finalVar = params['finalVar']
     finalY = params['finalY']
+    do_training = True if analysis_model+finalVar[0] not in params or params[analysis_model+finalVar[0]] == '' else False
     df = _getCache(user_id, filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
     print("****&&&&&&test******")
@@ -2056,7 +2049,7 @@ def cond_Classification_json():
             param_C = 1.0 if params['param_C']=='None' or (not params['param_C'].strip()) else float(params['param_C'])
             model = LogisticRegression(solver=param_solver, C=param_C)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 if text_data_feat_model == '--':
                     plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -2128,7 +2121,7 @@ def cond_Classification_json():
             param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
             model = DecisionTreeClassifier(criterion=param_criterion, max_depth=param_max_depth, max_leaf_nodes=param_max_leaf_nodes) 
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 if text_data_feat_model == '--':
                     plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -2227,7 +2220,7 @@ def cond_Classification_json():
             param_max_leaf_nodes = None if params['param_max_leaf_nodes']=='None' or (not params['param_max_leaf_nodes'].strip()) else int(params['param_max_leaf_nodes'])
             model = RandomForestClassifier(max_depth=param_max_depth, n_estimators=param_n_estimators, criterion=param_criterion, max_leaf_nodes=param_max_leaf_nodes)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 if text_data_feat_model == '--':
                     plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -2300,7 +2293,7 @@ def cond_Classification_json():
             param_kernel = params['param_kernel'] if 'param_kernel' in params else 'rbf'
             model = SVC(C=param_C, gamma=param_gamma, kernel=param_kernel)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
                 if text_data_feat_model == '--':
                     plotUrl = get_pre_vs_ob(model, Y_pred, Y_test, fig_len, fig_wid, plotType)
@@ -2368,7 +2361,7 @@ def cond_Classification_json():
         try:
             model = GaussianNB()
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 if isTsv:
                     X = StandardScaler().fit_transform(df[finalVar[0]]).toarray()  # test ; change later
                     Y = df[finalY].values
@@ -2440,15 +2433,21 @@ def cond_Classification_json():
     elif analysis_model == 'K Nearest Neighbors Classifier':
         try:
             from sklearn.neighbors import KNeighborsClassifier
-            neigbors = int(params['neighbors']) if params['neighbors'] != "" else 5
-            p = int(params['p']) if params['p'] != "" else 2
-            algo = params['algorithm'] if params['algorithm'] != "" else 'auto'
-            weight = params['weights'] if params['weights'] != "" else 'uniform'
-            leaf_size = int(params['leaf_size']) if params['leaf_size'] != "" else 30
-            d_metric = params['d_metric'] if params['d_metric'] != "" else 'minkowski'
+            # neigbors = int(params['neighbors']) if params['neighbors'] != "" else 5
+            # p = int(params['p']) if params['p'] != "" else 2
+            # algo = params['algorithm'] if params['algorithm'] != "" else 'auto'
+            # weight = params['weights'] if params['weights'] != "" else 'uniform'
+            # leaf_size = int(params['leaf_size']) if params['leaf_size'] != "" else 30
+            # d_metric = params['d_metric'] if params['d_metric'] != "" else 'minkowski'
+            neigbors = 5 if params['neighbors']=='None' or (not params['neighbors'].strip()) else int(params['neighbors'])
+            p = 2 if params['p']=='None' or (not params['p'].strip()) else int(params['p'])
+            algo = 'auto' if params['algorithm']=='None' or (not params['algorithm'].strip()) else params['algorithm']
+            weight = 'uniform' if 'weights' not in params or params['weights']=='None' or (not params['weights'].strip()) else params['weights']
+            leaf_size = 30 if params['leaf_size']=='None' or (not params['leaf_size'].strip()) else int(params['leaf_size'])
+            d_metric = 'minkowski' if params['d_metric']=='None' or (not params['d_metric'].strip()) else params['d_metric']
             model = KNeighborsClassifier(n_neighbors=neigbors,weights=weight, algorithm=algo, leaf_size=leaf_size, p=p, metric=d_metric)
             # for training model
-            if params[analysis_model+finalVar[0]] == '':
+            if do_training:
                 Y_pred = model.fit(X_train, Y_train).predict(X_test)
                 print('Y_pred= ', Y_pred)
                 if metric == "Classification Report":
@@ -2512,7 +2511,7 @@ def cond_Classification_json():
             print(e)
             error = e
 
-    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)))
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, errorMsg=str(repr(error)), do_training=do_training)
 
 
 @app.route('/analysis/clustering', methods=['POST']) 

@@ -64,8 +64,12 @@ const GetDisplayCode = (method) => {
     return optionCode[method]``
 }
 
-const getCodeFromResult = (option, model, result) => {
-    return DisplayCode[model](result)
+const getCodeFromResult = (option, model, result, do_training) => {
+    if (do_training) {
+        return DisplayCode[model](result)
+    } else {
+        return PredictionCode[model](result)
+    }
 }
 const InitialCode = {
     regression: code => `
@@ -112,11 +116,222 @@ df = pd.read_json(data_io)
 `
 }
 
+const PredictionCode = {
+    'Linear Regression': code => `
+# Prediction of Linear Regression
+# import libraries
+from sklearn.linear_model import LinearRegression
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = LinearRegression(fit_intercept=${code.param_fit_intercept_lr?`${code.param_fit_intercept_lr}`:`True`}, normalize=${code.param_normalize_lr?`${code.param_normalize_lr}`:`False`}) 
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Linear Regression${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'Decision Tree Regression': code => `
+# Prediction of Decision Tree Regression
+# import libraries
+from sklearn.tree import DecisionTreeRegressor
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = DecisionTreeRegressor(criterion=${code.param_criterion?`'${code.param_criterion}'`:`'mse'`}, splitter=${code.param_splitter?`'${code.param_splitter}'`:`'best'`}, max_depth=${code.param_max_depth?code.param_max_depth:`None`}, max_features=${code.param_max_features?`'${code.param_max_features}'`:`None`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`}, random_state=${code.param_random_state?code.param_random_state:`None`})
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Decision Tree Regression${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'Random Forests Regression': code => `
+# Prediction of Random Forests Regression
+# import libraries
+from sklearn.ensemble import RandomForestRegressor
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = RandomForestRegressor(n_estimators=${code.param_n_estimators?code.param_n_estimators:100}, criterion=${code.param_criterion?`'${code.param_criterion}'`:`'mse'`}, max_depth=${code.param_max_depth?code.param_max_depth:`None`}, max_features=${code.param_max_features?`'${code.param_max_features}'`:`'auto'`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`}, random_state=${code.param_random_state?code.param_random_state:`None`})
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Random Forests Regression${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'SVM Regression': code => `
+# Prediction of SVM Regression
+# import libraries
+from sklearn.svm import SVR
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = SVR(kernel=${code.param_kernel?`'${code.param_kernel}'`:`'rbf'`}, gamma=${code.param_gamma?code.param_gamma:0.01}, C=${code.param_C?code.param_C:1.0})
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`SVM Regression${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'Logistic Regression': code => `
+# Prediction of Logistic Regression
+# import libraries
+from sklearn.linear_model import LogisticRegression
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = LogisticRegression(solver=${code.param_solver?`'${code.param_solver}'`:`'lbfgs'`}, C=${code.param_C?code.param_C:1.0})
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Logistic Regression${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'Decision Tree Classifier': code => `
+# Prediction of Decision Tree Classifier
+# import libraries
+from sklearn.tree import DecisionTreeClassifier
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = DecisionTreeClassifier(criterion=${code.param_criterion?`'${code.param_criterion}'`:`'gini'`}, max_depth=${code.param_max_depth?code.param_max_depth:`None`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`}) 
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Decision Tree Classifier${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'Random Forests Classifier': code => `
+# Prediction of Random Forests Classifier
+# import libraries
+from sklearn.ensemble import RandomForestClassifier
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = RandomForestClassifier(max_depth=${code.param_max_depth?code.param_max_depth:`None`}, n_estimators=${code.param_n_estimators?code.param_n_estimators:100}, criterion=${code.param_criterion?`'${code.param_criterion}'`:`'gini'`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`})
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Random Forests Classifier${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'SVM Classifier': code => `
+# Prediction of SVM Classifier
+# import libraries
+from sklearn.svm import SVC
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = SVC(kernel=${code.param_kernel?`'${code.param_kernel}'`:`'rbf'`}, gamma=${code.param_gamma?code.param_gamma:0.01}, C=${code.param_C?code.param_C:1.0})
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`SVM Classifier${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'Naive Bayes Classifier': code => `
+# Prediction of Naive Bayes Classifier
+# import libraries
+from sklearn.naive_bayes import GaussianNB
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = GaussianNB()
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Naive Bayes Classifier${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+
+    'K Nearest Neighbors Classifier': code => `
+# Prediction of K Nearest Neighbors Classifier
+# import libraries
+from sklearn.neighbors import KNeighborsClassifier
+
+# multiple independent variales
+X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
+# one dependent variable, our target variable
+Y = '${code.finalY}'
+
+# build a model, users can modify parameters
+model = KNeighborsClassifier(n_neighbors=${code.neighbors?code.neighbors:5},weights=${code.weights?`'${code.weights}'`:`'uniform'`}, algorithm=${code.algorithm?`'${code.algorithm}'`:'auto'}, leaf_size=${code.leaf_size?code.leaf_size:30}, p=${code.p?code.p:2}, metric=${code.d_metric?`'${code.d_metric}'`:`'minkowski'`})
+
+# fit input data for prediction
+X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`K Nearest Neighbors Classifier${e}`]}]`).join(', ')}})
+
+# fit model to train, and predict testing dataset
+Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
+print("Print predicted results of testing dataset: ", X_pred, Y_pred)
+`,
+}
+
 const DisplayCode = {
     'Linear Regression': code => (`
 # Demo of Linear Regression
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split
@@ -128,10 +343,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = LinearRegression(fit_intercept=True, normalize=False) 
+model = LinearRegression(fit_intercept=${code.param_fit_intercept_lr?`${code.param_fit_intercept_lr}`:`True`}, normalize=${code.param_normalize_lr?`${code.param_normalize_lr}`:`False`}) 
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -141,39 +356,9 @@ print("Print predicted results of testing dataset: ", Y_pred)
 print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
 `),
 
-'Linear Regression Prediction': code => `
-# Prediction of Linear Regression
-
-# import libraries
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error
-from sklearn.linear_model import LinearRegression
-
-# multiple independent variales
-X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
-# one dependent variable, our target variable
-Y = '${code.finalY}'
-# split the dataset into two parts: training dataset and testing dataset
-# X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
-
-# build a model, users can modify parameters
-model = LinearRegression(fit_intercept=True, normalize=False) 
-
-# fit input data for prediction
-X_pred = pd.DataFrame({${code.finalVar.map(e => `'${e}': [${code[`Linear Regression${e}`]}]`).join(', ')}})
-
-# fit model to train, and predict testing dataset
-Y_pred = model.fit(df[X], df[Y]).predict(X_pred) 
-print("Print predicted results of testing dataset: ", X_pred, Y_pred)
-
-# measure performance of model with metric
-# print("Measure performance of model with mean_absolute_error: ", mean_absolute_error(Y_test, Y_pred))
-`,
-
     'Decision Tree Regression': code => `
 # Demo of Decision Tree Regression
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split
@@ -185,10 +370,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=3, max_features=None, max_leaf_nodes=None, random_state=None)
+model = DecisionTreeRegressor(criterion=${code.param_criterion?`'${code.param_criterion}'`:`'mse'`}, splitter=${code.param_splitter?`'${code.param_splitter}'`:`'best'`}, max_depth=${code.param_max_depth?code.param_max_depth:`None`}, max_features=${code.param_max_features?`'${code.param_max_features}'`:`None`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`}, random_state=${code.param_random_state?code.param_random_state:`None`})
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -200,8 +385,7 @@ print("Measure performance of model with mean_absolute_error: ", mean_absolute_e
 
     'Random Forests Regression': code => `
 # Demo of Random Forests Regression
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split
@@ -213,10 +397,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = RandomForestRegressor(n_estimators=100, criterion='mse', max_depth=3, max_features='auto', max_leaf_nodes=None, random_state=None)
+model = RandomForestRegressor(n_estimators=${code.param_n_estimators?code.param_n_estimators:100}, criterion=${code.param_criterion?`'${code.param_criterion}'`:`'mse'`}, max_depth=${code.param_max_depth?code.param_max_depth:`None`}, max_features=${code.param_max_features?`'${code.param_max_features}'`:`'auto'`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`}, random_state=${code.param_random_state?code.param_random_state:`None`})
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -228,8 +412,7 @@ print("Measure performance of model with mean_absolute_error: ", mean_absolute_e
 
     'SVM Regression': code => `
 # Demo of SVM Regression
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split
@@ -240,10 +423,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = SVR(kernel='rbf', gamma=0.01, C=1.0)
+model = SVR(kernel=${code.param_kernel?`'${code.param_kernel}'`:`'rbf'`}, gamma=${code.param_gamma?code.param_gamma:0.01}, C=${code.param_C?code.param_C:1.0})
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -255,8 +438,7 @@ print("Measure performance of model with mean_absolute_error: ", mean_absolute_e
 
     'Logistic Regression': code => `
 # Demo of Logistic Regression
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split 
@@ -267,10 +449,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = LogisticRegression(solver='lbfgs', C=1.0)
+model = LogisticRegression(solver=${code.param_solver?`'${code.param_solver}'`:`'lbfgs'`}, C=${code.param_C?code.param_C:1.0})
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -284,8 +466,7 @@ print("Measure performance of model with Classification Report: ", report)
 
     'Decision Tree Classifier': code => `
 # Demo of Decision Tree Classifier
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split 
@@ -296,10 +477,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = DecisionTreeClassifier(criterion='gini', max_depth=3, max_leaf_nodes=None) 
+model = DecisionTreeClassifier(criterion=${code.param_criterion?`'${code.param_criterion}'`:`'gini'`}, max_depth=${code.param_max_depth?code.param_max_depth:`None`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`}) 
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -312,8 +493,7 @@ print("Measure performance of model with Classification Report: ", report)
     ,
     'Random Forests Classifier': code => `
 # Demo of Random Forests Classifier
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split 
@@ -324,10 +504,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = RandomForestClassifier(max_depth=3, n_estimators=100, criterion='gini', max_leaf_nodes=None)
+model = RandomForestClassifier(max_depth=${code.param_max_depth?code.param_max_depth:`None`}, n_estimators=${code.param_n_estimators?code.param_n_estimators:100}, criterion=${code.param_criterion?`'${code.param_criterion}'`:`'gini'`}, max_leaf_nodes=${code.param_max_leaf_nodes?code.param_max_leaf_nodes:`None`})
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -340,8 +520,7 @@ print("Measure performance of model with Classification Report: ", report)
     ,
     'SVM Classifier': code => `
 # Demo of SVM Classifier
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split 
@@ -352,10 +531,10 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
-model = SVC(kernel='rbf', gamma=0.01, C=1.0)
+model = SVC(kernel=${code.param_kernel?`'${code.param_kernel}'`:`'rbf'`}, gamma=${code.param_gamma?code.param_gamma:0.01}, C=${code.param_C?code.param_C:1.0})
 
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -368,8 +547,7 @@ print("Measure performance of model with Classification Report: ", report)
     ,
     'Naive Bayes Classifier': code => `
 # Demo of Naive Bayes Classifier
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
 
 # import libraries
 from sklearn.model_selection import train_test_split 
@@ -380,7 +558,7 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
 
 # build a model, users can modify parameters
 model = GaussianNB()
@@ -394,23 +572,24 @@ report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
     ,
-    'K Nearest Neighbors Classifier': function(code){
-        let neighbors = 5;
-        let weights = "uniform";
-        let algorithm = "auto";
-        let leaf_size = 30;
-        let p = 2;
-        let d_metric = "minkowski";
-        if (code.neighbors !== ""){neighbors = code.neighbors}
-        if (code.weights !== ""){weights = code.weights}
-        if (code.algorithm !== ""){algorithm = code.algorithm}
-        if (code.leaf_size !== ""){leaf_size = code.leaf_size}
-        if (code.p !== ""){p = code.p}
-        if (code.d_metric !== ""){d_metric = code.d_metric}
-    return `
+    'K Nearest Neighbors Classifier': code =>
+    // function(code){
+    //     let neighbors = 5;
+    //     let weights = "uniform";
+    //     let algorithm = "auto";
+    //     let leaf_size = 30;
+    //     let p = 2;
+    //     let d_metric = "minkowski";
+    //     if (!code.neighbors){neighbors = code.neighbors}
+    //     if (!code.weights){weights = code.weights}
+    //     if (!code.algorithm){algorithm = code.algorithm}
+    //     if (!code.leaf_size){leaf_size = code.leaf_size}
+    //     if (!code.p){p = code.p}
+    //     if (!code.d_metric){d_metric = code.d_metric}
+    // return
+    `
 # Demo of K Nearest Neighbors Classifier
-# Note: Only two variables "X" and "Y" are changed automatically based on user's option,
-# other parameters are just example.
+# Note: All variables except metrics are changed automatically based on user's option
     
 # import libraries
 from sklearn.model_selection import train_test_split 
@@ -421,10 +600,11 @@ X = [${code.finalVar.map(e => `'${e}'`).join(',')}]
 # one dependent variable, our target variable
 Y = '${code.finalY}'
 # split the dataset into two parts: training dataset and testing dataset
-X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=0.3, random_state=0, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(df[X], df[Y], test_size=${code.test_size?code.test_size/100:0.3}, random_state=${code.param_random_state?code.param_random_state:0}, shuffle=True)
     
 # build a model, users can modify parameters
-model = KNeighborsClassifier(n_neighbors=${neighbors},weights="${weights}", algorithm="${algorithm}", leaf_size=${leaf_size}, p=${p}, metric="${d_metric}")
+
+model = KNeighborsClassifier(n_neighbors=${code.neighbors?code.neighbors:5},weights=${code.weights?`'${code.weights}'`:`'uniform'`}, algorithm=${code.algorithm?`'${code.algorithm}'`:'auto'}, leaf_size=${code.leaf_size?code.leaf_size:30}, p=${code.p?code.p:2}, metric=${code.d_metric?`'${code.d_metric}'`:`'minkowski'`})
     
 # fit model to train, and predict testing dataset
 Y_pred = model.fit(X_train, Y_train).predict(X_test) 
@@ -434,7 +614,7 @@ print("Print predicted results of testing dataset: ", Y_pred)
 report = classification_report(Y_test, Y_pred)
 print("Measure performance of model with Classification Report: ", report)
 `
-    }
+    // }
 
     ,
     'K-means': code => `
@@ -632,7 +812,8 @@ const Analysis = () => {
         if(errorMsg && errorMsg != "''"){
             alert(errorMsg)
         }else{
-            setCode(getCodeFromResult(option, model, result))   // demo code
+            // console.log(result)
+            setCode(getCodeFromResult(option, model, result, json.do_training))   // demo code
             $('#display_query').text(json.cond.trim())
             $('#display_results').html(json.para_result.trim())
             document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
