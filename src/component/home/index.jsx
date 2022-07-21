@@ -102,6 +102,62 @@ const filenames = [
     description: "Classification dataset",
     method: "Supervised"
   },
+  {
+    id: 10,
+    filename: "iris_dataset.csv",
+    type: "Classification",
+    description: "Classification and clustering dataset",
+    method: "All"
+  },
+  {
+    id: 11,
+    filename: "advertising.csv",
+    type: "Regression",
+    description: "Regression dataset",
+    method: "Supervised"
+  },
+  {
+    id: 12,
+    filename: "Auto.csv",
+    type: "Classification",
+    description: "Classification and clustering dataset",
+    method: "All"
+  },
+  {
+    id: 13,
+    filename: "Carseat.csv",
+    type: "Classification",
+    description: "Classification and clustering dataset",
+    method: "All"
+  },
+  {
+    id: 14,
+    filename: "country_vaccinations.csv",
+    type: "Classification",
+    description: "Classification dataset",
+    method: "Supervised"
+  },
+  {
+    id: 15,
+    filename: "Groceries_dataset.csv",
+    type: "Association rule",
+    description: "Association rule dataset",
+    method: "Unsupervised"
+  },
+  {
+    id: 16,
+    filename: "Mall_Customers.csv",
+    type: "Clustering",
+    description: "Clustering dataset",
+    method: "Unsupervised"
+  },
+  {
+    id: 17,
+    filename: "Smarket.csv",
+    type: "Regression",
+    description: "Regression dataset",
+    method: "Supervised"
+  }
   // {
   //   id: 10,
   //   filename: "country_vaccinations.csv",
