@@ -196,7 +196,7 @@ const Page = () => {
       }
 
     return (<>
-        <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`}/>
+        {/* <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`}/> */}
         <div className='flex flex-col bg-gray-100' >
             <div className="flex flex-row h-20 w-full items-center justify-between bg-gray-100 shadow-md">
 
