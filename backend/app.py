@@ -138,7 +138,8 @@ otp_collection = mongo_db["otp_for_users"]
 
 missing_values = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
 DEFAULT_FILES = ['Mall_Customers_clustering.csv', 'credit_card_default_classification.csv', 'house_price_prediction_regression.csv', 'amazon_alexa_text.csv', \
- 'BreadBasket_DMS.csv', 'titanic_clean.csv', 'titanic.csv']
+ 'BreadBasket_DMS.csv', 'titanic_clean.csv', 'titanic.csv', 'acs2015_county_data.csv', 'advertising.csv', 'Auto.csv', 'Carseat.csv', \
+ 'country_vaccinations.csv', 'Groceries_dataset.csv', 'house_rent.csv', 'iris_dataset.csv', 'Mall_Customers.csv', 'Smarket.csv']
 # DEFAULT_FILES = []
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
@@ -514,6 +515,7 @@ def login():
         user.save()
         to_zone = tz.tzlocal()
         last_logged_in = user.last_logged_in.astimezone(to_zone)
+        # user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
         if user.username == 'admin':
             role = "admin"
         return {'accessToken': access_token, 'refreshToken': refresh_token, 'id': str(user.id), 'username':str(user.username), 'fullname':str(user.fullname), 'email':str(user.email), 'avatar':imgStr, \
@@ -579,6 +581,24 @@ def logout():
         user_act[str(now.date())] += seconds
     else:
         user_act[str(now.date())] = seconds 
+    # calculate and store seconds for the previous activity page
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity to default
+    # !!! other_activity still has bug !!!
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "other_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+    # user['last_activity'] = 'other'
+    # user['last_activity_time'] = datetime.now(timezone.utc)
+    
     user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"user_activity":user_act}})       
     blocklist = TokenBlockList(jti=jti, created_at=now)
     blocklist.save()
@@ -1072,6 +1092,28 @@ def _getCache(uid,name,modified = True):
 # def get_user_id():
 
 
+# @app.route('/v_area',methods=['POST'])
+# @cross_origin()
+# @jwt_required(optional=True)
+# def v_area():
+#     MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+#     params = json.loads(request.data)
+#     user_id = get_jwt_identity()
+#     df = _getCache(user_id, params['filename'])
+#     df = df.fillna(0)
+#     cond = json.loads(params['cond'])
+#     res = []
+#     if 'group_by' not in cond or cond['group_by'] == '':
+#         res.append(df.groupby([cond['x']])[cond['y']].sum().to_dict())
+#     else:
+#         temp_dict = df.groupby([cond['x'], cond['group_by']])[cond['y']].sum().unstack().to_dict()
+#         for k, v in temp_dict.items():
+#             entry = {}
+#             entry['name'] = k
+#             entry['data'] = v
+#             res.append(entry)
+#     print(res)
+#     return jsonify(data=df.to_json(), res=res)
 
 
 @app.route('/visualization',methods=['POST'])
@@ -1168,6 +1210,24 @@ def query():
     params = request.json
     filename = params['filename']
     filters = json.loads(params['filters'])
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "query_activity"}})
+    # user['last_activity'] = 'query'
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+    # user['last_activity_time'] = datetime.now(timezone.utc)
     
     if params['setSource']:# when query page loads, set a temporary dataset for filters to take effects on
         df = _getCache(user_id,filename)
@@ -1222,7 +1282,8 @@ def cleanEditedCache():
     params = request.json
     filename = params['filename']
     _clearCache(user_id,filename)
-    return jsonify(success=True)
+    df = _getCache(user_id, filename)
+    return jsonify(success=True, data=df.to_json())
 
 # cleaner data structure
 # {
@@ -1240,6 +1301,25 @@ def cond_clean_json():
     print('params=', params)
     filename = params['filename']
     cleaners = json.loads(params['cleaners'])
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "clean_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+    # user['last_activity'] = 'clean'
+    # user['last_activity_time'] = datetime.now(timezone.utc)
+
     df = _getCache(user_id, filename)
     # auto replace missing values
     if df is None:
@@ -1300,6 +1380,23 @@ def cond_eng_json():
     # df = _getCache(user_id,EditedPrefix+filename) or _getCache(user_id,filename)    # auto replace missing values
     df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "feaeng_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     para_result = ''
     
     plotUrl = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=' # blank image
@@ -1483,6 +1580,23 @@ def cond_select_json():
     user_id = get_jwt_identity()    
     df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "feaslc_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     print('params***!!=====', params)
     DEFAULT_PLOT_SIZE = (5,5)
     Techniques = {i:e for i,e in enumerate(['Removing Features with Low Variance', 'Correlation Matrix','Regression1: Pearson’s Correlation Coefficient','Classification1: ANOVA','Classification2: Chi-Squared','Classification3: Mutual Information','Principal Component Analysis'])}
@@ -1577,6 +1691,23 @@ def cond_preprocess_json():
     df = _getCache(user_id,filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
     print('params= ', params)
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "prepro_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     target_col, target_operation = [], []
     option = int(params['option'])
     for key, val in params.items():
@@ -1679,6 +1810,23 @@ def cond_Regression_json():
     params = request.json
     filename = params['filename']
     print(params)
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "analysis_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     analysis_model = params['analysis_model']
     test_size = 0.3 if params['test_size']=='None' or (not params['test_size'].strip()) else float(params['test_size'])/100
     metric = params['metric'] if 'metric' in params else 'neg_mean_squared_error'
@@ -2011,6 +2159,23 @@ def cond_Classification_json():
     user_id = get_jwt_identity()
     params = request.json
     filename = params['filename']
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "analysis_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     print(params)
     analysis_model = params['analysis_model']
     test_size = 0.3 if params['test_size']=='None' or (not params['test_size'].strip()) else float(params['test_size'])/100
@@ -2526,6 +2691,23 @@ def cond_Clustering_json():
     filename = params['filename']
     df = _getCache(user_id, filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "analysis_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     # finalVar = params['finalVar'] if 'finalVar' in params else ndf.Columns
     # finalVar = [x for x in df.columns if 'finalVar'+x in params]
     finalVar = params['variablesx']
@@ -2681,6 +2863,23 @@ def cond_associateRule_json():
     print(params)
     df = _getCache(user_id, filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "analysis_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     analysis_model = params['analysis_model']
     metric = params['metric'] if 'metric' in params else 'Classification Report'
     transid = params['trans_id']
@@ -2746,6 +2945,23 @@ def cond_timeSeries_json():
     print(params)
     df = _getCache(user_id, filename)
     ndf = df.replace(MISSING_VALUES, np.nan)
+    user = User.objects(id=user_id)[0]
+    # calculate and store seconds for the previous activity page
+    now = datetime.now(timezone.utc)
+    last_activity = user['last_activity']
+    last_activity_time = user['last_activity_time']
+    last_activity_time = datetime.combine(last_activity_time.date(), last_activity_time.time(), timezone.utc)
+    last_seconds = get_sec_between_dates(now, last_activity_time)
+    activity = user[last_activity]
+    if str(now.date()) in activity:
+        activity[str(now.date())] += last_seconds
+    else:
+        activity[str(now.date())] = last_seconds
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{last_activity: activity}})
+    # update last activity and time to current page
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity": "analysis_activity"}})
+    user_collection.update_one({"_id":ObjectId(user_id)}, {"$set":{"last_activity_time": datetime.now(timezone.utc)}})
+
     analysis_model = params['analysis_model']
     date_col = params['finalX']
     target_col = params['finalY']
