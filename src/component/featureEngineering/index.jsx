@@ -504,15 +504,35 @@ const FeatureEngineering = () => {
 
 
             {/* demo code */}
-            <Button onClick={() => {
+            {/* <Button onClick={() => {
                 runCode()
             }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
-                ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
+                ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} /> */}
             <Button text="Undo" width={'w-24 ml-3'} onClick={() => {
                 kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) })
                 dispatch(DataSetActions.setTableData(previousCondition))
                 setCurrentCondition(previousCondition)
             }}/>
+            <Button text='Revert' width='w-24 mx-3' onClick={
+                async (e) => {
+                    setCode('')
+                    if (dataset.filename) {
+                        let res = await fetchByJSON('cleanEditedCache', {
+                            filename: dataset.filename
+                        })
+            
+                        let json = await res.json()
+            
+                        if (json.success) {
+                            // alert('Revert data success!')
+                            dispatch(DataSetActions.emptyInfo())
+                            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+                            // selectFileOption(dataset.filename, false)
+                        }
+                        // setCurrentCondition({})
+                    }
+                }
+            } />
 
         </div>
 

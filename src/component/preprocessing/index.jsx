@@ -245,6 +245,7 @@ const Preprocessing = () => {
     })
     let [previousCondition, setPreviousCondition] = useState({})
     let [currentCondition, setCurrentCondition] = useState({})
+    // const [currentFilter, setCurrentFilter] = useState([])
 
     useEffect(() => {
         if (!code) return
@@ -359,6 +360,17 @@ const Preprocessing = () => {
         setShowSubOptionModal(false)
     }
 
+    // useEffect(async ()=>{
+    //     for (const cond of dataset.dataPreprocessing) {
+    //         let res = await fetchByJSON('preprocessing', cond)
+    //         let json = await res.json()
+    //         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+    //         $('#display_cond').text(json.cond)
+    //         $('#display_para_result').html(json.para_result)
+    //     }
+    //     setCode(getCodeFromResult(dataset.dataPreprocessing[dataset.dataPreprocessing.length-1].option, dataset.dataPreprocessing[dataset.dataPreprocessing.length-1]))
+    // }, [dataset.dataPreprocessing])
+
 
     const onConfirm = async (e) => {
         if (JSON.stringify(previousCondition)==="{}") {
@@ -373,13 +385,23 @@ const Preprocessing = () => {
         if(option!==0)
             eval(`requestData = getData${option}()`)
         let requestObject = {...requestData,option, filename:dataset.filename}
-        let res = await fetchByJSON('preprocessing', requestObject)
+        dispatch(DataSetActions.setPreprocessing([...dataset.dataPreprocessing, requestObject]))
 
+        let res = await fetchByJSON('preprocessing', requestObject)
         let json = await res.json()
         setCode(getCodeFromResult(option,requestObject)) // Demo code
         requestObjectRef.current = requestObject //demo code
-        // console.log(json.data)
-        dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        console.log(requestObject)
+        // dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        dispatch(DataSetActions.setData({
+            data: JSON.parse(json.data),
+            cols: json.cols,
+            num_cols: json.num_cols,
+            col_lists: json.col_lists,
+            cate_cols: json.cate_cols,
+            cate_lists: json.cate_lists,
+            num_lists: json.num_lists
+        }))
         $('#display_cond').text(json.cond)
         $('#display_para_result').html(json.para_result)
         setShowSubOptionModal(false)
@@ -387,9 +409,31 @@ const Preprocessing = () => {
         setCurrentCondition(JSON.parse(json.data))
     }
 
-    const onUndo = (e) => {
-        dispatch(DataSetActions.setTableData(previousCondition))
-        setCurrentCondition(previousCondition)
+    const onUndo = async (e) => {
+        // let res = await fetchByJSON('cleanEditedCache', {
+        //     filename: dataset.filename
+        // })
+        // let json = await res.json()
+        // if (json.success) {
+        //     let previous = dataset.dataPreprocessing.slice(0, -1)
+        //     dispatch(DataSetActions.setPreprocessing(previous))
+        //     setCurrentFilter([])
+        //     setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
+        // }
+
+        if (currentCondition == previousCondition) {
+            return
+        } else {
+            let previous = dataset.dataPreprocessing.slice(0, -1)
+            dispatch(DataSetActions.setPreprocessing(previous))
+            if (previous.length > 0) {
+                setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
+            } else {
+                setCode('')
+            }
+            dispatch(DataSetActions.setTableData(previousCondition))
+            setCurrentCondition(previousCondition)
+        }
     }
 
     let dispatch = useDispatch()
@@ -407,7 +451,7 @@ const Preprocessing = () => {
 
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
-        <Modal clickBgToClose={false} isOpen={showSubOptionModal} onClose={()=>{
+        <Modal isOpen={showSubOptionModal} onClose={()=>{
             if (option === 1){
                 setSubOption(option, subOption, getData1())
             }
@@ -424,6 +468,7 @@ const Preprocessing = () => {
             if (option === 5){
                 setSubOption(option, subOption, getData5())
             }
+            setShowSubOptionModal(false)
 
         }} setIsOpen={setShowSubOptionModal} contentStyleText="">
             <div className='p-5 flex flex-col'>
@@ -444,21 +489,21 @@ const Preprocessing = () => {
 
                 
                 {option === 3 ? <div className='grid grid-cols-2'>
-                    {dataset.cols.map((col,i)=><React.Fragment key={i}>
+                    {dataset.cate_cols.map((col,i)=><React.Fragment key={i}>
                         <label className='m-3'>{col}</label>
                         <input {...input3} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Useless character' name={col}/>
                     </React.Fragment>)}
                 </div> : ''}
 
                 {option === 4 ? <div className='grid grid-cols-2'>
-                    {dataset.cols.map((col,i)=><React.Fragment key={i}>
+                    {dataset.cate_cols.map((col,i)=><React.Fragment key={i}>
                         <label className='m-3'>{col}</label>
                         <input {...input4} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Specific value' name={col}/>
                     </React.Fragment>)}
                 </div> : ''}
 
                 {option === 5 ? <div className='grid grid-cols-2'>
-                    {dataset.cols.map((col,i)=><React.Fragment key={i}>
+                    {dataset.cate_cols.map((col,i)=><React.Fragment key={i}>
                         <label className='m-3'>{col}</label>
                         <input {...input5} className='m-3 px-5 py-2 focus:outline-none rounded-full' placeholder='Specific words' name={col}/>
                     </React.Fragment>)}
@@ -515,11 +560,31 @@ const Preprocessing = () => {
                         setShowSubOptionModal(true)
                     }
                 }}/>
-                <Button onClick={() => {
+                {/* <Button onClick={() => {
                     runCode()
                 }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5 w-32 px-4 py-1 rounded font-semibold border focus:outline-none text-black ${!code
-                    ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
-                <Button text="Undo" width='w-32 mx-3' onClick={onUndo} disable={JSON.stringify(previousCondition)==="{}"}/>   
+                    ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} /> */}
+                <Button text="Undo" width='w-24 mx-3' onClick={onUndo} disabled={currentCondition == previousCondition}/>   
+                <Button text='Revert' width='w-24 mx-3' onClick={
+                    async (e) => {
+                        setCode('')
+                        if (dataset.filename) {
+                            let res = await fetchByJSON('cleanEditedCache', {
+                                filename: dataset.filename
+                            })
+                
+                            let json = await res.json()
+                
+                            if (json.success) {
+                                // alert('Revert data success!')
+                                dispatch(DataSetActions.emptyInfo())
+                                dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+                                // selectFileOption(dataset.filename, false)
+                            }
+                            // setCurrentCondition({})
+                        }
+                    }
+                } />
                 
               </div>
                 {/* <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{

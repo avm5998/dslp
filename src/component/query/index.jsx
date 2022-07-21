@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { Modal, RangeSelector } from '../../util/ui'
-import { Button, Input, DropDown, MultiSelect, ButtonGroup } from '../../util/ui_components'
+import { Button, Input, DropDown, MultiSelect, ButtonGroup, Label } from '../../util/ui_components'
 import { useDispatch, useSelector } from 'react-redux'
 import { pythonEscape, fetchByJSON, GetDataFrameInfo, useCachedData } from '../../util/util'
 import { actions as DataSetActions } from '../../reducer/dataset'
@@ -65,11 +65,16 @@ const Page = () => {
     useCachedData()
 
     let dataset = useSelector(state => state.dataset)
-    let [filters, setFilters] = useState([])
+    // this "currentFilter" hook only store the latest ONE applied filter
+    let [currentFilter, setCurrentFilter] = useState([])
     let loadRef = useRef(true)
     let [searchColumn, setSearchColumn] = useState('Select a Column')
     let [inputOption, setInputOption] = useState('')
     let [selectedOptions, setSelectedOptions] = useState([])
+
+    const [code, setCode] = useState('')
+    let codeParent = useRef()
+    let kernelRef = useRef()
 
     let [queryType, setQueryType] = useState(0)
 
@@ -81,7 +86,7 @@ const Page = () => {
 
     useEffect(async () => {
         let res = await fetchByJSON('query', {
-            filters: JSON.stringify(filters),
+            filters: JSON.stringify(dataset.dataFilters),
             filename: dataset.filename,
             setSource:loadRef.current
         })
@@ -90,7 +95,41 @@ const Page = () => {
 
         let json = await res.json()
         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
-    }, [filters])
+        // dispatch(DataSetActions.setData({
+        //     data: JSON.parse(json.data),
+        //     cols: json.cols,
+        //     num_cols: json.num_cols,
+        //     col_lists: json.col_lists,
+        //     cate_cols: json.cate_cols,
+        //     cate_lists: json.cate_lists,
+        //     num_lists: json.num_lists
+        // }))
+        setCode(getCodeFromConditions({conditions:dataset.dataFilters}))
+        console.log(currentFilter)
+    }, [dataset.dataFilters])
+
+    useEffect(() => {
+        if (!code) return
+        codeParent.current.innerHTML = ''
+        let pre = document.createElement('pre')
+        pre.setAttribute('data-executable', 'true')
+        pre.setAttribute('data-language', 'python')
+        codeParent.current.appendChild(pre)
+        pre.innerHTML = code
+        thebelab.bootstrap();
+
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready') {
+                kernelRef.current = data.kernel
+                console.log('kernel ready');
+                // alert('Ready')
+                // setActivateStatus('Ready')
+            }
+        })
+    }, [code])
+
+    // useEffect(() => {
+    // }, [currentFilter])
 
     const setComparators = useCallback((name) => {
         if (dataset.num_cols.indexOf(name) !== -1) {
@@ -106,13 +145,43 @@ const Page = () => {
 
     const addFilter = () => {
         if (queryType === 0) return
-        let qString = getQString(queryType, numericalRangeRef.current, categoricalRef.current, searchColumn)
-        setFilters([...filters, {
-            queryType,
-            qString,
-            desc: queryType === QueryType.Numerical ? `Range of ${searchColumn}` :
-                queryType === QueryType.Categorical ? `Categories of ${searchColumn}` : ''
-        }])
+        // let qString = getQString(queryType, numericalRangeRef.current, categoricalRef.current, searchColumn)
+        // setCurrentFilter([...currentFilter, {
+        //     queryType,
+        //     qString,
+        //     desc: queryType === QueryType.Numerical ? `Range of ${searchColumn}` :
+        //         queryType === QueryType.Categorical ? `Categories of ${searchColumn}` : ''
+        // }])
+        dispatch(DataSetActions.setFilters([...dataset.dataFilters, ...currentFilter]))
+    }
+
+    const onUndo = async (e) => {
+        let res = await fetchByJSON('cleanEditedCache', {
+            filename: dataset.filename
+        })
+        let json = await res.json()
+        if (json.success) {
+            let previous = dataset.dataFilters.slice(0, -1)
+            dispatch(DataSetActions.setFilters(previous))
+            setCurrentFilter([])
+            setCode(getCodeFromConditions({ conditions: previous }))
+        }
+    }
+
+    const onRevert = async (e) => {
+        if (dataset.filename) {
+            let res = await fetchByJSON('cleanEditedCache', {
+                filename: dataset.filename
+            })
+
+            let json = await res.json()
+
+            if (json.success) {
+                // alert('Revert data success!')
+                dispatch(DataSetActions.emptyInfo())
+                // selectFileOption(dataset.filename, false)
+            }
+        }
     }
 
     function hashCode(string) {
@@ -132,7 +201,7 @@ const Page = () => {
             <div className="flex flex-row h-20 w-full items-center justify-between bg-gray-100 shadow-md">
 
                 <div className='mx-5'>
-                    <DropDown width={'w-48'} defaultText={searchColumn} items={dataset.data ? Object.keys(dataset.data).map(name => ({
+                    <DropDown width={'w-48'} defaultText={searchColumn} zIndex={100} items={dataset.data ? Object.keys(dataset.data).map(name => ({
                         name,
                         onClick(e) {
                             setSearchColumn(name)
@@ -147,6 +216,12 @@ const Page = () => {
                         <div className='w-auto gap-8 flex justify-center items-center px-1'>
                             <RangeSelector max={dataset.num_lists[searchColumn].max} min={dataset.num_lists[searchColumn].min} onEnd={(leftValue, rightValue) => {
                                 Object.assign(numericalRangeRef.current, { min: leftValue, max: rightValue })
+                                let qString = getQString(queryType, numericalRangeRef.current, categoricalRef.current, searchColumn)
+                                setCurrentFilter([{
+                                    queryType,
+                                    qString,
+                                    desc: `Range of ${searchColumn}`
+                                }])
                             }} />
                             <InlineTip info='Drag the sliding bars to change query window or double click them to manually input query value.' />
                         </div>
@@ -169,6 +244,12 @@ const Page = () => {
                                     `mx-1 px-1 rounded border focus:outline-none h-10 ${dataset.cate_lists[searchColumn].indexOf(inputOption)===-1 ? 'text-gray-300 cursor-default' : ''}`} onClick={(e)=>{
                                     setSelectedOptions([...selectedOptions, inputOption])
                                     categoricalRef.current.push(inputOption)
+                                    let qString = getQString(queryType, numericalRangeRef.current, categoricalRef.current, searchColumn)
+                                    setCurrentFilter([{
+                                        queryType,
+                                        qString,
+                                        desc: `Categories of ${searchColumn}`
+                                    }])
                                 }} />
                                 <Button hasPadding={false} text="Clear" overrideClass={`mx-1 px-1 rounded border focus:outline-none h-10`} onClick={(e)=>{
                                     setSelectedOptions([])
@@ -180,21 +261,47 @@ const Page = () => {
                 </div>
 
                 <div className='w-auto flex flex-row items-center gap-8 mx-5'>
-                    <MultiSelect width="w-24" allowDelete={true} passiveMode={true} selections={filters} getDesc={e => e.desc} onSelect={filters => {
-                        setFilters([...filters])
-                    }} />
+                    <MultiSelect width="w-24" allowDelete={false} passiveMode={true} selections={dataset.dataFilters} getDesc={e => e.desc} /*onSelect={filter => {setCurrentFilter([...currentFilter])}}*/ />
                     <ButtonGroup buttons={[{
-                        text: 'Add filter',
-                        onClick: addFilter
-                    },{
-                        text:' Show code',
-                        onClick: ()=>{
-                            sandboxRef.current.setCode(getCodeFromConditions({conditions:filters}))
-                            sandboxRef.current.show()
-                        }
-                    }]} />
+                        text: 'Confirm',
+                        onClick: addFilter,
+                    },
+                    // {
+                    //     text:' Show code',
+                    //     onClick: ()=>{
+                    //         sandboxRef.current.setCode(getCodeFromConditions({conditions:dataset.dataFilters}))
+                    //         sandboxRef.current.show()
+                    //     }
+                    // },
+                    {
+                        text: 'Undo',
+                        onClick: onUndo,
+                    },
+                    {
+                        text: 'Revert',
+                        onClick: onRevert
+                    }
+                    ]} />
                 </div>
 
+            </div>
+            <div className="w-full flex flex-nowrap">
+                <div className='w-1/2 text-gray-500 font-semibold'>
+                    <div className='scroll w-full flex justify-center items-center' style={{height:'100%'}}>
+
+                        <Label text="Results:">
+                            <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see preprocessed results</div>
+                        </Label>
+                        <Label text="">
+                            <img id="img" src="" />
+                        </Label>
+                    </div>
+                </div>
+                <div className='flex-grow-1 w-1/2' ref={codeParent}>
+                    {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                        Select a filter to see the corresponding code
+                    </div>}
+                </div>
             </div>
             <Table PageSize={10} />
             {/* <Help url={"menu/data_querying"}/> */}

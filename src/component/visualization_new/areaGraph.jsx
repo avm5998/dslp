@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { Label, Modal, Checkbox } from '../../util/ui'
+import { fetchByJSON } from '../../util/util'
 import { DropDown, MultiSelect, Button } from  '../../util/ui_components'
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 import { InlineTip } from '../common/tip'
@@ -7,6 +8,27 @@ const defaultResult = { ...DEFAULT_RESULT, ...{} }
 
 export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
     let [activeTab, setActiveTab] = useState(0)
+
+    // tried to transmit and display chart data through react-chartkick in visualization page, but didn't work
+    // useEffect(async (result, dataset) => {
+    //     let jres = await fetchByJSON('v_area', {
+    //         cond: JSON.stringify(result),
+    //         filename: dataset.filename
+    //     })
+    //     let json = await jres.json()
+    //     // return json.res
+    //     setLocalData(json.res)
+    // }, [])
+
+    // const getChartData = async (result, dataset) => {
+    //     let jres = await fetchByJSON('v_area', {
+    //         cond: JSON.stringify(result),
+    //         filename: dataset.filename
+    //     })
+    //     let json = await jres.json()
+    //     // return json.res
+    //     setLocalData(json.res)
+    // }
 
     return <>
         <div className='p-4'>
@@ -40,6 +62,9 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 <Button onClick={e=>{
                     showOptions(0)
                     setCode(config.getCode({...defaultResult,...result}, dataset))
+                    // getChartData(result, dataset)
+                    // setChartData(localData)
+                    // console.log(localData)
                 }} width={`w-48 justify-self-end`} text={`Confirm`}/>
             </div>
         </div>

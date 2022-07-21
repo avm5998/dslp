@@ -1,15 +1,22 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { fetch, fetchByJSON, GetDataFrameInfo, pythonEscape, useCachedData } from '../../util/util'
+import { fetch, fetchByJSON, GetDataFrameInfo, pythonEscape, useCachedData, toUnicode } from '../../util/util'
 import './index.css'
 import { push } from 'connected-react-router'
 import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Modal } from '../../util/ui'
-import { Button, MultiSelect, DropDown, ButtonGroup } from '../../util/ui_components'
+import { Button, MultiSelect, DropDown, ButtonGroup, Label } from '../../util/ui_components'
+import { InlineTip } from '../common/tip';
 import Table from '../common/table'
 import { data } from 'autoprefixer';
 import Tip from '../common/tip'
 import Sandbox from '../common/sandbox'
+
+const getInitialCode = (data) => `
+import json
+data_json = StringIO(r"""${toUnicode(data)}""")
+df = pd.read_json(data_json)
+`
 
 const getCodeFromConditions = ({ conditions }) => {
     let cleaners = []
@@ -69,52 +76,114 @@ const Cleaning = ({ location }) => {
         res[4].refs = {}
         return res
     }, [])
+    const [code, setCode] = useState('')
+    let codeParent = useRef()
+    let kernelRef = useRef()
+    const dfJSON = useRef()
+    const [activateStatus, setActivateStatus] = useState('Loading...')
     let cleaningCondition = useRef(getDefaultSubOptions())
     let [subOptionText, setSubOptionText] = useState('Input values')
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let dispatch = useDispatch()
     let sandboxRef = useRef(null)
     // let [previousCleaners, setPreviousCleaners] = useState([])
-    let [currentCleaners, setCurrentCleaners] = useState([])
+    // this "currentCleaner" hook only store the latest ONE applied cleaner filter
+    let [currentCleaner, setCurrentCleaner] = useState([])
 
     // useEffect(() => {
     //     queryCleaner()
     // }, [dataset.dataCleaners])
 
+    useEffect(() => {
+        if (!code) return
+        codeParent.current.innerHTML = ''
+        let pre = document.createElement('pre')
+        pre.setAttribute('data-executable', 'true')
+        pre.setAttribute('data-language', 'python')
+        codeParent.current.appendChild(pre)
+        pre.innerHTML = code
+        thebelab.bootstrap();
+
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready') {
+                kernelRef.current = data.kernel
+                console.log('kernel ready');
+                // alert('Ready')
+                // setActivateStatus('Ready')
+            }
+        })
+    }, [code])
+
+    //start thebelab automatically
+    //load current dataframe
+    useEffect(() => {
+        if (!dataset.filename) {
+            setActivateStatus('No data')
+            return
+        }
+
+        thebelab.bootstrap();
+
+        //excute code in advance on thebelab to import libraries and set dataframe variable
+        thebelab.on("status", async function (evt, data) {
+            if (data.status === 'ready' && dataset.filename) {
+                let res = await fetchByJSON('current_data_json', {
+                    filename: dataset.filename
+                })
+
+                let g = await res.json()
+                if(!dfJSON.current && g.data){
+                    dfJSON.current = g.data
+                }
+                kernelRef.current = data.kernel
+                // alert('X')
+                data.kernel.requestExecute({ code:getInitialCode(dfJSON.current) })
+                // setDfJSON(g.data)
+                setActivateStatus('Ready')
+            }
+            // console.log("Status changed:", data.status, data.message);
+        })
+
+    }, [dataset.filename])
+
+    const runCode = async (e) => {
+        let res = await fetchByJSON('current_data_json', {
+            filename: dataset.filename
+        })
+
+        let json = await res.json();
+        // let res2 = await kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) }).done
+
+        document.querySelector('.thebelab-run-button').click()
+    }
+
     const onConfirm = (e) => {
         if (option === -1) return
 
-        let cleaners = [...dataset.dataCleaners]
-        // let exist = filters.some(f => f.subOption === option && f.qString === qString)
-        // if (exist) return
-        cleaners.push({
-            option: option,
-            condition: cleaningCondition.current[option].condition,
-            desc: CleanTypes[option]
-        })
+        // let cleaners = [...dataset.dataCleaners]
+        // // let exist = filters.some(f => f.subOption === option && f.qString === qString)
+        // // if (exist) return
+        // cleaners.push({
+        //     option: option,
+        //     condition: cleaningCondition.current[option].condition,
+        //     desc: CleanTypes[option]
+        // })
 
-        if (guideStep == 2) {
-            setGuideStep(3)
-        }
-        setCurrentCleaners(cleaners)
+        // if (guideStep == 2) {
+        //     setGuideStep(3)
+        // }
+        // setCurrentCleaner(cleaners)
 
-        dispatch(DataSetActions.setCleaners(cleaners))
+        dispatch(DataSetActions.setCleaners([...dataset.dataCleaners, ...currentCleaner]))
     }
 
     // const onRemove = async (e) => {
     //     let cleaners = []
     //     dispatch(DataSetActions.setCleaners(cleaners))
-    //     setCurrentCleaners([])
+    //     setCurrentCleaner([])
     //     let res = await fetchByJSON('cleanEditedCache', {
     //         filename: dataset.filename
     //     })
-    // }
-
-    // const onUndo = (e) => {
-    //     // setChoice(1)
-    //     dataset = previousDataset
-    //     dispatch(DataSetActions.setCleaners(previousCleaners))
-    //     dispatch(DataSetActions.setData(previousDataset))
     // }
 
     const onUndo = async (e) => {
@@ -123,11 +192,28 @@ const Cleaning = ({ location }) => {
         })
         let json = await res.json()
         if (json.success) {
-            let previous = currentCleaners.slice(0, -1)
+            let previous = dataset.dataCleaners.slice(0, -1)
             dispatch(DataSetActions.setCleaners(previous))
-            setCurrentCleaners(previous)
+            setCurrentCleaner([])
             // dispatch(DataSetActions.setCleaners(previousCleaners))
-            // setCurrentCleaners(previousCleaners)
+            // setCurrentCleaner(previousCleaners)
+            setCode(getCodeFromConditions({ conditions: previous }))
+        }
+    }
+
+    const onRevert = async (e) => {
+        if (dataset.filename) {
+            let res = await fetchByJSON('cleanEditedCache', {
+                filename: dataset.filename
+            })
+
+            let json = await res.json()
+
+            if (json.success) {
+                // alert('Revert data success!')
+                dispatch(DataSetActions.emptyInfo())
+                // selectFileOption(dataset.filename, false)
+            }
         }
     }
 
@@ -190,14 +276,16 @@ const Cleaning = ({ location }) => {
             cate_lists: json.cate_lists,
             num_lists: json.num_lists
         }))
+        console.log(currentCleaner)
     }
 
     useEffect(() => {
         queryCleaner()
+        setCode(getCodeFromConditions({ conditions: dataset.dataCleaners }))
     }, [dataset.dataCleaners])
 
     return (<div className='flex flex-col min-h-screen bg-gray-100'>
-        <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`} />
+        {/* <Sandbox ref={sandboxRef} dataset={dataset} additional={`import json`} /> */}
         {/* <Tip info={{
             '#confirmBtn':'Just confirm your data',
             // '#dropdownClean':`What is data cleaning?
@@ -225,7 +313,7 @@ const Cleaning = ({ location }) => {
         <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
 
             <div className='mx-5 w-3/12'>
-                <DropDown id="dropdownClean" text={optionText} width='w-72' items={
+                <DropDown id="dropdownClean" text={optionText} width='w-72' zIndex={100} items={
                     CleanTypes.map((item, i) => ({
                         name: item, onClick(e) {
                             {/*0                      1                2                       3                        4                            5 */ }
@@ -240,6 +328,11 @@ const Cleaning = ({ location }) => {
                             if (guideStep == 1) {
                                 setGuideStep(2)
                             }
+
+                            if (guideStep == 2) {
+                                setGuideStep(3)
+                            }
+                            setCurrentCleaner([{option:i, condition: cleaningCondition.current[i].condition, desc: CleanTypes[i]}])
                         }
                     }))} />
             </div>
@@ -264,18 +357,28 @@ const Cleaning = ({ location }) => {
                 <MultiSelect defaultText={`Applied cleaners`} allowDelete={false} passiveMode={true} selections={dataset.dataCleaners} getDesc={e => e.desc} />
             </div>
 
+            <div className='w-auto flex justify-center items-center px-1'>
+                <div className={``}>{activateStatus}</div>
+                <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
+            </div>
+
             <div className='mx-5 w-3/12'>
                 <ButtonGroup
                     buttons={[{
                         text: 'Confirm',
                         onClick: onConfirm
-                    }, {
-                        text: 'Show code',
-                        onClick: () => {
-                            sandboxRef.current.setCode(getCodeFromConditions({ conditions: dataset.dataCleaners }))
-                            sandboxRef.current.show()
-                        }
                     }, 
+                    // {
+                    //     text: 'Run',
+                    //     onClick: runCode
+                    // },
+                    // {
+                    //     text: 'Show code',
+                    //     onClick: () => {
+                    //         sandboxRef.current.setCode(getCodeFromConditions({ conditions: dataset.dataCleaners }))
+                    //         sandboxRef.current.show()
+                    //     }
+                    // }, 
                     // {
                     //     text: 'Remove',
                     //     onClick: onRemove
@@ -283,11 +386,42 @@ const Cleaning = ({ location }) => {
                     {
                         text: 'Undo',
                         onClick: onUndo
+                    },
+                    {
+                        text: 'Revert',
+                        onClick: onRevert
                     }
                     ]}
                 />
             </div>
         </div>
+
+        {/* <div className='flex-grow-1 w-1/2' ref={codeParent}>
+            {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                Select a filter to see the corresponding code
+            </div>}
+        </div> */}
+
+        <div className="w-full flex flex-nowrap">
+            <div className='w-1/2 text-gray-500 font-semibold'>
+                <div className='scroll w-full flex justify-center items-center' style={{height:'100%'}}>
+
+                    <Label text="Results:">
+                        <div id="display_results" style={{ whiteSpace: 'pre-wrap' }} >Select an operation to see preprocessed results</div>
+                    </Label>
+                    <Label text="">
+                        <img id="img" src="" />
+                    </Label>
+                </div>
+            </div>
+            {/* Demo code */}
+            <div className='flex-grow-1 w-1/2' ref={codeParent}>
+                {code ? code : <div className='w-full flex-grow-0 h-48 flex justify-center items-center text-gray-500 font-semibold'>
+                    Select a filter to see the corresponding code
+                </div>}
+            </div>
+        </div>
+
         <Table PageSize={10} />
     </div>)
 }
