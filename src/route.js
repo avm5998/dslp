@@ -54,8 +54,9 @@ library.add(fas);
 library.add(far);
 
 const Menu = {
-  User: [{ text: "Profile", icon: "home", to: "/profile" }],
+  // User: [{ text: "Profile", icon: "home", to: "/profile" }],
   Main: [
+    { text: "Profile", icon: "user", to: "/profile" },
     { text: "Data", icon: "home", to: "/" },
     { text: "Guide", icon: "book-reader", to: "/guide" },
     { text: "Summary", icon: "chart-area", to: "/summary" },
