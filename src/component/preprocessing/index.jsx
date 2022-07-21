@@ -247,29 +247,29 @@ const Preprocessing = () => {
     let [currentCondition, setCurrentCondition] = useState({})
     // const [currentFilter, setCurrentFilter] = useState([])
 
-    useEffect(() => {
-        if (!code) return
+    // useEffect(() => {
+    //     if (!code) return
 
-        codeParent.current.innerHTML = ''
-        let pre = document.createElement('pre')
-        pre.setAttribute('data-executable', 'true')
-        pre.setAttribute('data-language', 'python')
-        codeParent.current.appendChild(pre)
-        pre.innerHTML = code
-        thebelab.bootstrap();
+    //     codeParent.current.innerHTML = ''
+    //     let pre = document.createElement('pre')
+    //     pre.setAttribute('data-executable', 'true')
+    //     pre.setAttribute('data-language', 'python')
+    //     codeParent.current.appendChild(pre)
+    //     pre.innerHTML = code
+    //     thebelab.bootstrap();
 
-        thebelab.on("status", async function (evt, data) {
-            if (data.status === 'ready') {
-                kernelRef.current = data.kernel
-                console.log('kernel ready');
-                // alert('Ready')
-                // setActivateStatus('Ready')
-            }
-        })
-    }, [code])
+    //     thebelab.on("status", async function (evt, data) {
+    //         if (data.status === 'ready') {
+    //             kernelRef.current = data.kernel
+    //             console.log('kernel ready');
+    //             // alert('Ready')
+    //             // setActivateStatus('Ready')
+    //         }
+    //     })
+    // }, [code])
 
-    //start thebelab automatically
-    //load current dataframe
+    // //start thebelab automatically
+    // //load current dataframe
     // useEffect(() => {
     //     if (!dataset.filename) {
     //         setActivateStatus('No data')
