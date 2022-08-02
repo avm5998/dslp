@@ -791,6 +791,73 @@ def get_user_activity():
         progress = {}
     return {"progress":progress}
 
+
+@app.route('/get_activities',methods=['POST'])
+@cross_origin(origin="*")
+@jwt_required()
+def get_activities():
+    email = json.loads(request.data)['email']
+    user = user_collection.find_one({"email":email})
+    if "query_activity" in user:
+        if not user["query_activity"]:
+            query_progress = {}
+        else:
+            query_progress = extract_report(user["query_activity"].items())
+    else:
+        query_progress = {}
+    if "clean_activity" in user:
+        if not user["clean_activity"]:
+            clean_progress = {}
+        else:
+            clean_progress = extract_report(user["clean_activity"].items())
+    else:
+        clean_progress = {}
+    if "prepro_activity" in user:
+        if not user["prepro_activity"]:
+            prepro_progress = {}
+        else:
+            prepro_progress = extract_report(user["prepro_activity"].items())
+    else:
+        prepro_progress = {}
+    if "feaeng_activity" in user:
+        if not user["feaeng_activity"]:
+            feaeng_progress = {}
+        else:
+            feaeng_progress = extract_report(user["feaeng_activity"].items())
+    else:
+        feaeng_progress = {}
+    if "feaslc_activity" in user:
+        if not user["feaslc_activity"]:
+            feaslc_progress = {}
+        else:
+            feaslc_progress = extract_report(user["feaslc_activity"].items())
+    else:
+        feaslc_progress = {}
+    if "analysis_activity" in user:
+        if not user["analysis_activity"]:
+            analysis_progress = {}
+        else:
+            analysis_progress = extract_report(user["analysis_activity"].items())
+    else:
+        analysis_progress = {}
+    return {"query_progress":query_progress, "clean_progress":clean_progress, "prepro_progress":prepro_progress,
+    "feaeng_progress":feaeng_progress, "feaslc_progress":feaslc_progress, "analysis_progress":analysis_progress}
+
+    # user_id = get_jwt_identity()
+    # user = User.objects(id=user_id)[0]
+    # query_activity=user["query_activity"]
+    # clean_activity=user["clean_activity"]
+    # prepro_activity=user["prepro_activity"]
+    # feaeng_activity=user["feaeng_activity"]
+    # feaslc_activity=user["feaslc_activity"]
+    # analysis_activity=user["analysis_activity"]
+    # print(query_activity)
+    # return {"query_activity": query_activity, "clean_activity": clean_activity, "prepro_activity": prepro_activity,
+    # "feaeng_activity": feaeng_activity, "feaslc_activity": feaslc_activity, "analysis_activity": analysis_activity}
+    # # return jsonify(query_activity=query_activity, clean_activity=clean_activity, prepro_activity=prepro_activity,
+    # # feaeng_activity=feaeng_activity, feaslc_activity=feaslc_activity, analysis_activity=analysis_activity)
+
+
 @app.route('/graph_details',methods=['POST'])
 @cross_origin(origin="*")
 @jwt_required()

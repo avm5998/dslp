@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { elementIsVisibleInViewport } from '../../util/util';
 import './profile.css'
 import Form from "react-validation/build/form";
-import { Button, DropDown } from '../../util/ui'
+import { Button, Checkbox } from '../../util/ui'
+import {DropDown} from '../../util/ui_components'
 import CheckButton from "react-validation/build/button";
 import Input from "react-validation/build/input";
 import { reset_password_confirm } from '../../actions/auth';
@@ -130,7 +131,7 @@ const ProfileSection = ({currentUser, parentCallback}) => {
           </div>
           {role === 'Student' && <div className="col md-3 p-8 mt-16">
                   <label> Your Instructor </label>
-                  <DropDown className="fileSelect" disabled={!!instructors_list.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructors_list.map(name => ({
+                  <DropDown className="fileSelect" /*disabled={!!instructors_list.length} customStyle='w-72'*/ height='h-10' text={selectInstructor} items={instructors_list.map(name => ({
                     name,
                     onClick(e) {
                       // e.preventDefault();
@@ -209,7 +210,7 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                                   <input type="text" id="fullname" className="form-control-profile" placeholder={fullname} disabled />
                                 }
                                 
-                                <FontAwesomeIcon className="pl-4" icon="edit" onClick={()=>setIsEditName(!isEditName)} />
+                                <FontAwesomeIcon /*className="pl-4"*/ icon="edit" onClick={()=>setIsEditName(!isEditName)} />
                               </div>
                           </div>
                       </div>
@@ -220,7 +221,7 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                               <input type="email" name='email' className="form-control-profile" id="inputEmail4" onChange={handleChange}/>:
                               <input type="email" className="form-control-profile" id="inputEmail4" placeholder={email} disabled/>
                                 }
-                            <FontAwesomeIcon className="pl-4" icon="edit" onClick={()=>setIsEditEmail(!isEditEmail)} />
+                            <FontAwesomeIcon /*className="pl-4"*/ icon="edit" onClick={()=>setIsEditEmail(!isEditEmail)} />
                           </div>
                       </div>
                       <hr className="my-16" /> 
@@ -293,9 +294,19 @@ const exportToCsv = (data) => {
 const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const { saveAsCsv } = useJsonToCsv();
   const { message } = useSelector(state => state.message);
+  const { email: currentEmail } = useSelector(state => state.auth.user)
   const { progress, last_logged } = currentUser;
   const {role} = currentUser;
   const [progressData, setProgressData] = useState(progress)
+  const [displayQuery, setDisplayQuery] = useState(false)
+  const [displayClean, setDisplayClean] = useState(false)
+  const [displayPrepro, setDisplayPrepro] = useState(false)
+  const [displayFeaeng, setDisplayFeaeng] = useState(false)
+  const [displayFeaslc, setDisplayFeaslc] = useState(false)
+  const [displayAnalysis, setDisplayAnalysis] = useState(false)
+  const [personalProgres, setPersonalProgress] = useState([])
+  const [personalActivities, setPersonalActivities] = useState([])
+  const [studentProgreee, setStudentProgress] = useState([])
   const parentRef = useRef();
   const [option, setOption] = useState('days');
   const [studCount, setStudCount] = useState(0);
@@ -324,6 +335,9 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     console.log('fetching details');
     fetchDetails();
     setExportPersonalData([...exportToCsv(progress["days"])])
+    console.log("currentUser:", currentUser)
+    console.log("authtest:", currentEmail)
+    fetchAllActivities(currentEmail)
   }, []);
   const fetchDetails = async () => {
     const response = await fetch(config.endpoint+"/graph_details", {
@@ -352,7 +366,68 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
       setInstructorDetails([...json.instructor_details, "All"]);
       console.log(json.instructor_details);
     }
+
+    // const restest = await fetch(config.endpoint+'/get_activities', {method: 'GET', headers: authHeader()});
+    // let jsontest = await restest.json();
+    // console.log("jsontest", jsontest);
   };
+
+  const fetchAllActivities = async (email) => {
+    const res = await fetch(config.endpoint+"/get_activities", {
+      method: 'POST',
+      body: JSON.stringify({'email':email}),
+      headers: authHeader()
+    })
+    let json = await res.json()
+    console.log("get activities test:", json)
+    setPersonalProgress([
+      {
+        "name": "query",
+        "data": json.query_progress,
+        "display": false,
+      },
+      {
+        "name": "cleaning",
+        "data": json.clean_progress,
+        "display": false,
+      },
+      {
+        "name": "preprocessing",
+        "data": json.prepro_progress,
+        "display": false,
+      },
+      {
+        "name": "feature engineering",
+        "data": json.feaeng_progress,
+        "display": false,
+      },
+      {
+        "name": "feature selection",
+        "data": json.feaslc_progress,
+        "display": false,
+      },
+      {
+        "name": "analysis",
+        "data": json.analysis_progress,
+        "display": false,
+      }
+    ])
+  }
+
+  const updateProgress = (name, modify) => {
+    const newProgress = personalProgres.map(item => {
+      if (item.name == name) {
+        return {...item, display: modify};
+      }
+      return item
+    })
+    setPersonalProgress(newProgress)
+  }
+
+  useEffect(()=>{
+    let newActivities = personalProgres.filter(item=>item.display)
+    setPersonalActivities(newActivities)
+  }, [displayQuery, displayClean, displayPrepro, displayFeaeng, displayFeaslc, displayAnalysis])
 
   const fetchUserActivity = async (email) => {
     const response = await fetch(config.endpoint+"/get_user_activity", {
@@ -412,7 +487,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                             <div>
                             {role==='admin' && 
                             <div className='flex flex-row items-center' >
-                              <DropDown className="fileSelect" disabled={!!instructorDetails.length} customStyle='w-72' height='h-10' text={selectInstructor} items={instructorDetails.map((name) => ({
+                              <DropDown className="fileSelect" /*disabled={!!instructorDetails.length} customStyle='w-72'*/ height='h-10' text={selectInstructor} items={instructorDetails.map((name) => ({
                                 name,
                                 onClick(e) {
                                   // e.preventDefault();
@@ -436,7 +511,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                             {(role==='Instructor' || role ==='admin' )&& 
                             <div className='flex flex-row items-center'>
 
-                                <DropDown className="fileSelect" disabled={!!studentDetails.length} customStyle='w-72' height='h-10' text={selectStudent} items={studentDetails.map((name) => ({
+                                <DropDown className="fileSelect" /*disabled={!!studentDetails.length} customStyle='w-72'*/ height='h-10' text={selectStudent} items={studentDetails.map((name) => ({
                                   name,
                                   onClick(e) {
                                     setStudent(name);
@@ -455,11 +530,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                             </div>}
                             
                             </div>
-                            {exportData.length > 0?
-                                <FontAwesomeIcon icon='download' className='p-3 profile-button' onClick={(e) => {
-                                e.preventDefault();
-                                saveAsCsv({ data:exportData, fields, filename })}} />
-                              :''}
+                            
                         </div>
                         
                       </div>
@@ -474,22 +545,79 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                         </h2> 
                         </div>}
                         {role==='Instructor' && 
-                        <div className="flex flex-row justify-start items-center">                        
-                          <h2 className="graph-heading my-5">Total hours for {selectStudent === "All"?'all students':`${selectStudent}`}</h2>
-                        </div>}
-                        <AreaChart xtitle={option} ytitle="Hours" data={dates[option]} />
+                        <>
+                          <div className="flex flex-row justify-between items-center">                        
+                            <h2 className="graph-heading my-5">Total hours for {selectStudent === "All"?'all students':`${selectStudent}`}</h2>
+                            <div>Download Avtivity
+                              {exportData.length > 0?
+                                  <FontAwesomeIcon icon='download' /*className='p-3 profile-button'*/ onClick={(e) => {
+                                  e.preventDefault();
+                                  saveAsCsv({ data:exportData, fields, filename })}} />
+                                :''}</div>
+                          </div>
+                          <AreaChart xtitle={option} ytitle="Hours" data={dates[option]} />
+                        </>}
+                        
                         <div className="flex flex-row justify-between items-center">
                         <h2 className="graph-heading my-5">Your activity</h2>
+                        <div>Download Avtivity
                         {exportPersonalData.length > 0?
-                                <FontAwesomeIcon icon='download' className='p-3 profile-button' onClick={(e) => {
+                                <FontAwesomeIcon icon='download' /*className='p-3 profile-button'*/ onClick={(e) => {
                                 e.preventDefault();
                                 saveAsCsv({ data:exportPersonalData, fields, filename })}} />
-                              :''}
+                              :''}</div>
                         </div>
                         
+                        <div className='flex flex-row gap-4'>
+                          <div className='flex items-center'>
+                            <Checkbox defaultChecked={false} onChange={e=>{
+                              updateProgress("query", e.target.checked)
+                              setDisplayQuery(e.target.checked)
+                            }}/>
+                            <p>Query</p>
+                          </div>
+                          <div className='flex items-center'>
+                            <Checkbox defaultChecked={false} onChange={e=>{
+                              updateProgress("cleaning", e.target.checked)
+                              setDisplayClean(e.target.checked)
+                            }}/>
+                            <p>Cleaning</p>
+                          </div>
+                          <div className='flex items-center'>
+                            <Checkbox defaultChecked={false} onChange={e=>{
+                              updateProgress("preprocessing", e.target.checked)
+                              setDisplayPrepro(e.target.checked)
+                            }}/>
+                            <p>Preprocessing</p>
+                          </div>
+                          <div className='flex items-center'>
+                            <Checkbox defaultChecked={false} onChange={e=>{
+                              updateProgress("feature engineering", e.target.checked)
+                              setDisplayFeaeng(e.target.checked)
+                            }}/>
+                            <p>Feature Engineering</p>
+                          </div>
+                          <div className='flex items-center'>
+                            <Checkbox defaultChecked={false} onChange={e=>{
+                              updateProgress("feature selection", e.target.checked)
+                              setDisplayFeaslc(e.target.checked)
+                            }}/>
+                            <p>Feature Selection</p>
+                          </div>
+                          <div className='flex items-center'>
+                            <Checkbox defaultChecked={false} onChange={e=>{
+                              updateProgress("analysis", e.target.checked)
+                              setDisplayAnalysis(e.target.checked)
+                            }}/>
+                            <p>Analysis</p>
+                          </div>
+                        </div>
                         
                         <div>
-                          <LineChart xtitle={option} ytitle="Hours" data={progressData[option]} />
+                          <LineChart xtitle={option} ytitle="Hours" /*data={progressData[option]}*/ /*data={[
+                            {"name": "total", "data": progressData[option]},
+                            {"name": "query", "data": queryProgress[option]},
+                          ]}*/ data={[{"name": "total", "data": progressData[option]}, ...personalActivities.map(item=>({"name": item.name, "data":item.data[option]}))]} />
                         </div>
                         
                       </div>
