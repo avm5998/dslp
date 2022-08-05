@@ -168,7 +168,7 @@ const Routes = (props) => {
 
   useEffect(() => {
     setMenuData((data) => {
-      data.Main[0].extraText = dataset.filename;
+      data.Main[1].extraText = dataset.filename;
       return { ...data };
     });
   }, [dataset.filename]);
@@ -187,15 +187,18 @@ const Routes = (props) => {
               <div className="logo flex">
                 <nav>
                   <div>
-                    <img src={logo} width="70" height="70"></img>
+                    <Link to={"/"}>
+                      <img src={logo} width="70" height="70"></img>
+                    </Link>
                   </div>
                 </nav>
-                <Link to={"/"}>
+                {/* <Link to={"/"}>
                   <div className="flex justify-center items-center">
                     <DATA_MINING_SVG />
-                    <div className="pl-2">Data Science<br/>Learning Platform</div>
+                    <div className="pl-2">Data Science Learning Platform</div>
                   </div>
-                </Link>
+                </Link> */}
+                <div className="pl-2">Data Science Learning Platform</div>
               </div>
               <nav>
                 <div className="nav-mobile">
@@ -206,13 +209,13 @@ const Routes = (props) => {
 
                 <ul className="nav-list">
                   <li>
-                    <Link to={"/login"}>Login</Link>
+                    <Link to={"/login"} title="login with an existed account">Login</Link>
                   </li>
                   <li>
-                    <Link to={"/register"}>Register</Link>
+                    <Link to={"/register"} title="register a new account">Register</Link>
                   </li>
                   <li>
-                    <Link to={{pathname:"https://www.youtube.com/channel/UCFrjZE5lzonruR_3kmN4_zQ/videos"}} target="_blank">Tutorial</Link>
+                    <Link to={{pathname:"https://www.youtube.com/channel/UCFrjZE5lzonruR_3kmN4_zQ/videos"}} target="_blank" title="Check YouTube tutorial channel">Tutorial</Link>
                   </li>
                 </ul>
               </nav>
