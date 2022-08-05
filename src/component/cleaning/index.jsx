@@ -53,11 +53,18 @@ for(let val of conditions){
 }
 
 return `
+# track all types of missing value
 MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+
+# store cleaning option(s)
 cleaners = json.loads(${pythonEscape(JSON.stringify(conditions))})
+
+# clean dataset based on selected option(s)
 df.replace(MISSING_VALUES, np.nan, inplace = True)
 ${cleaners.join('\n')}
-df
+
+# display dataset after cleaning
+# print(df)
 `
 }
 
@@ -210,7 +217,7 @@ const Cleaning = ({ location }) => {
             let json = await res.json()
 
             if (json.success) {
-                // alert('Revert data success!')
+                alert('Revert data success!')
                 dispatch(DataSetActions.emptyInfo())
                 // selectFileOption(dataset.filename, false)
             }

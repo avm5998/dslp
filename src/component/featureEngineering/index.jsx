@@ -61,7 +61,7 @@ column = [${Object.keys(subOption).map(e => `"${e}"`).join(',')}]
 label = LabelEncoder()
 df[column] = label.fit_transform(df[column].astype(str))
 
-print(df.head())
+# print(df.head())
 `},
     [Options.ConvertCategoricalToNumerical]: (subOption) => {
         // console.log(subOption)
@@ -73,7 +73,7 @@ column = [${Object.values(subOption).map(e => `"${e}"`).join(',')}]
 
 label = LabelEncoder()
 df[column] = label.fit_transform(df[column].astype(str))
-print(df.head())
+# print(df.head())
 `},
     [Options.ConvertNumericalToCategorical]: (subOption) => {
         let column = []
@@ -96,7 +96,7 @@ labels = [${labels.map(e=>`[${e}]`).join(',')}]  # labels to be assigned to bins
 
 for column, bin, label in zip(columns, bins, labels):
     df[column] = pd.cut(df[column].astype(float), bins=bin, labels=label)
-print(df.head()) 
+# print(df.head()) 
 `},
     [Options.CreateFeaturesByArithmeticOperations]: (subOption) => {
         let values = Object.values(subOption)
@@ -126,7 +126,7 @@ for col in cols:
 print('stand_scaler_col= ', stand_scaler_col)
 scaler = StandardScaler()
 ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
-print(ndf.head())
+# print(ndf.head())
 `},
     [Options.MinmaxScaler]: (subOption) => {
         let values = Object.values(subOption)
@@ -139,7 +139,7 @@ for col in cols:
 print('stand_scaler_col= ', stand_scaler_col)
 scaler = MinMaxScaler()
 ndf[stand_scaler_col] = scaler.fit_transform(ndf[stand_scaler_col])
-print(ndf.head())
+# print(ndf.head())
 `},
     [Options.TextDataFeatureCheckBasicFeatures]: (subOption) => {
         let values = Object.values(subOption).map(e => `'${e}'`)
@@ -524,7 +524,7 @@ const FeatureEngineering = () => {
                         let json = await res.json()
             
                         if (json.success) {
-                            // alert('Revert data success!')
+                            alert('Revert data success!')
                             dispatch(DataSetActions.emptyInfo())
                             dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
                             // selectFileOption(dataset.filename, false)

@@ -75,8 +75,8 @@ for key, val in params.items():
 
 ndf.convert_dtypes()  # Convert data types
 
-print("After converting")
-print(ndf.dtypes)
+# print("After converting")
+# print(ndf.dtypes)
 `),
     1: code => function(){
         let targetCol = []
@@ -103,8 +103,8 @@ for column, data_type in zip(target_col, target_operation):
     else:
         ndf[column] = ndf[column].astype(data_type)
 
-print("After converting")
-print(ndf.dtypes)
+# print("After converting")
+# print(ndf.dtypes)
 `},
     2: code => function(){
         let targetCol = []
@@ -119,13 +119,13 @@ return `
 # Demo of "Remove Columns"
 
 # column(s) that will be dropped
-columns = [${targetCol}]
+# columns = [${targetCol}]
 
 # remove columns
-df = df.drop(columns, axis=1) 
+# df = df.drop(columns, axis=1) 
 
-print("After Removing:" )
-print(df.columns)
+# print("After Removing:" )
+# print(df.columns)
  `},
     3: code => function(){
         let targetCol = []
@@ -147,7 +147,7 @@ for index1, index2 in zip(target_col, target_operation):
     for k in index2:
         ndf[index1] = ndf[index1].str.replace(k, '')
 
-print(ndf.head())  # check the dataset
+# print(ndf.head())
     `},
     4: code => function(){
         let targetCol = []
@@ -169,7 +169,7 @@ for index1, index2 in zip(target_col, target_operation):
     temp = index2.split(',')
     ndf = ndf[~(df[index1].isin(temp))]
 
-print(ndf.head())  # check the dataset
+# print(ndf.head())
 
     `},
     5: code => function(){
@@ -196,7 +196,7 @@ for index1, index2 in zip(target_col, target_operation):
     else:
         ndf[index1] = ndf[index1].str.replace(temp, '') 
 
-print(ndf.head())  # check the dataset
+# print(ndf.head())
  
     `},
     6: code => function(){
@@ -218,7 +218,7 @@ for column in ndf.columns:
         q_hi = ndf[column].quantile(float(params[column+'_below'].strip('%') or 100)/100 if column+'_below' in params else 100)
         ndf = ndf[(ndf[column] <= q_hi) & (ndf[column] >= q_low)] 
 
-print(ndf.describe())  # check the dataset
+# print(ndf.describe())
 
     `},
 
@@ -576,7 +576,7 @@ const Preprocessing = () => {
                             let json = await res.json()
                 
                             if (json.success) {
-                                // alert('Revert data success!')
+                                alert('Revert data success!')
                                 dispatch(DataSetActions.emptyInfo())
                                 dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
                                 // selectFileOption(dataset.filename, false)

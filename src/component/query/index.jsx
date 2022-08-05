@@ -55,9 +55,14 @@ for(let condition of conditions){
 }
 
 return `
+# store query option(s)
 filters = json.loads(${pythonEscape(JSON.stringify(conditions))})
+
+# query dataset based on selected option(s)
 ${queries.map(q=>`df.query('''${q}''',inplace = True)`).join('\n')}
-df
+
+# display dataset after querying
+# print(df)
 `
 }
 
@@ -177,7 +182,7 @@ const Page = () => {
             let json = await res.json()
 
             if (json.success) {
-                // alert('Revert data success!')
+                alert('Revert data success!')
                 dispatch(DataSetActions.emptyInfo())
                 // selectFileOption(dataset.filename, false)
             }
