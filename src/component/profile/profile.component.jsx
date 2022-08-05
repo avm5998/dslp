@@ -122,7 +122,7 @@ const ProfileSection = ({currentUser, parentCallback}) => {
                                 onChange={handleChange} /> */}
                          <div>
                         <label htmlFor="biography">Edit bio</label>
-                        <FontAwesomeIcon icon="edit" onClick={()=>setEditBio(!editBio)}
+                        <FontAwesomeIcon className="cursor-pointer" icon="edit" onClick={()=>setEditBio(!editBio)}
                         />
                         </div>
                         
@@ -210,7 +210,7 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                                   <input type="text" id="fullname" className="form-control-profile" placeholder={fullname} disabled />
                                 }
                                 
-                                <FontAwesomeIcon /*className="pl-4"*/ icon="edit" onClick={()=>setIsEditName(!isEditName)} />
+                                <FontAwesomeIcon className="cursor-pointer" icon="edit" onClick={()=>setIsEditName(!isEditName)} />
                               </div>
                           </div>
                       </div>
@@ -221,7 +221,7 @@ const About = ({ tabpanelIndex, tabpanel, currentUser }) => {
                               <input type="email" name='email' className="form-control-profile" id="inputEmail4" onChange={handleChange}/>:
                               <input type="email" className="form-control-profile" id="inputEmail4" placeholder={email} disabled/>
                                 }
-                            <FontAwesomeIcon /*className="pl-4"*/ icon="edit" onClick={()=>setIsEditEmail(!isEditEmail)} />
+                            <FontAwesomeIcon className="cursor-pointer" icon="edit" onClick={()=>setIsEditEmail(!isEditEmail)} />
                           </div>
                       </div>
                       <hr className="my-16" /> 
@@ -246,36 +246,28 @@ const csvFormatDataArr = (data) => {
   console.log('csv',data);
   let dataArr = []
   for(let key in data){
-    dataArr.push({"days":key, "hours":data[key]})
+    dataArr.push({"days":key, "total":data[key]})
   }
 
 return dataArr;
 };
-const exportToCsv = (data) => {
+const exportToCsv = (data, sepProgress) => {
   console.log('inside export');
   console.log('exp',data)
-  const fields = {
-    "days": "Days",
-    "hours": "Hours"
-  };
 
   let resultData = [];
   const style = { padding: "5px"};
-  // useEffect(  () => {
-  //   let dataArr = []
-  //   for(let key in data){
-  //     dataArr.push({"days":key, "hours":data[key]})
-  //   }
-  //   setResultData([...dataArr]);
-  // }, [resultData])
-  // const { saveAsCsv } = useJsonToCsv();
   
-
-  let today = new Date();
-  let date = today.getFullYear() + '_' + (today.getMonth() + 1) + '_' + today.getDate();
-  const filename = 'activity_'+date;
-  
-  resultData = csvFormatDataArr(data)
+  // console.log("separation progress:", sepProgress)
+  for (let key in data) {
+    let entry = {"days":key, "total":data[key]}
+    sepProgress.forEach(i=>entry[i['name']] = "days" in i["data"]?
+      key in i["data"]["days"]?
+        i["data"]["days"][key]:
+        0
+      : 0)
+    resultData.push(entry)
+  }
 
   console.log('arr',resultData);
   return resultData
@@ -298,15 +290,25 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   const { progress, last_logged } = currentUser;
   const {role} = currentUser;
   const [progressData, setProgressData] = useState(progress)
+  // 12 booleans from Checkbox to track wheather display a separate time series
   const [displayQuery, setDisplayQuery] = useState(false)
   const [displayClean, setDisplayClean] = useState(false)
   const [displayPrepro, setDisplayPrepro] = useState(false)
   const [displayFeaeng, setDisplayFeaeng] = useState(false)
   const [displayFeaslc, setDisplayFeaslc] = useState(false)
   const [displayAnalysis, setDisplayAnalysis] = useState(false)
-  const [personalProgres, setPersonalProgress] = useState([])
+  const [displayStudentQuery, setDisplayStudentQuery] = useState(false)
+  const [displayStudentClean, setDisplayStudentClean] = useState(false)
+  const [displayStudentPrepro, setDisplayStudentPrepro] = useState(false)
+  const [displayStudentFeaeng, setDisplayStudentFeaeng] = useState(false)
+  const [displayStudentFeaslc, setDisplayStudentFeaslc] = useState(false)
+  const [displayStudentAnalysis, setDisplayStudentAnalysis] = useState(false)
+  // xxxProgress store entire array of activity objects, xxxActivities for chart component
+  const [personalProgress, setPersonalProgress] = useState([])
   const [personalActivities, setPersonalActivities] = useState([])
-  const [studentProgreee, setStudentProgress] = useState([])
+  const [studentProgress, setStudentProgress] = useState([])
+  const [studentActivities, setStudentActivities] = useState([])
+
   const parentRef = useRef();
   const [option, setOption] = useState('days');
   const [studCount, setStudCount] = useState(0);
@@ -322,7 +324,13 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
    
   const fields = {
     "days": "Days",
-    "hours": "Hours"
+    "total": "Total",
+    "query": "Query",
+    "cleaning": "Cleaning",
+    "preprocessing": "Preprocessing",
+    "feature engineering": "Feature Engineering",
+    "feature selection": "Feature Selection",
+    "analysis": "Analysis"
   };
   let today = new Date();
   let date = today.getFullYear() + '_' + (today.getMonth() + 1) + '_' + today.getDate();
@@ -332,12 +340,8 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     if (!elementIsVisibleInViewport(parentRef.current)) return
   }, [tabpanel, exportData])
   useEffect(() => {
-    console.log('fetching details');
     fetchDetails();
-    setExportPersonalData([...exportToCsv(progress["days"])])
-    console.log("currentUser:", currentUser)
-    console.log("authtest:", currentEmail)
-    fetchAllActivities(currentEmail)
+    fetchPersonalActivities(currentEmail)
   }, []);
   const fetchDetails = async () => {
     const response = await fetch(config.endpoint+"/graph_details", {
@@ -346,6 +350,7 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
       headers: authHeader()
     });
     let json = await response.json();
+    // console.log("details:", json)
     if (json.students) {
       setStudCount(json.students)
     }
@@ -354,8 +359,8 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     }
     if(json.dates){
       setAllDates(json.dates);
-      setDates(json.dates);
-      setExportData([...exportToCsv(json.dates["days"])])
+      // setDates(json.dates);
+      // setExportData([...exportToCsv(json.dates["days"], studentProgress)])
     }
     if(json.student_details){
       setStudentDetails([...json.student_details, "All"]);
@@ -372,15 +377,14 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     // console.log("jsontest", jsontest);
   };
 
-  const fetchAllActivities = async (email) => {
+  const fetchPersonalActivities = async (email) => {
     const res = await fetch(config.endpoint+"/get_activities", {
       method: 'POST',
       body: JSON.stringify({'email':email}),
       headers: authHeader()
     })
     let json = await res.json()
-    console.log("get activities test:", json)
-    setPersonalProgress([
+    let pro = [
       {
         "name": "query",
         "data": json.query_progress,
@@ -411,11 +415,13 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
         "data": json.analysis_progress,
         "display": false,
       }
-    ])
+    ]
+    setPersonalProgress(pro)
+    setExportPersonalData([...exportToCsv(progress["days"], pro)])
   }
 
-  const updateProgress = (name, modify) => {
-    const newProgress = personalProgres.map(item => {
+  const updatePersonalProgress = (name, modify) => {
+    const newProgress = personalProgress.map(item => {
       if (item.name == name) {
         return {...item, display: modify};
       }
@@ -425,9 +431,24 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
   }
 
   useEffect(()=>{
-    let newActivities = personalProgres.filter(item=>item.display)
+    let newActivities = personalProgress.filter(item=>item.display)
     setPersonalActivities(newActivities)
   }, [displayQuery, displayClean, displayPrepro, displayFeaeng, displayFeaslc, displayAnalysis])
+
+  const updateStudentProgress = (name, modify) => {
+    const newProgress = studentProgress.map(item => {
+      if (item.name == name) {
+        return {...item, display: modify};
+      }
+      return item
+    })
+    setStudentProgress(newProgress)
+  }
+
+  useEffect(()=>{
+    let newActivities = studentProgress.filter(item=>item.display)
+    setStudentActivities(newActivities)
+  }, [displayStudentQuery, displayStudentClean, displayStudentPrepro, displayStudentFeaeng, displayStudentFeaslc, displayStudentAnalysis])
 
   const fetchUserActivity = async (email) => {
     const response = await fetch(config.endpoint+"/get_user_activity", {
@@ -438,8 +459,48 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
     let json = await response.json();
     if(json.progress){
       setDates(json.progress);
-      setExportData([...exportToCsv(json.progress["days"])])
     }
+
+    const res2 = await fetch(config.endpoint+"/get_activities", {
+      method: 'POST',
+      body: JSON.stringify({'email':email}),
+      headers: authHeader()
+    })
+    let json2 = await res2.json()
+    let pro = [
+      {
+        "name": "query",
+        "data": json2.query_progress,
+        "display": false,
+      },
+      {
+        "name": "cleaning",
+        "data": json2.clean_progress,
+        "display": false,
+      },
+      {
+        "name": "preprocessing",
+        "data": json2.prepro_progress,
+        "display": false,
+      },
+      {
+        "name": "feature engineering",
+        "data": json2.feaeng_progress,
+        "display": false,
+      },
+      {
+        "name": "feature selection",
+        "data": json2.feaslc_progress,
+        "display": false,
+      },
+      {
+        "name": "analysis",
+        "data": json2.analysis_progress,
+        "display": false,
+      }
+    ]
+    setStudentProgress(pro)
+    setExportData([...exportToCsv(json.progress["days"], pro)])
   }
 
             return <div className={`container mx-auto pl-10 ${tabpanelIndex === tabpanel ? '' : 'hidden'}`} ref={parentRef}>
@@ -547,66 +608,114 @@ const Activity = ({ tabpanelIndex, tabpanel, currentUser }) => {
                         {role==='Instructor' && 
                         <>
                           <div className="flex flex-row justify-between items-center">                        
-                            <h2 className="graph-heading my-5">Total hours for {selectStudent === "All"?'all students':`${selectStudent}`}</h2>
-                            <div>Download Avtivity
+                            <h2 className="graph-heading my-5">Activity of {selectStudent === "All"?'all students':`${selectStudent}`}</h2>
+                            <div title='click icon to download activity as a csv file'>Download Activity
                               {exportData.length > 0?
-                                  <FontAwesomeIcon icon='download' /*className='p-3 profile-button'*/ onClick={(e) => {
+                                  <FontAwesomeIcon className="cursor-pointer" icon='download' /*className='p-3 profile-button'*/ onClick={(e) => {
                                   e.preventDefault();
                                   saveAsCsv({ data:exportData, fields, filename })}} />
                                 :''}</div>
                           </div>
-                          <AreaChart xtitle={option} ytitle="Hours" data={dates[option]} />
+
+                          <div className='flex flex-row gap-4'>
+                            <div className='flex items-center'>
+                              <Checkbox defaultChecked={false} onChange={e=>{
+                                updateStudentProgress("query", e.target.checked)
+                                setDisplayStudentQuery(e.target.checked)
+                              }}/>
+                              <p>Query</p>
+                            </div>
+                            <div className='flex items-center'>
+                              <Checkbox defaultChecked={false} onChange={e=>{
+                                updateStudentProgress("cleaning", e.target.checked)
+                                setDisplayStudentClean(e.target.checked)
+                              }}/>
+                              <p>Cleaning</p>
+                            </div>
+                            <div className='flex items-center'>
+                              <Checkbox defaultChecked={false} onChange={e=>{
+                                updateStudentProgress("preprocessing", e.target.checked)
+                                setDisplayStudentPrepro(e.target.checked)
+                              }}/>
+                              <p>Preprocessing</p>
+                            </div>
+                            <div className='flex items-center'>
+                              <Checkbox defaultChecked={false} onChange={e=>{
+                                updateStudentProgress("feature engineering", e.target.checked)
+                                setDisplayStudentFeaeng(e.target.checked)
+                              }}/>
+                              <p>Feature Engineering</p>
+                            </div>
+                            <div className='flex items-center'>
+                              <Checkbox defaultChecked={false} onChange={e=>{
+                                updateStudentProgress("feature selection", e.target.checked)
+                                setDisplayStudentFeaslc(e.target.checked)
+                              }}/>
+                              <p>Feature Selection</p>
+                            </div>
+                            <div className='flex items-center'>
+                              <Checkbox defaultChecked={false} onChange={e=>{
+                                updateStudentProgress("analysis", e.target.checked)
+                                setDisplayStudentAnalysis(e.target.checked)
+                              }}/>
+                              <p>Analysis</p>
+                            </div>
+                          </div>
+
+                          <AreaChart xtitle={option} ytitle="Hours" /*data={dates[option]}*/ data={[{"name":"total", "data":dates[option]}, ...studentActivities.map(item=>({"name": item.name, "data":item.data[option]}))]} />
                         </>}
                         
                         <div className="flex flex-row justify-between items-center">
                         <h2 className="graph-heading my-5">Your activity</h2>
-                        <div>Download Avtivity
+                        <div title='click icon to download activity as a csv file'>Download Activity
                         {exportPersonalData.length > 0?
+                              <button className="cursor-pointer">
                                 <FontAwesomeIcon icon='download' /*className='p-3 profile-button'*/ onClick={(e) => {
                                 e.preventDefault();
                                 saveAsCsv({ data:exportPersonalData, fields, filename })}} />
+                              </button>
                               :''}</div>
                         </div>
                         
                         <div className='flex flex-row gap-4'>
                           <div className='flex items-center'>
                             <Checkbox defaultChecked={false} onChange={e=>{
-                              updateProgress("query", e.target.checked)
+                              updatePersonalProgress("query", e.target.checked)
                               setDisplayQuery(e.target.checked)
                             }}/>
                             <p>Query</p>
                           </div>
                           <div className='flex items-center'>
                             <Checkbox defaultChecked={false} onChange={e=>{
-                              updateProgress("cleaning", e.target.checked)
+                              updatePersonalProgress("cleaning", e.target.checked)
                               setDisplayClean(e.target.checked)
                             }}/>
                             <p>Cleaning</p>
                           </div>
                           <div className='flex items-center'>
                             <Checkbox defaultChecked={false} onChange={e=>{
-                              updateProgress("preprocessing", e.target.checked)
+                              updatePersonalProgress("preprocessing", e.target.checked)
                               setDisplayPrepro(e.target.checked)
                             }}/>
                             <p>Preprocessing</p>
                           </div>
                           <div className='flex items-center'>
                             <Checkbox defaultChecked={false} onChange={e=>{
-                              updateProgress("feature engineering", e.target.checked)
+                              updatePersonalProgress("feature engineering", e.target.checked)
                               setDisplayFeaeng(e.target.checked)
                             }}/>
                             <p>Feature Engineering</p>
                           </div>
                           <div className='flex items-center'>
                             <Checkbox defaultChecked={false} onChange={e=>{
-                              updateProgress("feature selection", e.target.checked)
+                              updatePersonalProgress("feature selection", e.target.checked)
                               setDisplayFeaslc(e.target.checked)
                             }}/>
                             <p>Feature Selection</p>
                           </div>
                           <div className='flex items-center'>
                             <Checkbox defaultChecked={false} onChange={e=>{
-                              updateProgress("analysis", e.target.checked)
+                              updatePersonalProgress("analysis", e.target.checked)
                               setDisplayAnalysis(e.target.checked)
                             }}/>
                             <p>Analysis</p>
