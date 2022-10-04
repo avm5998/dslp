@@ -1,13 +1,23 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { Input, Label, Modal, Checkbox } from '../../util/ui'
+import { fetchByJSON } from '../../util/util'
 import { MultiSelect,DropDown,Button } from '../../util/ui_components'
 import { InlineTip } from '../common/tip'
 import CommonOption,{setCommonCode,DEFAULT_RESULT} from './commonOption'
 const defaultResult = {...DEFAULT_RESULT,...{bins:10,alpha:1,stacked:true}}
 
-export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
+export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode, setImage }) => {
     let [activeTab, setActiveTab] = useState(0)
     let defaultgroupby = ['--']
+
+    const getImage = async (result, dataset) => {
+        let res = await fetchByJSON('v_hist', {
+            cond: JSON.stringify(result),
+            filename: dataset.filename
+        })
+        let json = await res.json()
+        setImage("data:image/png;charset=utf-8;base64," + json.plot)
+    }
 
     return <>
         <div className='p-4'>
@@ -51,6 +61,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                     showOptions(0)
                     // confirmOption()
                     setCode(config.getCode({...defaultResult,...result}, dataset))
+                    getImage(result, dataset)
                 }} width={`w-48 justify-self-end`} text={`Confirm`}/>
             </div>
         </div>

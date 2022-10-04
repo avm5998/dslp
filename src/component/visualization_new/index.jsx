@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
-// import { LineChart, AreaChart } from 'react-chartkick'
+import { LineChart, AreaChart } from 'react-chartkick'
 import { Label, Button, Modal, Checkbox, DropDownInput, Input } from '../../util/ui'
 import { MultiSelect, DropDown } from '../../util/ui_components'
 
@@ -90,7 +90,7 @@ export default function ({ location }) {
     let codeParent = useRef()
     let kernelRef = useRef()
     let [guideStep, setGuideStep] = useState(0)
-    // let [chartData, setChartData] = useState([])
+    let [image, setImage] = useState('')
 
     useEffect(() => {
         switch (guideStep) {
@@ -159,6 +159,7 @@ export default function ({ location }) {
         codeParent.current.appendChild(pre)
         pre.innerHTML = code
         thebelab.bootstrap();
+        // console.log("image", image)
     }, [code])
 
     //start thebelab automatically
@@ -181,31 +182,15 @@ export default function ({ location }) {
                 let g = await res.json()
                 kernelRef.current = data.kernel
                 // alert('X')
-                data.kernel.requestExecute({ code: initialCode(g.data) })
+                let res2 = await data.kernel.requestExecute({ code: initialCode(g.data) }).done
                 setDfJSON(g.data)
                 setActivateStatus('Ready')
-                // run code as soon as code being generated and status ready (don't have to manually click "run" button)
-                runCode()
+                // document.getElementById("img1").src = image
             }
             // console.log("Status changed:", data.status, data.message);
         })
 
     }, [dataset.filename])
-
-    // useEffect(async () => {
-    //     switch (currentPlot) {
-    //         case 'Area Graph':
-    //             console.log("go to area graph!!!")
-    //             let jres = await fetchByJSON('v_area', {
-    //                 cond: JSON.stringify(result),
-    //                 filename: dataset.filename
-    //             })
-    //             let json = await jres.json()
-    //             // return json.res
-    //             setChartData(json.res)
-    //             break
-    //     }
-    // }, [code])
 
     const setPlotsByFunctions = useCallback((functions) => {
         if (!functions || functions.length === 0) {
@@ -244,7 +229,7 @@ export default function ({ location }) {
             // setCode(GraphConfigs[currentPlot].getCode(result), dataset)
         }}>
             {
-                GraphOptionViews[currentPlot] ? <OptionView guideStep={guideStep} setGuideStep={setGuideStep} setCode={setCode} /*setChartData={setChartData}*/ dataset={dataset} result={result} showOptions={showOptions} /> : ''
+                GraphOptionViews[currentPlot] ? <OptionView guideStep={guideStep} setGuideStep={setGuideStep} setCode={setCode} /*setChartData={setChartData}*/ setImage={setImage} dataset={dataset} result={result} showOptions={showOptions} /> : ''
             }
         </Modal>
 
@@ -284,8 +269,9 @@ export default function ({ location }) {
                 Select a plot type to see the corresponding code
             </div>}
         </div>
+        {/* section below is for getting img from local backend instead of server kernel */}
         {/* <div className='flex-grow-1 w-full' >
-            <AreaChart data={chartData[0]}/>
+            <img id="img1" src={image} />
         </div> */}
     </div>)
 }

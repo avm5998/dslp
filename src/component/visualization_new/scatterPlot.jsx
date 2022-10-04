@@ -1,13 +1,23 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { Label, Modal, Checkbox } from '../../util/ui'
+import { fetchByJSON } from '../../util/util'
 import { DropDown, MultiSelect, Button } from  '../../util/ui_components'
 import { InlineTip } from '../common/tip'
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
 
-export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
+export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, result, showOptions, confirmOption, setCode, setImage }) => {
     let [activeTab, setActiveTab] = useState(0)
     let defaultx = ['--']
+
+    const getImage = async (result, dataset) => {
+        let res = await fetchByJSON('v_scatter', {
+            cond: JSON.stringify(result),
+            filename: dataset.filename
+        })
+        let json = await res.json()
+        setImage("data:image/png;charset=utf-8;base64," + json.plot)
+    }
 
     return <>
         <div className='p-4'>
@@ -47,6 +57,7 @@ export const view = ({ guideStep,setGuideStep, aggregatedDataset, dataset, resul
                     if (guideStep == 6) setGuideStep(7)
                     // confirmOption()
                     setCode(config.getCode({ ...defaultResult, ...result }, dataset))
+                    getImage(result, dataset)
                 }} width={`w-48 justify-self-end`} text={`Confirm`} />
             </div>
         </div>

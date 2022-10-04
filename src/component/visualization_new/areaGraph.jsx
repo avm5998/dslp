@@ -4,21 +4,11 @@ import { fetchByJSON } from '../../util/util'
 import { DropDown, MultiSelect, Button } from  '../../util/ui_components'
 import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 import { InlineTip } from '../common/tip'
+import { use } from 'echarts'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
 
-export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode }) => {
+export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode, setImage, /*setChartData*/ }) => {
     let [activeTab, setActiveTab] = useState(0)
-
-    // tried to transmit and display chart data through react-chartkick in visualization page, but didn't work
-    // useEffect(async (result, dataset) => {
-    //     let jres = await fetchByJSON('v_area', {
-    //         cond: JSON.stringify(result),
-    //         filename: dataset.filename
-    //     })
-    //     let json = await jres.json()
-    //     // return json.res
-    //     setLocalData(json.res)
-    // }, [])
 
     // const getChartData = async (result, dataset) => {
     //     let jres = await fetchByJSON('v_area', {
@@ -26,9 +16,18 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
     //         filename: dataset.filename
     //     })
     //     let json = await jres.json()
-    //     // return json.res
-    //     setLocalData(json.res)
+    //     setChartData(json.res)
     // }
+
+    const getImage = async (result, dataset) => {
+        let res = await fetchByJSON('v_area', {
+            cond: JSON.stringify(result),
+            filename: dataset.filename
+        })
+        let json = await res.json()
+        setImage("data:image/png;charset=utf-8;base64," + json.plot)
+    }
+
 
     return <>
         <div className='p-4'>
@@ -63,8 +62,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                     showOptions(0)
                     setCode(config.getCode({...defaultResult,...result}, dataset))
                     // getChartData(result, dataset)
-                    // setChartData(localData)
-                    // console.log(localData)
+                    getImage(result, dataset)
                 }} width={`w-48 justify-self-end`} text={`Confirm`}/>
             </div>
         </div>
