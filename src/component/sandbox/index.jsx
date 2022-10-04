@@ -14,6 +14,18 @@ data_io = StringIO(r"""${code}""")
 df = pd.read_json(data_io)
 `
 
+const supportCode = `
+import pandas as pd
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+
+# manually import other libraries if necessary
+
+# replace <filename.csv> with the dataset you need
+df = pd.read_csv('<filname.csv>')
+`
+
 //https://stackoverflow.com/questions/3903488/javascript-backslash-in-variables-is-causing-an-error
 const stringEscape = (s)=>{
     return s ? s.replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/\t/g,'\\t').replace(/\v/g,'\\v').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/[\x00-\x1F\x80-\x9F]/g,hex) : s;
@@ -25,6 +37,7 @@ const Page = ()=>{
     let mutated = useRef(1)
     let dataset = useSelector(e=>e.dataset)
     let kernelRef = useRef(null)
+    let [code, setCode] = useState([])
 
     //load components on page loading
     useEffect(()=>{
@@ -50,13 +63,22 @@ const Page = ()=>{
         })
     },[])
 
+    const onDownload = () => {
+        const element = document.createElement('a')
+        const file = new Blob([supportCode, ...code], {type: "text/plain"})
+        element.href = URL.createObjectURL(file)
+        element.download = "download_test.py" // or .txt
+        document.body.appendChild(element)
+        element.click()
+    }
+
     return (<div className='flex flex-col h-full justify-between gap-2'>
         <div className="flex w-full justify-center items-center m-0 flex-grow-0 h-20">
             <div className="">{statusText}</div>
         </div>
         <div className="flex w-full h-full justify-between flex-grow-1 gap-2">
             <div className="code w-1/2 border-2 m-2 box-content flex flex-col">
-                <div className="flex justify-start items-center bg-gray-400">
+                <div className="flex justify-between items-center bg-gray-400">
                     <div className='run' onClick={async ()=>{
                         mutated.current = 0
                         let res = await fetchByJSON('current_data_json', {
@@ -65,9 +87,17 @@ const Page = ()=>{
                         let json = await res.json();
                         let res2 = await kernelRef.current.requestExecute({ code: InitialCode(json.data) }).done
                         document.querySelector('.thebelab-run-button').click()
+
+                        // catch user input code for download option
+                        let appendCode = []
+                        document.querySelector('#leftPart').querySelectorAll('span[role="presentation"]').forEach((node)=>{appendCode.push('\n' + node.textContent)})
+                        setCode(appendCode)
+                        // setCode(document.querySelector('#leftPart').querySelector('span[role="presentation"]').textContent)
+                        // console.log("test", document.querySelector('#leftPart').querySelectorAll('span'))
                     }}>Run</div>
+                    <div className="run" onClick={onDownload}>Download</div>
                 </div>
-                <pre data-executable="true" data-language="python"></pre>
+                <pre data-executable="true" data-language="python" id="leftPart"></pre>
             </div>
             <div className="result w-1/2 border-2 m-2 box-content" id="rightPart">
 
