@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { actions as DataSetActions } from '../../reducer/dataset'
 import { Checkbox, Modal } from '../../util/ui'
 import { DropDown, MultiSelect, Button, Label } from '../../util/ui_components'
+import authHeader from '../../services/auth-header';
 
 import Table from '../common/table'
 // import Tip from '../common/tip'
@@ -266,6 +267,26 @@ data_io = StringIO(r"""${toUnicode(dfJSON)}""")
 df = pd.read_json(data_io)
 `
 
+const supportCode = `
+import pandas as pd
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import plotly.express as px
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+
+import nltk
+from nltk.tokenize import word_tokenize
+nltk.download('punkt')
+
+# replace <filename.csv> with the dataset you need
+df = pd.read_csv('<filname.csv>')
+`
+
 const FeatureEngineering = () => {
     useCachedData()
     let [option, setOption] = useState('')
@@ -321,12 +342,40 @@ const FeatureEngineering = () => {
                   dfJSON.current = g.data
                 }
                 kernelRef.current = data.kernel
-                data.kernel.requestExecute({ code:getInitialCode(option,dfJSON.current) })
+                let res2 = await data.kernel.requestExecute({ code:getInitialCode(option,dfJSON.current) }).done
                 setActivateStatus('Ready')
             }
         })
 
     }, [dataset.filename])
+
+    useEffect(async () => {
+        for (const cond of dataset.dataEngineering) {
+            let res = await fetchByJSON('featureEngineering', cond) //send request
+            let json = await res.json()
+            setCode(getDisplayCode[cond.activeOption](cond.subOption))
+            $('#display_results').html(json.para_result)
+            document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
+            dispatch(DataSetActions.setData({
+                cols: json.cols,
+                num_cols: json.num_cols,
+                cate_cols: json.cate_cols,
+                num_lists: json.num_lists,
+                cate_lists: json.cate_lists,
+                col_lists: json.col_lists,
+            }))
+            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        }
+
+        // for situation that the only preprocessing condition being deleted
+        if (dataset.dataEngineering.length === 0) {
+            let res = await fetchByJSON('cleanEditedCache', {
+                filename: dataset.filename
+            })
+            let json = await res.json()
+            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        }
+    }, [dataset.dataEngineering])
 
     const runCode = async (e) => {
         let res = await fetchByJSON('current_data_json', {
@@ -334,9 +383,18 @@ const FeatureEngineering = () => {
         })
 
         let json = await res.json();
-        // let res2 = await kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) }).done
+        let res2 = await kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) }).done
 
         document.querySelector('.thebelab-run-button').click()
+    }
+
+    const onDownload = () => {
+        const element = document.createElement('a')
+        const file = new Blob([supportCode, code], {type: "text/plain"})
+        element.href = URL.createObjectURL(file)
+        element.download = "download_test.py" // or .txt
+        document.body.appendChild(element)
+        element.click()
     }
 
     const assignSubOption = useCallback((prop, entry) => {
@@ -440,34 +498,40 @@ const FeatureEngineering = () => {
 
                 <div className="flex justify-end mt-10">
                     <Button text='Confirm' width='w-24' customStyle={{padding:'auto'}} onClick={async () => {
-                        if (JSON.stringify(previousCondition)==="{}") {
-                            let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
-                            let prevjson = await prevres.json()
-                            setPreviousCondition(JSON.parse(prevjson.data))
-                        } else {
-                            setPreviousCondition(currentCondition)
-                        }
+                        // if (JSON.stringify(previousCondition)==="{}") {
+                        //     let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
+                        //     let prevjson = await prevres.json()
+                        //     setPreviousCondition(JSON.parse(prevjson.data))
+                        // } else {
+                        //     setPreviousCondition(currentCondition)
+                        // }
 
                         setShowOptionModal(false)
-                        let res = await fetchByJSON('featureEngineering', { subOption:{...subOption.current},...{
-                            activeOption:option,
-                        }, filename: dataset.filename }) //send request
-                        let json = await res.json()
-                        setCode(getDisplayCode[option](subOption.current)) // demo code
+                        let currentParam = {
+                            subOption: {...subOption.current},
+                            activeOption: option,
+                            filename: dataset.filename
+                        }
+                        dispatch(DataSetActions.setEngineering([...dataset.dataEngineering, currentParam]))
+                        // let res = await fetchByJSON('featureEngineering', { subOption:{...subOption.current},...{
+                        //     activeOption:option,
+                        // }, filename: dataset.filename }) //send request
+                        // let json = await res.json()
+                        // setCode(getDisplayCode[option](subOption.current)) // demo code
 
-                        $('#display_results').html(json.para_result)
-                        document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
-                        dispatch(DataSetActions.setData({
-                            cols: json.cols,
-                            num_cols: json.num_cols,
-                            cate_cols: json.cate_cols,
-                            num_lists: json.num_lists,
-                            cate_lists: json.cate_lists,
-                            col_lists: json.col_lists,
-                        }))
-                        dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+                        // $('#display_results').html(json.para_result)
+                        // document.getElementById("img").src = "data:image/png;charset=utf-8;base64," + json.plot_url
+                        // dispatch(DataSetActions.setData({
+                        //     cols: json.cols,
+                        //     num_cols: json.num_cols,
+                        //     cate_cols: json.cate_cols,
+                        //     num_lists: json.num_lists,
+                        //     cate_lists: json.cate_lists,
+                        //     col_lists: json.col_lists,
+                        // }))
+                        // dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
 
-                        setCurrentCondition(JSON.parse(json.data))
+                        // setCurrentCondition(JSON.parse(json.data))
                     }} />
                 </div>
             </div>
@@ -504,14 +568,22 @@ const FeatureEngineering = () => {
 
 
             {/* demo code */}
-            {/* <Button onClick={() => {
+            <Button onClick={() => {
                 runCode()
             }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5  px-4 py-1 rounded font-semibold border focus:outline-none text-black cursor-pointer ${!code
-                ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} /> */}
-            <Button text="Undo" width={'w-24 ml-3'} onClick={() => {
-                kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) })
-                dispatch(DataSetActions.setTableData(previousCondition))
-                setCurrentCondition(previousCondition)
+                ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
+            <Button text="Undo" width={'w-24 ml-3'} onClick={async () => {
+                // kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) })
+                // dispatch(DataSetActions.setTableData(previousCondition))
+                // setCurrentCondition(previousCondition)
+                let res = await fetchByJSON('cleanEditedCache', {
+                    filename: dataset.filename
+                })
+                let json = await res.json()
+                if (json.success) {
+                    let previous = dataset.dataEngineering.slice(0, -1)
+                    dispatch(DataSetActions.setEngineering(previous))
+                }
             }}/>
             <Button text='Revert' width='w-24 mx-3' onClick={
                 async (e) => {
@@ -526,13 +598,36 @@ const FeatureEngineering = () => {
                         if (json.success) {
                             alert('Revert data success!')
                             dispatch(DataSetActions.emptyInfo())
-                            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+
                             // selectFileOption(dataset.filename, false)
+                            // replace the above function with the first part of selectFileOption() in /home/index.jsx
+                            let res2 = await fetch('/file/?filename=' + dataset.filename + '&default=' + false, {
+                                method: 'GET',
+                                headers: authHeader()
+                            })
+                            let json2 = await res2.json()
+                          
+                            if (json2.success) {
+                                dispatch(DataSetActions.setData({
+                                    filname: dataset.filename,
+                                    info: GetDataFrameInfo(json2.info),
+                                    data: JSON.parse(json2.data),
+                                    cols: json2.cols,
+                                    num_cols: json2.num_cols,
+                                    col_lists: json2.col_lists,
+                                    cate_cols: json2.cate_cols,
+                                    cate_lists: json2.cate_lists,
+                                    num_lists: json2.num_lists
+                                }))
+                            }
+                            
+                            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
                         }
                         // setCurrentCondition({})
                     }
                 }
             } />
+            <Button text='Download' width='w-30 mx-3' onClick={onDownload} />
 
         </div>
 

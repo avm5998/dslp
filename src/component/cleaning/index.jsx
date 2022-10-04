@@ -8,14 +8,28 @@ import { Modal } from '../../util/ui'
 import { Button, MultiSelect, DropDown, ButtonGroup, Label } from '../../util/ui_components'
 import { InlineTip } from '../common/tip';
 import Table from '../common/table'
+import authHeader from '../../services/auth-header';
 import { data } from 'autoprefixer';
 import Tip from '../common/tip'
 import Sandbox from '../common/sandbox'
 
 const getInitialCode = (data) => `
+import pandas as pd
+import numpy as np
 import json
+from io import StringIO
+
 data_json = StringIO(r"""${toUnicode(data)}""")
 df = pd.read_json(data_json)
+`
+
+const supportCode = `
+import pandas as pd
+import numpy as np
+import json
+
+# replace <filename.csv> with the dataset you need
+df = pd.read_csv('<filname.csv>')
 `
 
 const getCodeFromConditions = ({ conditions }) => {
@@ -86,20 +100,15 @@ const Cleaning = ({ location }) => {
     const [code, setCode] = useState('')
     let codeParent = useRef()
     let kernelRef = useRef()
-    const dfJSON = useRef()
+    let [dfJSON, setDfJSON] = useState('')//dataframe json
     const [activateStatus, setActivateStatus] = useState('Loading...')
     let cleaningCondition = useRef(getDefaultSubOptions())
     let [subOptionText, setSubOptionText] = useState('Input values')
     let [showSubOptionModal, setShowSubOptionModal] = useState(false)
     let dispatch = useDispatch()
     let sandboxRef = useRef(null)
-    // let [previousCleaners, setPreviousCleaners] = useState([])
     // this "currentCleaner" hook only store the latest ONE applied cleaner filter
     let [currentCleaner, setCurrentCleaner] = useState([])
-
-    // useEffect(() => {
-    //     queryCleaner()
-    // }, [dataset.dataCleaners])
 
     useEffect(() => {
         if (!code) return
@@ -139,13 +148,10 @@ const Cleaning = ({ location }) => {
                 })
 
                 let g = await res.json()
-                if(!dfJSON.current && g.data){
-                    dfJSON.current = g.data
-                }
                 kernelRef.current = data.kernel
                 // alert('X')
-                data.kernel.requestExecute({ code:getInitialCode(dfJSON.current) })
-                // setDfJSON(g.data)
+                let res2 = await data.kernel.requestExecute({ code:getInitialCode(g.data) }).done
+                setDfJSON(g.data)
                 setActivateStatus('Ready')
             }
             // console.log("Status changed:", data.status, data.message);
@@ -160,7 +166,8 @@ const Cleaning = ({ location }) => {
 
         let json = await res.json();
         // let res2 = await kernelRef.current.requestExecute({ code:getInitialCode(option,dfJSON.current) }).done
-
+        let res2 = await kernelRef.current.requestExecute({ code:getInitialCode(json.data) }).done
+        
         document.querySelector('.thebelab-run-button').click()
     }
 
@@ -184,15 +191,6 @@ const Cleaning = ({ location }) => {
         dispatch(DataSetActions.setCleaners([...dataset.dataCleaners, ...currentCleaner]))
     }
 
-    // const onRemove = async (e) => {
-    //     let cleaners = []
-    //     dispatch(DataSetActions.setCleaners(cleaners))
-    //     setCurrentCleaner([])
-    //     let res = await fetchByJSON('cleanEditedCache', {
-    //         filename: dataset.filename
-    //     })
-    // }
-
     const onUndo = async (e) => {
         let res = await fetchByJSON('cleanEditedCache', {
             filename: dataset.filename
@@ -202,8 +200,6 @@ const Cleaning = ({ location }) => {
             let previous = dataset.dataCleaners.slice(0, -1)
             dispatch(DataSetActions.setCleaners(previous))
             setCurrentCleaner([])
-            // dispatch(DataSetActions.setCleaners(previousCleaners))
-            // setCurrentCleaner(previousCleaners)
             setCode(getCodeFromConditions({ conditions: previous }))
         }
     }
@@ -219,9 +215,40 @@ const Cleaning = ({ location }) => {
             if (json.success) {
                 alert('Revert data success!')
                 dispatch(DataSetActions.emptyInfo())
+
                 // selectFileOption(dataset.filename, false)
+                // replace the above function with the first part of selectFileOption() in /home/index.jsx
+                let res2 = await fetch('/file/?filename=' + dataset.filename + '&default=' + false, {
+                    method: 'GET',
+                    headers: authHeader()
+                })
+                let json2 = await res2.json()
+              
+                if (json2.success) {
+                    dispatch(DataSetActions.setData({
+                        filname: dataset.filename,
+                        info: GetDataFrameInfo(json2.info),
+                        data: JSON.parse(json2.data),
+                        cols: json2.cols,
+                        num_cols: json2.num_cols,
+                        col_lists: json2.col_lists,
+                        cate_cols: json2.cate_cols,
+                        cate_lists: json2.cate_lists,
+                        num_lists: json2.num_lists
+                    }))
+                }
             }
         }
+    }
+
+    const onDownload = () => {
+        const element = document.createElement('a')
+        // const file = new Blob([getInitialCode(dfJSON.current), code], {type: "text/plain"})
+        const file = new Blob([supportCode, code], {type: "text/plain"})
+        element.href = URL.createObjectURL(file)
+        element.download = "download_test.py" // or .txt
+        document.body.appendChild(element)
+        element.click()
     }
 
     const [guideStep, setGuideStep] = useState(0)
@@ -260,6 +287,13 @@ const Cleaning = ({ location }) => {
             }
             cleaningCondition.current[4].condition.items = items
             if (items.length) setSubOptionText('Edit values')
+            // will cause error when re-select on this multiselect!!!
+            // setCurrentCleaner([{option:option, condition: cleaningCondition.current[option].condition, desc: CleanTypes[option]}])
+            setCurrentCleaner([{
+                option: option,
+                condition: {items: items},
+                desc: CleanTypes[option]
+            }])
         }
 
 
@@ -339,15 +373,24 @@ const Cleaning = ({ location }) => {
                             if (guideStep == 2) {
                                 setGuideStep(3)
                             }
-                            setCurrentCleaner([{option:i, condition: cleaningCondition.current[i].condition, desc: CleanTypes[i]}])
+                            if (i === 0 || i === 1) {
+                                setCurrentCleaner([{option:i, condition: cleaningCondition.current[i].condition, desc: CleanTypes[i]}])
+                            }
                         }
                     }))} />
             </div>
             <div className='mx-5 w-3/12'>
                 {/* Select a column and apply a cleaner */}
-                {(option === 2 || option === 3) ? <MultiSelect ref={multiSelect23Ref} customHeight={`h-10`} selections={dataset.num_cols}
+                {(option === 2 || option === 3) ? <MultiSelect ref={multiSelect23Ref} customHeight={`h-10`} selections={dataset.num_cols} /*defaultValue={dataset.num_cols} defaultText={dataset.num_cols[0]}*/
                     onSelect={(e) => {
-                        cleaningCondition.current[option].condition.cols = e
+                        // will cause error when re-select on this multiselect!!!
+                        // cleaningCondition.current[option].condition.cols = e
+                        // setCurrentCleaner([{option:option, condition: cleaningCondition.current[option].condition, desc: CleanTypes[option]}])
+                        setCurrentCleaner([{
+                            option: option,
+                            condition: {cols: e},
+                            desc: CleanTypes[option],
+                        }])
                     }}
                 /> : ''}
 
@@ -369,26 +412,27 @@ const Cleaning = ({ location }) => {
                 <InlineTip zIndex={10} info='The loading status of a remote environment, python code will be executed in that environment as soon as it is ready.' />
             </div>
 
+            
+        </div>
+        <div className="flex flex-row h-20 w-full items-center justify-start bg-gray-100 shadow-md">
             <div className='mx-5 w-3/12'>
                 <ButtonGroup
                     buttons={[{
                         text: 'Confirm',
                         onClick: onConfirm
                     }, 
-                    // {
-                    //     text: 'Run',
-                    //     onClick: runCode
-                    // },
+                    {
+                        text: 'Run',
+                        onClick: runCode,
+                        overrideClass: `ml-5 w-32 px-4 py-1 rounded font-semibold border focus:outline-none text-black ${!code? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`,
+                        customStyle: { backgroundColor: !!code ? '#4bd699' : 'inherit' }
+                    },
                     // {
                     //     text: 'Show code',
                     //     onClick: () => {
                     //         sandboxRef.current.setCode(getCodeFromConditions({ conditions: dataset.dataCleaners }))
                     //         sandboxRef.current.show()
                     //     }
-                    // }, 
-                    // {
-                    //     text: 'Remove',
-                    //     onClick: onRemove
                     // }, 
                     {
                         text: 'Undo',
@@ -397,6 +441,10 @@ const Cleaning = ({ location }) => {
                     {
                         text: 'Revert',
                         onClick: onRevert
+                    },
+                    {
+                        text: 'Download',
+                        onClick: onDownload
                     }
                     ]}
                 />

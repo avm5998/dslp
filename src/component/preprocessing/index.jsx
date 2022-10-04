@@ -8,6 +8,7 @@ import { MultiSelect, DropDown,Button } from '../../util/ui_components'
 import { Checkbox, Label, Modal } from '../../util/ui'
 import Table from '../common/table'
 import { InlineTip } from '../common/tip';
+import authHeader from '../../services/auth-header';
 import { func } from 'prop-types';
 import { getType } from '@reduxjs/toolkit';
 
@@ -36,7 +37,6 @@ const CategoricalOptions = [
 ]
 
 const setSubOption = (option, subOption, condition) => {
-    console.log(condition);
     if (option === 1) {
         subOption.current[option] = condition
     }
@@ -67,6 +67,18 @@ for key, val in params.items():
     if val and key in ndf.columns:
         target_col.append(key)
         target_operation.append(val)
+`
+
+const supportCode = `
+import pandas as pd
+import numpy as np
+import json
+
+MISSING_VALUES = ['-', '?', 'na', 'n/a', 'NA', 'N/A', 'nan', 'NAN', 'NaN']
+
+# replace <filename.csv> with the dataset you need
+df = pd.read_csv('<filname.csv>')
+ndf = df.replace(MISSING_VALUES, np.nan)
 `
 
     const DisplayCode = {
@@ -243,8 +255,8 @@ const Preprocessing = () => {
     let { getData, result, input } = useSimpleForm({
         default_key: 'default_value'
     })
-    let [previousCondition, setPreviousCondition] = useState({})
-    let [currentCondition, setCurrentCondition] = useState({})
+    // let [previousCondition, setPreviousCondition] = useState({})
+    // let [currentCondition, setCurrentCondition] = useState({})
     // const [currentFilter, setCurrentFilter] = useState([])
 
     useEffect(() => {
@@ -303,7 +315,7 @@ const Preprocessing = () => {
         })
         let json = await res.json();
         let res2 = await kernelRef.current.requestExecute({ code: InitialCode(json.data,requestObjectRef.current) }).done
-        console.log(res2);
+        // console.log(res2);
         document.querySelector('.thebelab-run-button').click()
     }
 
@@ -360,26 +372,53 @@ const Preprocessing = () => {
         setShowSubOptionModal(false)
     }
 
-    // useEffect(async ()=>{
-    //     for (const cond of dataset.dataPreprocessing) {
-    //         let res = await fetchByJSON('preprocessing', cond)
-    //         let json = await res.json()
-    //         dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
-    //         $('#display_cond').text(json.cond)
-    //         $('#display_para_result').html(json.para_result)
-    //     }
-    //     setCode(getCodeFromResult(dataset.dataPreprocessing[dataset.dataPreprocessing.length-1].option, dataset.dataPreprocessing[dataset.dataPreprocessing.length-1]))
-    // }, [dataset.dataPreprocessing])
+    useEffect(async ()=>{
+        for (const cond of dataset.dataPreprocessing) {
+            let requestData = {}
+            if (cond.option!==0) {
+                eval(`requestData = getData${cond.option}()`)
+            }
+            let requestObject = {...requestData, option:cond.option, filename:cond.filename}
+            console.log("requestObject:", requestObject)
+            let res = await fetchByJSON('preprocessing', requestObject)
+            let json = await res.json()
+            setCode(getCodeFromResult(cond.option,requestObject))
+            dispatch(DataSetActions.setData({
+                data: JSON.parse(json.data),
+                cols: json.cols,
+                num_cols: json.num_cols,
+                col_lists: json.col_lists,
+                cate_cols: json.cate_cols,
+                cate_lists: json.cate_lists,
+                num_lists: json.num_lists
+            }))
+            $('#display_cond').text(json.cond)
+            $('#display_para_result').html(json.para_result)
+        }
+
+        // for situation that the only preprocessing condition being deleted
+        if (dataset.dataPreprocessing.length === 0) {
+            let res = await fetchByJSON('cleanEditedCache', {
+                filename: dataset.filename
+            })
+            let json = await res.json()
+            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        }
+    }, [dataset.dataPreprocessing])
 
 
     const onConfirm = async (e) => {
-        if (JSON.stringify(previousCondition)==="{}") {
-            let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
-            let prevjson = await prevres.json()
-            setPreviousCondition(JSON.parse(prevjson.data))
-        } else {
-            setPreviousCondition(currentCondition)
-        }
+        // *********************************
+        // commented code in this function will work for single-time undo feature (undo only go back to one stage and stay)
+        // *********************************
+
+        // if (JSON.stringify(previousCondition)==="{}") {
+        //     let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
+        //     let prevjson = await prevres.json()
+        //     setPreviousCondition(JSON.parse(prevjson.data))
+        // } else {
+        //     setPreviousCondition(currentCondition)
+        // }
 
         let requestData = {}
         if(option!==0)
@@ -387,53 +426,66 @@ const Preprocessing = () => {
         let requestObject = {...requestData,option, filename:dataset.filename}
         dispatch(DataSetActions.setPreprocessing([...dataset.dataPreprocessing, requestObject]))
 
-        let res = await fetchByJSON('preprocessing', requestObject)
-        let json = await res.json()
-        setCode(getCodeFromResult(option,requestObject)) // Demo code
-        requestObjectRef.current = requestObject //demo code
-        console.log(requestObject)
-        // dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
-        dispatch(DataSetActions.setData({
-            data: JSON.parse(json.data),
-            cols: json.cols,
-            num_cols: json.num_cols,
-            col_lists: json.col_lists,
-            cate_cols: json.cate_cols,
-            cate_lists: json.cate_lists,
-            num_lists: json.num_lists
-        }))
-        $('#display_cond').text(json.cond)
-        $('#display_para_result').html(json.para_result)
+        // let res = await fetchByJSON('preprocessing', requestObject)
+        // let json = await res.json()
+        // setCode(getCodeFromResult(option,requestObject)) // Demo code
+        // requestObjectRef.current = requestObject //demo code
+        // console.log("requestObject:", requestObject)
+        // // dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        // dispatch(DataSetActions.setData({
+        //     data: JSON.parse(json.data),
+        //     cols: json.cols,
+        //     num_cols: json.num_cols,
+        //     col_lists: json.col_lists,
+        //     cate_cols: json.cate_cols,
+        //     cate_lists: json.cate_lists,
+        //     num_lists: json.num_lists
+        // }))
+        // $('#display_cond').text(json.cond)
+        // $('#display_para_result').html(json.para_result)
         setShowSubOptionModal(false)
 
-        setCurrentCondition(JSON.parse(json.data))
+        // setCurrentCondition(JSON.parse(json.data))
     }
 
     const onUndo = async (e) => {
-        // let res = await fetchByJSON('cleanEditedCache', {
-        //     filename: dataset.filename
-        // })
-        // let json = await res.json()
-        // if (json.success) {
-        //     let previous = dataset.dataPreprocessing.slice(0, -1)
-        //     dispatch(DataSetActions.setPreprocessing(previous))
-        //     setCurrentFilter([])
-        //     setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
-        // }
-
-        if (currentCondition == previousCondition) {
-            return
-        } else {
+        let res = await fetchByJSON('cleanEditedCache', {
+            filename: dataset.filename
+        })
+        let json = await res.json()
+        if (json.success) {
             let previous = dataset.dataPreprocessing.slice(0, -1)
             dispatch(DataSetActions.setPreprocessing(previous))
-            if (previous.length > 0) {
-                setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
-            } else {
-                setCode('')
-            }
-            dispatch(DataSetActions.setTableData(previousCondition))
-            setCurrentCondition(previousCondition)
+            // setCurrentFilter([])
+            // setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
         }
+
+        // *********************************
+        // commented code below in this function will work for single-time undo feature (undo only go back to one stage and stay)
+        // *********************************
+
+        // if (currentCondition == previousCondition) {
+        //     return
+        // } else {
+        //     let previous = dataset.dataPreprocessing.slice(0, -1)
+        //     dispatch(DataSetActions.setPreprocessing(previous))
+        //     if (previous.length > 0) {
+        //         setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
+        //     } else {
+        //         setCode('')
+        //     }
+        //     dispatch(DataSetActions.setTableData(previousCondition))
+        //     setCurrentCondition(previousCondition)
+        // }
+    }
+
+    const onDownload = () => {
+        const element = document.createElement('a')
+        const file = new Blob([supportCode, code], {type: "text/plain"})
+        element.href = URL.createObjectURL(file)
+        element.download = "download_test.py" // or .txt
+        document.body.appendChild(element)
+        element.click()
     }
 
     let dispatch = useDispatch()
@@ -560,11 +612,9 @@ const Preprocessing = () => {
                         setShowSubOptionModal(true)
                     }
                 }}/>
-                {/* <Button onClick={() => {
-                    runCode()
-                }} disabled={!code} width='w-32' text="Run" overrideClass={`ml-5 w-32 px-4 py-1 rounded font-semibold border focus:outline-none text-black ${!code
-                    ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} /> */}
-                <Button text="Undo" width='w-24 mx-3' onClick={onUndo} disabled={currentCondition == previousCondition}/>   
+                <Button disabled={!code} width='w-32' text="Run" overrideClass={`ml-5 w-32 px-4 py-1 rounded font-semibold border focus:outline-none text-black ${!code
+                    ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} customStyle={{ backgroundColor: !!code ? '#4bd699' : 'inherit' }} onClick={runCode} hoverAnimation={false} />
+                <Button text="Undo" width='w-24 mx-3' onClick={onUndo}/>   
                 <Button text='Revert' width='w-24 mx-3' onClick={
                     async (e) => {
                         setCode('')
@@ -578,13 +628,36 @@ const Preprocessing = () => {
                             if (json.success) {
                                 alert('Revert data success!')
                                 dispatch(DataSetActions.emptyInfo())
-                                dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+
                                 // selectFileOption(dataset.filename, false)
+                                // replace the above function with the first part of selectFileOption() in /home/index.jsx
+                                let res2 = await fetch('/file/?filename=' + dataset.filename + '&default=' + false, {
+                                    method: 'GET',
+                                    headers: authHeader()
+                                })
+                                let json2 = await res2.json()
+                              
+                                if (json2.success) {
+                                    dispatch(DataSetActions.setData({
+                                        filname: dataset.filename,
+                                        info: GetDataFrameInfo(json2.info),
+                                        data: JSON.parse(json2.data),
+                                        cols: json2.cols,
+                                        num_cols: json2.num_cols,
+                                        col_lists: json2.col_lists,
+                                        cate_cols: json2.cate_cols,
+                                        cate_lists: json2.cate_lists,
+                                        num_lists: json2.num_lists
+                                    }))
+                                }
+                                
+                                dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
                             }
                             // setCurrentCondition({})
                         }
                     }
                 } />
+                <Button text='Download' width='w-30 mx-3' onClick={onDownload} />
                 
               </div>
                 {/* <Button text={'Confirm'} customStyle={'h-10 w-60 ml-10'} onClick={()=>{

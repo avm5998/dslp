@@ -1167,13 +1167,14 @@ def _getCache(uid,name,modified = True):
 #     params = json.loads(request.data)
 #     user_id = get_jwt_identity()
 #     df = _getCache(user_id, params['filename'])
-#     df = df.fillna(0)
+#     # df.replace(MISSING_VALUES, np.nan, inplace = True)
+#     # df.dropna(axis = 0,inplace = True)
 #     cond = json.loads(params['cond'])
 #     res = []
 #     if 'group_by' not in cond or cond['group_by'] == '':
 #         res.append(df.groupby([cond['x']])[cond['y']].sum().to_dict())
 #     else:
-#         temp_dict = df.groupby([cond['x'], cond['group_by']])[cond['y']].sum().unstack().to_dict()
+#         temp_dict = df.groupby([cond['x'], cond['group_by']])[cond['y']].sum().unstack().fillna(0).to_dict()
 #         for k, v in temp_dict.items():
 #             entry = {}
 #             entry['name'] = k
@@ -1181,6 +1182,677 @@ def _getCache(uid,name,modified = True):
 #             res.append(entry)
 #     print(res)
 #     return jsonify(data=df.to_json(), res=res)
+
+
+@app.route('/v_area',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def v_area():
+    params = json.loads(request.data)
+    user_id = get_jwt_identity()
+    df = _getCache(user_id, params['filename'])
+    cond = json.loads(params['cond'])
+    # prev = json.loads(params['prev'])
+    # option = json.loads(params['option'])
+    # post = json.loads(params['post'])
+
+    # setCommonCode prevSteps
+    if 'dropna_col' in cond and cond['dropna_col']:
+        df.dropna(axis=1,inplace=True)
+    if 'dropna_row' in cond and cond['dropna_row']:
+        df.dropna(axis=0,inplace=True)
+    if 'filter_col' in cond and cond['filter_col']:
+        if 'filter_operator' in cond and 'filter_value' in cond:
+            if cond['filter_operator'] == '=':
+                df = df[df[cond['filter_col']] == float(cond['filter_value'])]
+            elif cond['filter_operator'] == '!=':
+                df = df[df[cond['filter_col']] != float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<':
+                df = df[df[cond['filter_col']] < float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<=':
+                df = df[df[cond['filter_col']] <= float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>':
+                df = df[df[cond['filter_col']] > float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>=':
+                df = df[df[cond['filter_col']] >= float(cond['filter_value'])]
+    if 'trans_col' in cond and cond['trans_col']:
+        if 'trans_fn' in cond and cond['trans_fn']:
+            if cond['trans_fn'] == 'Logarithm':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x,10))
+            elif cond['trans_fn'] == 'Square root':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.sqrt(x))
+            elif cond['trans_fn'] == 'Exponential':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.pow(math.e,x))
+            elif cond['trans_fn'] == 'Logit':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x/(1-x),10))
+    
+    # setCommonCode plotOptions
+    img = BytesIO()
+    if 'group_by' in cond and cond['group_by']:
+        df = df.groupby([cond['x'], cond['group_by']])[cond['y']].sum()
+    else:
+        df = df.groupby([cond['x']])[cond['y']].sum()
+    if 'res_trans' in cond and cond['res_trans'] != '--':
+        if cond['res_trans'] == 'Logarithm':
+            df = df.apply(lambda x: math.log(x,10))
+        elif cond['res_trans'] == 'Square root':
+            df = df.apply(lambda x: math.sqrt(x))
+        elif cond['res_trans'] == 'Exponential':
+            df = df.apply(lambda x: math.pow(math.e,x))
+        elif cond['res_trans'] == 'Logit':
+            df = df.apply(lambda x: math.log(x/(1-x),10))
+    if 'group_by' in cond and cond['group_by']:
+        df = df.unstack()
+    option = {}
+    if 'figureSize' in cond and cond['figureSize']:
+        option['figureSize'] = [float(x) for x in cond['figureSize'].replace(' ', '').split(',')]
+    if 'figureTitle' in cond and cond['figureTitle']:
+        option['figureTitle'] = cond['figureTitle']
+    if 'figureSize' in option and 'figureTitle' in option:
+        df.plot.area(figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+    elif 'figureSize' in option:
+        df.plot.area(figsize=(option['figureSize'][0], option['figureSize'][1]))
+    elif 'figureTitle' in option:
+        df.plot.area(title=option['figureTitle'])
+    else:
+        df.plot.area()
+    
+    # setCommonCode postSteps
+    if 'legend' in cond and cond['legend']:
+        plt.legend(loc=cond['legend'])
+    else:
+        plt.legend(loc='best')
+    if 'xlabel' in cond and cond['xlabel']:
+        plt.xlabel(cond['xlabel'])
+    if 'ylabel' in cond and cond['ylabel']:
+        plt.ylabel(cond['ylabel'])
+    
+    plt.savefig(img, format='png')
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(data=df.to_json(), plot=plotUrl)
+
+
+@app.route('/v_bar',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def v_bar():
+    params = json.loads(request.data)
+    user_id = get_jwt_identity()
+    df = _getCache(user_id, params['filename'])
+    cond = json.loads(params['cond'])
+
+    # setCommonCode prevSteps
+    if 'dropna_col' in cond and cond['dropna_col']:
+        df.dropna(axis=1,inplace=True)
+    if 'dropna_row' in cond and cond['dropna_row']:
+        df.dropna(axis=0,inplace=True)
+    if 'filter_col' in cond and cond['filter_col']:
+        if 'filter_operator' in cond and 'filter_value' in cond:
+            if cond['filter_operator'] == '=':
+                df = df[df[cond['filter_col']] == float(cond['filter_value'])]
+            elif cond['filter_operator'] == '!=':
+                df = df[df[cond['filter_col']] != float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<':
+                df = df[df[cond['filter_col']] < float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<=':
+                df = df[df[cond['filter_col']] <= float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>':
+                df = df[df[cond['filter_col']] > float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>=':
+                df = df[df[cond['filter_col']] >= float(cond['filter_value'])]
+    if 'trans_col' in cond and cond['trans_col']:
+        if 'trans_fn' in cond and cond['trans_fn']:
+            if cond['trans_fn'] == 'Logarithm':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x,10))
+            elif cond['trans_fn'] == 'Square root':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.sqrt(x))
+            elif cond['trans_fn'] == 'Exponential':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.pow(math.e,x))
+            elif cond['trans_fn'] == 'Logit':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x/(1-x),10))
+    
+    # setCommonCode plotOptions
+    img = BytesIO()
+    df = df.groupby(cond['x']).count()
+    option = {}
+    if 'figureSize' in cond and cond['figureSize']:
+        option['figureSize'] = [float(x) for x in cond['figureSize'].replace(' ', '').split(',')]
+    if 'figureTitle' in cond and cond['figureTitle']:
+        option['figureTitle'] = cond['figureTitle']
+    if 'figureSize' in option and 'figureTitle' in option:
+        df.iloc[:, 0].plot.bar(figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+    elif 'figureSize' in option:
+        df.iloc[:, 0].plot.bar(figsize=(option['figureSize'][0], option['figureSize'][1]))
+    elif 'figureTitle' in option:
+        df.iloc[:, 0].plot.bar(title=option['figureTitle'])
+    else:
+        df.iloc[:, 0].plot.bar()
+    
+    # setCommonCode postSteps
+    if 'legend' in cond and cond['legend']:
+        plt.legend(loc=cond['legend'])
+    else:
+        plt.legend(loc='best')
+    if 'xlabel' in cond and cond['xlabel']:
+        plt.xlabel(cond['xlabel'])
+    if 'ylabel' in cond and cond['ylabel']:
+        plt.ylabel(cond['ylabel'])
+    
+    # plt.bar(df.index.values, df.iloc[:, 0])
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(data=df.to_json(), plot=plotUrl)
+
+
+@app.route('/v_box',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def v_box():
+    params = json.loads(request.data)
+    user_id = get_jwt_identity()
+    df = _getCache(user_id, params['filename'])
+    cond = json.loads(params['cond'])
+
+    # setCommonCode prevSteps
+    if 'dropna_col' in cond and cond['dropna_col']:
+        df.dropna(axis=1,inplace=True)
+    if 'dropna_row' in cond and cond['dropna_row']:
+        df.dropna(axis=0,inplace=True)
+    if 'filter_col' in cond and cond['filter_col']:
+        if 'filter_operator' in cond and 'filter_value' in cond:
+            if cond['filter_operator'] == '=':
+                df = df[df[cond['filter_col']] == float(cond['filter_value'])]
+            elif cond['filter_operator'] == '!=':
+                df = df[df[cond['filter_col']] != float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<':
+                df = df[df[cond['filter_col']] < float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<=':
+                df = df[df[cond['filter_col']] <= float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>':
+                df = df[df[cond['filter_col']] > float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>=':
+                df = df[df[cond['filter_col']] >= float(cond['filter_value'])]
+    if 'trans_col' in cond and cond['trans_col']:
+        if 'trans_fn' in cond and cond['trans_fn']:
+            if cond['trans_fn'] == 'Logarithm':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x,10))
+            elif cond['trans_fn'] == 'Square root':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.sqrt(x))
+            elif cond['trans_fn'] == 'Exponential':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.pow(math.e,x))
+            elif cond['trans_fn'] == 'Logit':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x/(1-x),10))
+    
+    # setCommonCode plotOptions
+    img = BytesIO()
+    option = {}
+    if 'figureSize' in cond and cond['figureSize']:
+        option['figureSize'] = [float(x) for x in cond['figureSize'].replace(' ', '').split(',')]
+    if 'figureTitle' in cond and cond['figureTitle']:
+        option['figureTitle'] = cond['figureTitle']
+    if 'figureSize' in option and 'figureTitle' in option:
+        df.boxplot(column=cond['y'], by=cond['x'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+    elif 'figureSize' in option:
+        df.boxplot(column=cond['y'], by=cond['x'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+    elif 'figureTitle' in option:
+        df.boxplot(column=cond['y'], by=cond['x'], title=option['figureTitle'])
+    else:
+        df.boxplot(column=cond['y'], by=cond['x'])
+
+    # setCommonCode postSteps
+    if 'legend' in cond and cond['legend']:
+        plt.legend(loc=cond['legend'])
+    else:
+        plt.legend(loc='best')
+    if 'xlabel' in cond and cond['xlabel']:
+        plt.xlabel(cond['xlabel'])
+    if 'ylabel' in cond and cond['ylabel']:
+        plt.ylabel(cond['ylabel'])
+    
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(data=df.to_json(), plot=plotUrl)
+
+
+@app.route('/v_hist',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def v_hist():
+    params = json.loads(request.data)
+    user_id = get_jwt_identity()
+    df = _getCache(user_id, params['filename'])
+    cond = json.loads(params['cond'])
+
+    # setCommonCode prevSteps
+    if 'dropna_col' in cond and cond['dropna_col']:
+        df.dropna(axis=1,inplace=True)
+    if 'dropna_row' in cond and cond['dropna_row']:
+        df.dropna(axis=0,inplace=True)
+    if 'filter_col' in cond and cond['filter_col']:
+        if 'filter_operator' in cond and 'filter_value' in cond:
+            if cond['filter_operator'] == '=':
+                df = df[df[cond['filter_col']] == float(cond['filter_value'])]
+            elif cond['filter_operator'] == '!=':
+                df = df[df[cond['filter_col']] != float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<':
+                df = df[df[cond['filter_col']] < float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<=':
+                df = df[df[cond['filter_col']] <= float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>':
+                df = df[df[cond['filter_col']] > float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>=':
+                df = df[df[cond['filter_col']] >= float(cond['filter_value'])]
+    if 'trans_col' in cond and cond['trans_col']:
+        if 'trans_fn' in cond and cond['trans_fn']:
+            if cond['trans_fn'] == 'Logarithm':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x,10))
+            elif cond['trans_fn'] == 'Square root':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.sqrt(x))
+            elif cond['trans_fn'] == 'Exponential':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.pow(math.e,x))
+            elif cond['trans_fn'] == 'Logit':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x/(1-x),10))
+    
+    # setCommonCode plotOptions
+    img = BytesIO()
+    option = {'bins':10, 'alpha':1, 'stacked':True}
+    if 'figureSize' in cond and cond['figureSize']:
+        option['figureSize'] = [float(x) for x in cond['figureSize'].replace(' ', '').split(',')]
+    if 'figureTitle' in cond and cond['figureTitle']:
+        option['figureTitle'] = cond['figureTitle']
+    if 'bins' in cond and cond['bins']:
+        option['bins'] = int(cond['bins'])
+    if 'alpha' in cond and cond['alpha']:
+        option['alpha'] = float(cond['alpha'])
+    if 'stacked' in cond and cond['stacked']:
+        option['stacked'] = cond['stacked'] == 'true'
+    if 'group_by' in cond and cond['group_by']:
+        df2 = pd.DataFrame(np.nan, index=range(len(df)), columns=[k for k in df.groupby(cond['group_by']).groups.keys()])
+        for i in range(len(df)):
+            df2.iloc[i][df.iloc[i][cond['group_by']]] = df.iloc[i][cond['cols'][0]]
+        if 'figureSize' in option and 'figureTitle' in option:
+            df2.plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+        elif 'figureSize' in option:
+            df2.plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+        elif 'figureTitle' in option:
+            df2.plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'], title=option['figureTitle'])
+        else:
+            df2.plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'])
+    else:
+        if 'figureSize' in option and 'figureTitle' in option:
+            df[cond['cols']].plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+        elif 'figureSize' in option:
+            df[cond['cols']].plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+        elif 'figureTitle' in option:
+            df[cond['cols']].plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'], title=option['figureTitle'])
+        else:
+            df[cond['cols']].plot.hist(stacked=option['stacked'], bins=option['bins'], alpha=option['alpha'])
+    
+    # setCommonCode postSteps
+    if 'legend' in cond and cond['legend']:
+        plt.legend(loc=cond['legend'])
+    else:
+        plt.legend(loc='best')
+    if 'xlabel' in cond and cond['xlabel']:
+        plt.xlabel(cond['xlabel'])
+    if 'ylabel' in cond and cond['ylabel']:
+        plt.ylabel(cond['ylabel'])
+    
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(data=df.to_json(), plot=plotUrl)
+
+
+@app.route('/v_line',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def v_line():
+    params = json.loads(request.data)
+    user_id = get_jwt_identity()
+    df = _getCache(user_id, params['filename'])
+    cond = json.loads(params['cond'])
+
+    # setCommonCode prevSteps
+    if 'dropna_col' in cond and cond['dropna_col']:
+        df.dropna(axis=1,inplace=True)
+    if 'dropna_row' in cond and cond['dropna_row']:
+        df.dropna(axis=0,inplace=True)
+    if 'filter_col' in cond and cond['filter_col']:
+        if 'filter_operator' in cond and 'filter_value' in cond:
+            if cond['filter_operator'] == '=':
+                df = df[df[cond['filter_col']] == float(cond['filter_value'])]
+            elif cond['filter_operator'] == '!=':
+                df = df[df[cond['filter_col']] != float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<':
+                df = df[df[cond['filter_col']] < float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<=':
+                df = df[df[cond['filter_col']] <= float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>':
+                df = df[df[cond['filter_col']] > float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>=':
+                df = df[df[cond['filter_col']] >= float(cond['filter_value'])]
+    if 'trans_col' in cond and cond['trans_col']:
+        if 'trans_fn' in cond and cond['trans_fn']:
+            if cond['trans_fn'] == 'Logarithm':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x,10))
+            elif cond['trans_fn'] == 'Square root':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.sqrt(x))
+            elif cond['trans_fn'] == 'Exponential':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.pow(math.e,x))
+            elif cond['trans_fn'] == 'Logit':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x/(1-x),10))
+    if 'sorted' in cond and cond['sorted']:
+        df = df.sort_values(by=[cond['x']])
+    
+    # setCommonCode plotOptions
+    img = BytesIO()
+    option = {}
+    if 'figureSize' in cond and cond['figureSize']:
+        option['figureSize'] = [float(x) for x in cond['figureSize'].replace(' ', '').split(',')]
+    if 'figureTitle' in cond and cond['figureTitle']:
+        option['figureTitle'] = cond['figureTitle']
+    if 'x' in cond and cond['x']:
+        if 'figureSize' in option and 'figureTitle' in option:
+            df.plot(x=cond['x'], y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+        elif 'figureSize' in option:
+            df.plot(x=cond['x'], y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+        elif 'figureTitle' in option:
+            df.plot(x=cond['x'], y=cond['y'], title=option['figureTitle'])
+        else:
+            df.plot(x=cond['x'], y=cond['y'])
+    else:
+        if 'figureSize' in option and 'figureTitle' in option:
+            df.plot(y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+        elif 'figureSize' in option:
+            df.plot(y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+        elif 'figureTitle' in option:
+            df.plot(y=cond['y'], title=option['figureTitle'])
+        else:
+            df.plot(y=cond['y'])
+    
+    # setCommonCode postSteps
+    if 'legend' in cond and cond['legend']:
+        plt.legend(loc=cond['legend'])
+    else:
+        plt.legend(loc='best')
+    if 'xlabel' in cond and cond['xlabel']:
+        plt.xlabel(cond['xlabel'])
+    if 'ylabel' in cond and cond['ylabel']:
+        plt.ylabel(cond['ylabel'])
+    
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(data=df.to_json(), plot=plotUrl)
+
+
+@app.route('/v_pie',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def v_pie():
+    params = json.loads(request.data)
+    user_id = get_jwt_identity()
+    df = _getCache(user_id, params['filename'])
+    cond = json.loads(params['cond'])
+
+    # setCommonCode prevSteps
+    if 'dropna_col' in cond and cond['dropna_col']:
+        df.dropna(axis=1,inplace=True)
+    if 'dropna_row' in cond and cond['dropna_row']:
+        df.dropna(axis=0,inplace=True)
+    if 'filter_col' in cond and cond['filter_col']:
+        if 'filter_operator' in cond and 'filter_value' in cond:
+            if cond['filter_operator'] == '=':
+                df = df[df[cond['filter_col']] == float(cond['filter_value'])]
+            elif cond['filter_operator'] == '!=':
+                df = df[df[cond['filter_col']] != float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<':
+                df = df[df[cond['filter_col']] < float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<=':
+                df = df[df[cond['filter_col']] <= float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>':
+                df = df[df[cond['filter_col']] > float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>=':
+                df = df[df[cond['filter_col']] >= float(cond['filter_value'])]
+    if 'trans_col' in cond and cond['trans_col']:
+        if 'trans_fn' in cond and cond['trans_fn']:
+            if cond['trans_fn'] == 'Logarithm':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x,10))
+            elif cond['trans_fn'] == 'Square root':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.sqrt(x))
+            elif cond['trans_fn'] == 'Exponential':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.pow(math.e,x))
+            elif cond['trans_fn'] == 'Logit':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x/(1-x),10))
+    
+    # setCommonCode plotOptions
+    img = BytesIO()
+    df = df.groupby(cond['cate_col']).count()
+    option = {}
+    if 'figureSize' in cond and cond['figureSize']:
+        option['figureSize'] = [float(x) for x in cond['figureSize'].replace(' ', '').split(',')]
+    if 'figureTitle' in cond and cond['figureTitle']:
+        option['figureTitle'] = cond['figureTitle']
+    if 'figureSize' in option and 'figureTitle' in option:
+        df.iloc[:, 0].plot.pie(figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+    elif 'figureSize' in option:
+        df.iloc[:, 0].plot.pie(figsize=(option['figureSize'][0], option['figureSize'][1]))
+    elif 'figureTitle' in option:
+        df.iloc[:, 0].plot.pie(title=option['figureTitle'])
+    else:
+        df.iloc[:, 0].plot.pie()
+    
+    # setCommonCode postSteps
+    if 'legend' in cond and cond['legend']:
+        plt.legend(loc=cond['legend'])
+    else:
+        plt.legend(loc='best')
+    if 'xlabel' in cond and cond['xlabel']:
+        plt.xlabel(cond['xlabel'])
+    if 'ylabel' in cond and cond['ylabel']:
+        plt.ylabel(cond['ylabel'])
+    
+    # plt.bar(df.index.values, df.iloc[:, 0])
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(data=df.to_json(), plot=plotUrl)
+
+
+@app.route('/v_scatter',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def v_scatter():
+    params = json.loads(request.data)
+    user_id = get_jwt_identity()
+    df = _getCache(user_id, params['filename'])
+    cond = json.loads(params['cond'])
+
+    # setCommonCode prevSteps
+    if 'dropna_col' in cond and cond['dropna_col']:
+        df.dropna(axis=1,inplace=True)
+    if 'dropna_row' in cond and cond['dropna_row']:
+        df.dropna(axis=0,inplace=True)
+    if 'filter_col' in cond and cond['filter_col']:
+        if 'filter_operator' in cond and 'filter_value' in cond:
+            if cond['filter_operator'] == '=':
+                df = df[df[cond['filter_col']] == float(cond['filter_value'])]
+            elif cond['filter_operator'] == '!=':
+                df = df[df[cond['filter_col']] != float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<':
+                df = df[df[cond['filter_col']] < float(cond['filter_value'])]
+            elif cond['filter_operator'] == '<=':
+                df = df[df[cond['filter_col']] <= float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>':
+                df = df[df[cond['filter_col']] > float(cond['filter_value'])]
+            elif cond['filter_operator'] == '>=':
+                df = df[df[cond['filter_col']] >= float(cond['filter_value'])]
+    if 'trans_col' in cond and cond['trans_col']:
+        if 'trans_fn' in cond and cond['trans_fn']:
+            if cond['trans_fn'] == 'Logarithm':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x,10))
+            elif cond['trans_fn'] == 'Square root':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.sqrt(x))
+            elif cond['trans_fn'] == 'Exponential':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.pow(math.e,x))
+            elif cond['trans_fn'] == 'Logit':
+                df[cond['trans_col']] = df[cond['trans_col']].apply(lambda x: math.log(x/(1-x),10))
+    if 'sorted' in cond and cond['sorted']:
+        df = df.sort_values(by=[cond['x']])
+    
+    # setCommonCode plotOptions
+    img = BytesIO()
+    option = {}
+    if 'figureSize' in cond and cond['figureSize']:
+        option['figureSize'] = [float(x) for x in cond['figureSize'].replace(' ', '').split(',')]
+    if 'figureTitle' in cond and cond['figureTitle']:
+        option['figureTitle'] = cond['figureTitle']
+    if cond['x'] == 'index':
+        if 'figureSize' in option and 'figureTitle' in option:
+            df.reset_index().plot.scatter(x=cond['x'], y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+        elif 'figureSize' in option:
+            df.reset_index().plot.scatter(x=cond['x'], y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+        elif 'figureTitle' in option:
+            df.reset_index().plot.scatter(x=cond['x'], y=cond['y'], title=option['figureTitle'])
+        else:
+            df.reset_index().plot.scatter(x=cond['x'], y=cond['y'])
+    else:
+        if 'figureSize' in option and 'figureTitle' in option:
+            df.plot.scatter(x=cond['x'], y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+        elif 'figureSize' in option:
+            df.plot.scatter(x=cond['x'], y=cond['y'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+        elif 'figureTitle' in option:
+            df.plot.scatter(x=cond['x'], y=cond['y'], title=option['figureTitle'])
+        else:
+            df.plot.scatter(x=cond['x'], y=cond['y'])
+    
+    # setCommonCode postSteps
+    if 'legend' in cond and cond['legend']:
+        plt.legend(loc=cond['legend'])
+    else:
+        plt.legend(loc='best')
+    if 'xlabel' in cond and cond['xlabel']:
+        plt.xlabel(cond['xlabel'])
+    if 'ylabel' in cond and cond['ylabel']:
+        plt.ylabel(cond['ylabel'])
+    
+    plt.savefig(img, format='png') 
+    plt.clf()
+    img.seek(0)
+    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+    img.close()
+    return jsonify(data=df.to_json(), plot=plotUrl)
+
+
+@app.route('/insert_new_user',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def manually_add():
+    user_id = get_jwt_identity()
+    params = request.json
+    newid = None
+    error = ''
+    # print(params)
+    # template = user_collection.find_one("email" : "chlost124@gmail.com")
+    full_name = params['fullname']
+    email = params['email']
+    username = params['username']
+    password = params['password']
+    # full_name = json.loads(request.data)['fullname']
+    # email = json.loads(request.data)['email']
+    # username = json.loads(request.data)['username']
+    # password = json.loads(request.data)['password']
+    try:
+        if user_collection.find_one({"email": email}) or "@" not in email:
+            raise InternalServerError('Something went wrong')
+        if user_collection.find_one({"username": username}):
+            raise InternalServerError('Something went wrong')
+        info = {'fullname': full_name, 'username': username, 'email': email, 'password': password, 'roles': ['Student']}
+        user = User(**info)
+        user.hash_password()
+        user_collection.insert_one(user.to_mongo())
+        newid = user.id
+    except Exception as e:
+        error = e
+    print(newid)
+    return jsonify(id=str(newid), errorMsg=str(repr(error)))
+    # return {'id': str(user.id), "message":"Manually insert successfully"}, 200
+
+    # full_name = input("Please enter the full name of the user: ")
+    # email = input("Please enter the user's email: ")
+    # while user_collection.find_one({"email": email}) or "@" not in email:
+    #     if "@" not in email:
+    #         email = input("That is not a valid email address. Please enter a valid email: ")
+    #     else:
+    #         action = input("There is already an account associated with that email. Type E to exit or any other key to"
+    #                        " enter a different email: ")
+    #         if action == "E":
+    #             exit_message()
+    #             return
+    #         else:
+    #             email = input("Enter a different email: ")
+    # username = input("Please enter a username for the user: ")
+    # while user_collection.find_one({"username": username}):
+    #     username = input("That username is already taken. Please enter a different username: ")
+    # password = input("Please enter a temporary password for the user: ")
+    # saved_password = password  #hash this
+    # admin = input("Would you like to make this user admin? (Y/N): ")
+    # while admin not in ["Y", "N"]:
+    #     admin = input("That is not a valid option. Please type Y or N: ")
+    # if admin == "Y":
+    #     action2 = True
+    # else:
+    #     action2 = False
+    # Temp.insert_one({"username": username, "email": email, "password": saved_password, "fullname": full_name,
+    #                        "admin": action2,"last_logged_in": None})
+    # print("User '" + username + "' has been added with the temporary password '" + password +
+    #       "'. Please let them know to log in and set their own password.")
+    # time.sleep(1)
+    # print()
+    # return
+
+
+@app.route('/get_all_users',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def get_all_users():
+    all_users = list(user_collection.find())
+    json_data = bson.json_util.dumps(all_users)
+    print(all_users)
+    return jsonify(data=json_data)
+
+
+@app.route('/get_one_user',methods=['POST'])
+@cross_origin()
+@jwt_required(optional=True)
+def get_one_user():
+    params = request.json
+    user_id = get_jwt_identity()
+    search_type = params['searchType']
+    entry = params['cond']
+    res = user_collection.find_one({search_type: entry})
+    print(res)
+    if res:
+        return jsonify(fullname=res['fullname'], username=res['username'], email=res['email'], errorMsg='')
+    else:
+        return jsonify(errorMsg='Sorry, cannot find this user')
+    
 
 
 @app.route('/visualization',methods=['POST'])
@@ -1802,8 +2474,14 @@ def cond_preprocess_json():
         para_result += str(ndf.dtypes)
     elif option == 2:
         remove_cols = params['cols']
+        # check if 'cols' has already been removed
+        check = True
+        for c in remove_cols:
+            if c not in ndf:
+                check = False
         cond += "\n" + str(remove_cols)
-        ndf = ndf.drop(remove_cols, axis=1)
+        if check:
+            ndf = ndf.drop(remove_cols, axis=1)
     elif option == 3:
         for index1, index2 in zip(target_col, target_operation):
             cond += "\n" + str(index1) + ":  " + str(index2)

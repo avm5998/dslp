@@ -364,6 +364,20 @@ const Home = ({location}) => {
     }
     await updateFilesDropdown();
     // setFile(filename)
+
+    // auto execute revert data when select a different dataset
+    if (dataset.filename) {
+      let res2 = await fetchByJSON('cleanEditedCache', {
+        filename: dataset.filename
+      })
+
+      let json2 = await res2.json()
+
+      if (json2.success) {
+        alert('Revert data success!')
+        dispatch(DataSetActions.emptyInfo())
+      }
+    }
   }
 
   async function selectFileOption(filename, existing) {
@@ -406,6 +420,20 @@ const Home = ({location}) => {
     }
     await updateFilesDropdown();
     // setFile(filename)
+
+    // auto execute revert data when select a different dataset, not necessary when manually click "revert data"
+    if (dataset.filename) {
+      let res2 = await fetchByJSON('cleanEditedCache', {
+        filename: dataset.filename
+      })
+
+      let json2 = await res2.json()
+
+      if (json2.success) {
+        alert('Revert data success!')
+        dispatch(DataSetActions.emptyInfo())
+      }
+    }
   }
   return (<div className='flex'>
     <Modal fixedModalPosition={{
@@ -463,7 +491,32 @@ const Home = ({location}) => {
             if (json.success) {
               alert('Revert data success!')
               dispatch(DataSetActions.emptyInfo())
-              selectFileOption(dataset.filename, false)
+
+              // selectFileOption(dataset.filename, false)
+              // replace the above function with the first part of selectFileOption()
+              if (optionsVisible) {
+                showOptions(0);
+              }
+              let res2 = await fetch('/file/?filename=' + dataset.filename + '&default=' + false, {
+                method: 'GET',
+                headers: authHeader()
+              })
+              let json2 = await res2.json()
+          
+              if (json2.success) {
+                dispatch(DataSetActions.setData({
+                  filname: dataset.filename,
+                  info: GetDataFrameInfo(json2.info),
+                  data: JSON.parse(json2.data),
+                  cols: json2.cols,
+                  num_cols: json2.num_cols,
+                  col_lists: json2.col_lists,
+                  cate_cols: json2.cate_cols,
+                  cate_lists: json2.cate_lists,
+                  num_lists: json2.num_lists
+                }))
+              }
+              await updateFilesDropdown();
             }
           }
         }} />

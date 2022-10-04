@@ -96,6 +96,11 @@ const slice = createSlice({
             state.dataPreprocessing = [...action.payload]
             cacheDataInfo(state)
         },
+
+        setEngineering(state,action){
+            state.dataEngineering = [...action.payload]
+            cacheDataInfo(state)
+        },
         
         setProfile(state,action){
             commonLoaded(state)
