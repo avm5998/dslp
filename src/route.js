@@ -36,6 +36,7 @@ import Profile from "./component/profile/profile.component";
 import ForgotPassword from "./component/forgot_password/forgot_password.component";
 import ResetPasswordConfirm from "./component/reset_password/reset_password.component";
 import PendingRequests from "./component/pending-requests/pending-requests.component";
+// import Admin from "./component/admin";
 
 import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
@@ -46,7 +47,7 @@ import arrow from "./assets/images/arrow.svg";
 
 import { history } from "./store";
 import "./route.css";
-import logo from './assets/images/rit_logo.svg'
+import logo from './assets/images/new_RIT_logo1_RGB_0.png'
 
 import Idle from './Idle'
 //add all solid icon-fonts
@@ -55,6 +56,9 @@ library.add(far);
 
 const Menu = {
   // User: [{ text: "Profile", icon: "home", to: "/profile" }],
+  User: [
+    // { text: "Admin", icon: "home", to: "/admin" }
+  ],
   Main: [
     { text: "Profile", icon: "user", to: "/profile" },
     { text: "Data", icon: "home", to: "/" },
@@ -188,7 +192,7 @@ const Routes = (props) => {
                 <nav>
                   <div>
                     <Link to={"/"}>
-                      <img src={logo} width="70" height="70"></img>
+                      <img src={logo} width="100" height="100"></img>
                     </Link>
                   </div>
                 </nav>
@@ -401,6 +405,7 @@ const Routes = (props) => {
             >
               {/* <div className='block w-full h-16'>&nbsp;</div> */}
               <Switch>
+                {/* <Route path="/admin" component={Admin} /> */}
                 <Route path="/login" component={Login} />
                 <Route path="/guide" component={Guide} />
                 <Route path="/register" component={Register} />
