@@ -364,17 +364,17 @@ const FeatureEngineering = () => {
                 cate_lists: json.cate_lists,
                 col_lists: json.col_lists,
             }))
-            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+            // dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
         }
 
         // for situation that the only preprocessing condition being deleted
-        if (dataset.dataEngineering.length === 0) {
-            let res = await fetchByJSON('cleanEditedCache', {
-                filename: dataset.filename
-            })
-            let json = await res.json()
-            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
-        }
+        // if (dataset.dataEngineering.length === 0) {
+        //     let res = await fetchByJSON('cleanEditedCache', {
+        //         filename: dataset.filename
+        //     })
+        //     let json = await res.json()
+        //     dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        // }
     }, [dataset.dataEngineering])
 
     const runCode = async (e) => {

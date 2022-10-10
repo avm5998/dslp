@@ -397,13 +397,13 @@ const Preprocessing = () => {
         }
 
         // for situation that the only preprocessing condition being deleted
-        if (dataset.dataPreprocessing.length === 0) {
-            let res = await fetchByJSON('cleanEditedCache', {
-                filename: dataset.filename
-            })
-            let json = await res.json()
-            dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
-        }
+        // if (dataset.dataPreprocessing.length === 0) {
+        //     let res = await fetchByJSON('cleanEditedCache', {
+        //         filename: dataset.filename
+        //     })
+        //     let json = await res.json()
+        //     dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        // }
     }, [dataset.dataPreprocessing])
 
 
