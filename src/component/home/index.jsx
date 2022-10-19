@@ -374,7 +374,7 @@ const Home = ({location}) => {
       let json2 = await res2.json()
 
       if (json2.success) {
-        alert('Revert data success!')
+        alert('Dataset changed!')
         dispatch(DataSetActions.emptyInfo())
       }
     }
@@ -430,7 +430,7 @@ const Home = ({location}) => {
       let json2 = await res2.json()
 
       if (json2.success) {
-        alert('Revert data success!')
+        alert('Dataset changed!')
         dispatch(DataSetActions.emptyInfo())
       }
     }
