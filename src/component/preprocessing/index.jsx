@@ -255,8 +255,8 @@ const Preprocessing = () => {
     let { getData, result, input } = useSimpleForm({
         default_key: 'default_value'
     })
-    // let [previousCondition, setPreviousCondition] = useState({})
-    // let [currentCondition, setCurrentCondition] = useState({})
+    let [previousCondition, setPreviousCondition] = useState({})
+    let [currentCondition, setCurrentCondition] = useState({})
     // const [currentFilter, setCurrentFilter] = useState([])
 
     useEffect(() => {
@@ -372,39 +372,39 @@ const Preprocessing = () => {
         setShowSubOptionModal(false)
     }
 
-    useEffect(async ()=>{
-        for (const cond of dataset.dataPreprocessing) {
-            let requestData = {}
-            if (cond.option!==0) {
-                eval(`requestData = getData${cond.option}()`)
-            }
-            let requestObject = {...requestData, option:cond.option, filename:cond.filename}
-            console.log("requestObject:", requestObject)
-            let res = await fetchByJSON('preprocessing', requestObject)
-            let json = await res.json()
-            setCode(getCodeFromResult(cond.option,requestObject))
-            dispatch(DataSetActions.setData({
-                data: JSON.parse(json.data),
-                cols: json.cols,
-                num_cols: json.num_cols,
-                col_lists: json.col_lists,
-                cate_cols: json.cate_cols,
-                cate_lists: json.cate_lists,
-                num_lists: json.num_lists
-            }))
-            $('#display_cond').text(json.cond)
-            $('#display_para_result').html(json.para_result)
-        }
+    // useEffect(async ()=>{
+    //     for (const cond of dataset.dataPreprocessing) {
+    //         let requestData = {}
+    //         if (cond.option!==0) {
+    //             eval(`requestData = getData${cond.option}()`)
+    //         }
+    //         let requestObject = {...requestData, option:cond.option, filename:cond.filename}
+    //         console.log("requestObject:", requestObject)
+    //         let res = await fetchByJSON('preprocessing', requestObject)
+    //         let json = await res.json()
+    //         setCode(getCodeFromResult(cond.option,requestObject))
+    //         dispatch(DataSetActions.setData({
+    //             data: JSON.parse(json.data),
+    //             cols: json.cols,
+    //             num_cols: json.num_cols,
+    //             col_lists: json.col_lists,
+    //             cate_cols: json.cate_cols,
+    //             cate_lists: json.cate_lists,
+    //             num_lists: json.num_lists
+    //         }))
+    //         $('#display_cond').text(json.cond)
+    //         $('#display_para_result').html(json.para_result)
+    //     }
 
-        // for situation that the only preprocessing condition being deleted
-        // if (dataset.dataPreprocessing.length === 0) {
-        //     let res = await fetchByJSON('cleanEditedCache', {
-        //         filename: dataset.filename
-        //     })
-        //     let json = await res.json()
-        //     dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
-        // }
-    }, [dataset.dataPreprocessing])
+    //     // for situation that the only preprocessing condition being deleted
+    //     // if (dataset.dataPreprocessing.length === 0) {
+    //     //     let res = await fetchByJSON('cleanEditedCache', {
+    //     //         filename: dataset.filename
+    //     //     })
+    //     //     let json = await res.json()
+    //     //     dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+    //     // }
+    // }, [dataset.dataPreprocessing])
 
 
     const onConfirm = async (e) => {
@@ -412,26 +412,26 @@ const Preprocessing = () => {
         // commented code in this function will work for single-time undo feature (undo only go back to one stage and stay)
         // *********************************
 
-        // if (JSON.stringify(previousCondition)==="{}") {
-        //     let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
-        //     let prevjson = await prevres.json()
-        //     setPreviousCondition(JSON.parse(prevjson.data))
-        // } else {
-        //     setPreviousCondition(currentCondition)
-        // }
+        if (JSON.stringify(previousCondition)==="{}") {
+            let prevres = await fetchByJSON('current_data_json', {filename: dataset.filename})
+            let prevjson = await prevres.json()
+            setPreviousCondition(JSON.parse(prevjson.data))
+        } else {
+            setPreviousCondition(currentCondition)
+        }
 
         let requestData = {}
         if(option!==0)
             eval(`requestData = getData${option}()`)
         let requestObject = {...requestData,option, filename:dataset.filename}
-        dispatch(DataSetActions.setPreprocessing([...dataset.dataPreprocessing, requestObject]))
+        // dispatch(DataSetActions.setPreprocessing([...dataset.dataPreprocessing, requestObject]))
 
-        // let res = await fetchByJSON('preprocessing', requestObject)
-        // let json = await res.json()
-        // setCode(getCodeFromResult(option,requestObject)) // Demo code
-        // requestObjectRef.current = requestObject //demo code
+        let res = await fetchByJSON('preprocessing', requestObject)
+        let json = await res.json()
+        setCode(getCodeFromResult(option,requestObject)) // Demo code
+        requestObjectRef.current = requestObject //demo code
         // console.log("requestObject:", requestObject)
-        // // dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
+        dispatch(DataSetActions.setTableData(JSON.parse(json.data)))
         // dispatch(DataSetActions.setData({
         //     data: JSON.parse(json.data),
         //     cols: json.cols,
@@ -441,42 +441,42 @@ const Preprocessing = () => {
         //     cate_lists: json.cate_lists,
         //     num_lists: json.num_lists
         // }))
-        // $('#display_cond').text(json.cond)
-        // $('#display_para_result').html(json.para_result)
+        $('#display_cond').text(json.cond)
+        $('#display_para_result').html(json.para_result)
         setShowSubOptionModal(false)
 
-        // setCurrentCondition(JSON.parse(json.data))
+        setCurrentCondition(JSON.parse(json.data))
     }
 
     const onUndo = async (e) => {
-        let res = await fetchByJSON('cleanEditedCache', {
-            filename: dataset.filename
-        })
-        let json = await res.json()
-        if (json.success) {
-            let previous = dataset.dataPreprocessing.slice(0, -1)
-            dispatch(DataSetActions.setPreprocessing(previous))
-            // setCurrentFilter([])
-            // setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
-        }
+        // let res = await fetchByJSON('cleanEditedCache', {
+        //     filename: dataset.filename
+        // })
+        // let json = await res.json()
+        // if (json.success) {
+        //     let previous = dataset.dataPreprocessing.slice(0, -1)
+        //     dispatch(DataSetActions.setPreprocessing(previous))
+        //     // setCurrentFilter([])
+        //     // setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
+        // }
 
         // *********************************
         // commented code below in this function will work for single-time undo feature (undo only go back to one stage and stay)
         // *********************************
 
-        // if (currentCondition == previousCondition) {
-        //     return
-        // } else {
-        //     let previous = dataset.dataPreprocessing.slice(0, -1)
-        //     dispatch(DataSetActions.setPreprocessing(previous))
-        //     if (previous.length > 0) {
-        //         setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
-        //     } else {
-        //         setCode('')
-        //     }
-        //     dispatch(DataSetActions.setTableData(previousCondition))
-        //     setCurrentCondition(previousCondition)
-        // }
+        if (currentCondition == previousCondition) {
+            return
+        } else {
+            let previous = dataset.dataPreprocessing.slice(0, -1)
+            dispatch(DataSetActions.setPreprocessing(previous))
+            if (previous.length > 0) {
+                setCode(getCodeFromResult(previous[previous.length-1].option, previous[previous.length-1]))
+            } else {
+                setCode('')
+            }
+            dispatch(DataSetActions.setTableData(previousCondition))
+            setCurrentCondition(previousCondition)
+        }
     }
 
     const onDownload = () => {
