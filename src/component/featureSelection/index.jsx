@@ -374,8 +374,13 @@ const FeatureSelection = () => {
             console.log(result.current);
             let res = await fetchByJSON('feature_selection',{filename:dataset.filename,...result.current})
             let json = await res.json()
-            $('#display_results').html(json.para_result)
-            document.getElementById("display_results_img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
+            let errorMsg = json['errorMsg']
+            if(errorMsg && errorMsg != "''"){
+                alert(errorMsg)
+            }else{
+              $('#display_results').html(json.para_result)
+              document.getElementById("display_results_img").src = "data:image/png;charset=utf-8;base64,"+json.plot_url
+            }
           }} />
         </div>
       </div>

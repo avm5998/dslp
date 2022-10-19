@@ -1000,6 +1000,7 @@ def get_file():
         user_id_admin = ObjectId(b'awesomeadmin')
     buf = StringIO()
     data = ''
+    # print("user_id_admin:", user_id_admin)
     if default=='true':
         df = _getCache(user_id_admin,filename, modified=False)
     else:
@@ -1009,6 +1010,7 @@ def get_file():
     if df is not None:
         df.info(buf=buf,verbose=True)
         data = df.to_json()
+    # print(df)
     cols,col_lists,num_cols,num_lists,cate_cols,cate_lists = getDataFrameDetails(df)
 
     return jsonify(success=True, info = buf.getvalue(), data = data, 
@@ -1142,7 +1144,8 @@ def _getCache(uid,name,modified = True):
             details = mongo_collection.find_one({"file_name": name,"user_id":uid})
             if not details:
                 if name in DEFAULT_FILES:
-                    details = mongo_collection.find_one({"file_name": name,"user_id":ObjectId(b"awesomeadmin")})
+                    details = mongo_collection.find_one({"file_name": name})
+                    # details = mongo_collection.find_one({"file_name": name,"user_id":ObjectId(b"awesomeadmin")})
                     if not details:
                         return None
                 else:
@@ -2314,6 +2317,7 @@ def cond_eng_json():
 @cross_origin()
 @jwt_required()
 def cond_select_json():
+    error = ""
     params = request.json
     filename = params['filename']
     user_id = get_jwt_identity()    
@@ -2358,65 +2362,70 @@ def cond_select_json():
     X = ndf[X]
     Y = ndf[Y]
     img = BytesIO()
-    if tech in ["Correlation Matrix", 'Principal Component Analysis']:
-        if tech == "Correlation Matrix":
-            featureResult = ndf.corr(method ='pearson')  # get correlations of each features in dataset
-            featureResult = pd.DataFrame(data=featureResult)
-            title = tech
-            x_label, y_label = 'Features', 'Correlation'
-        elif tech == "Principal Component Analysis":
-            num_comp = int(params['specific_inputVal_pca']) if 'specific_inputVal_pca' in params and params['specific_inputVal_pca'] else 2
-            scaled_data = StandardScaler().fit_transform(ndf)
-            pca = PCA(n_components=num_comp)
-            pca_res = pca.fit_transform(scaled_data) 
-            col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
-            pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
-            featureResult = pd.concat([pca_df, Y], axis=1)
-            title = 'Principle Component Analysis'
-            x_label, y_label = 'Features', 'PC'
-        plt.rcParams["figure.figsize"] = plotSize
-        if plotType == 'bar':
-            featureResult.plot.bar()
-        elif plotType == 'scatter':
-            sns.pairplot(featureResult) 
-        elif plotType == 'line':
-            featureResult.plot.line()
-        elif plotType == 'heatmap':
-            sns.heatmap(featureResult,annot=True,cmap="RdYlGn")
-    else:
-        if tech == "Removing Features with Low Variance":
-            thresh = float(params['specific_inputVal_lowVar']) if 'specific_inputVal_lowVar' in params and params['specific_inputVal_lowVar'] else 0.3
-            fs = VarianceThreshold(threshold=thresh)
-            fs.fit(X)
-            featureResult = pd.DataFrame({"Features":X.columns ,"Boolean Result":fs.get_support()})
-            x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
-            featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
+    try:
+        if tech in ["Correlation Matrix", 'Principal Component Analysis']:
+            if tech == "Correlation Matrix":
+                featureResult = ndf.corr(method ='pearson')  # get correlations of each features in dataset
+                featureResult = pd.DataFrame(data=featureResult)
+                title = tech
+                x_label, y_label = 'Features', 'Correlation'
+            elif tech == "Principal Component Analysis":
+                num_comp = int(params['specific_inputVal_pca']) if 'specific_inputVal_pca' in params and params['specific_inputVal_pca'] else 2
+                scaled_data = StandardScaler().fit_transform(ndf)
+                pca = PCA(n_components=num_comp)
+                pca_res = pca.fit_transform(scaled_data) 
+                col_pca= ["PC"+ str(i+1) for i in range(num_comp)]
+                pca_df = pd.DataFrame(data=pca_res, columns=col_pca)
+                featureResult = pd.concat([pca_df, Y], axis=1)
+                title = 'Principle Component Analysis'
+                x_label, y_label = 'Features', 'PC'
+            plt.rcParams["figure.figsize"] = plotSize
+            if plotType == 'bar':
+                featureResult.plot.bar()
+            elif plotType == 'scatter':
+                sns.pairplot(featureResult) 
+            elif plotType == 'line':
+                featureResult.plot.line()
+            elif plotType == 'heatmap':
+                sns.heatmap(featureResult,annot=True,cmap="RdYlGn")
         else:
-            if tech == "Regression1: Pearson’s Correlation Coefficient":
-                fs = SelectKBest(score_func=f_regression, k=K)
-            elif tech == "Classification1: ANOVA":
-                fs = SelectKBest(score_func=f_classif, k=K)
-            elif tech == "Classification2: Chi-Squared":
-                fs = SelectKBest(score_func=chi2, k=K)
-            elif tech == "Classification3: Mutual Information":
-                fs = SelectKBest(score_func=mutual_info_classif, k=K)
-            fit = fs.fit(X, Y.values.ravel())
-            featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
-            featureResult=featureResult.nlargest(K,'Score')  #print k best features
-            x_label, y_label, title = 'Features', 'Score', tech+'\nFeature Score'
-        featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
-    plt.title(title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
-    plt.rcParams["figure.figsize"] = plotSize
-    plt.savefig(img, format='png', bbox_inches="tight") 
-    plt.clf()
-    img.seek(0)
-    plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
-    img.close()
-    para_result = featureResult.to_html()
-    return jsonify(plot_url=plotUrl, para_result=para_result)
+            if tech == "Removing Features with Low Variance":
+                thresh = float(params['specific_inputVal_lowVar']) if 'specific_inputVal_lowVar' in params and params['specific_inputVal_lowVar'] else 0.3
+                fs = VarianceThreshold(threshold=thresh)
+                fs.fit(X)
+                featureResult = pd.DataFrame({"Features":X.columns ,"Boolean Result":fs.get_support()})
+                x_label, y_label, title = 'Features', 'Boolean Result', 'Variance Threshold: 1-True, 0-False'
+                featureResult['Boolean Result'] = featureResult['Boolean Result'].astype(int)
+            else:
+                if tech == "Regression1: Pearson’s Correlation Coefficient":
+                    fs = SelectKBest(score_func=f_regression, k=K)
+                elif tech == "Classification1: ANOVA":
+                    fs = SelectKBest(score_func=f_classif, k=K)
+                elif tech == "Classification2: Chi-Squared":
+                    fs = SelectKBest(score_func=chi2, k=K)
+                elif tech == "Classification3: Mutual Information":
+                    fs = SelectKBest(score_func=mutual_info_classif, k=K)
+                fit = fs.fit(X, Y.values.ravel())
+                featureResult = pd.DataFrame({'Features': X.columns, 'Score': fit.scores_})
+                featureResult=featureResult.nlargest(K,'Score')  #print k best features
+                x_label, y_label, title = 'Features', 'Score', tech+'\nFeature Score'
+            featureResult.plot(x=x_label, y=y_label, kind=plotType, color=(np.random.random_sample(), np.random.random_sample(), np.random.random_sample()), rot=0)
+        plt.title(title)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        plt.legend(bbox_to_anchor=(1, 0.5), loc='upper left')
+        plt.rcParams["figure.figsize"] = plotSize
+        plt.savefig(img, format='png', bbox_inches="tight") 
+        plt.clf()
+        img.seek(0)
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        img.close()
+        para_result = featureResult.to_html()
+    except Exception as e:
+        error = e
+        plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
+        para_result = ''
+    return jsonify(plot_url=plotUrl, para_result=para_result, errorMsg=str(repr(error)))
 
 
 @app.route('/preprocessing', methods=['POST'])
