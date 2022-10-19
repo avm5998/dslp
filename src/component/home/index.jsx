@@ -95,13 +95,13 @@ const filenames = [
     description: "Classification dataset",
     method: "Supervised"
   },
-  {
-    id: 9,
-    filename: "country_vaccinations_by_manufacturer.csv",
-    type: "Classification",
-    description: "Classification dataset",
-    method: "Supervised"
-  },
+  // {
+  //   id: 9,
+  //   filename: "country_vaccinations_by_manufacturer.csv",
+  //   type: "Classification",
+  //   description: "Classification dataset",
+  //   method: "Supervised"
+  // },
   {
     id: 10,
     filename: "iris_dataset.csv",
