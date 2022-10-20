@@ -163,7 +163,7 @@ CORS(app)
 def insert_default_files():
     path = 'backend/assets/files/'
     for filename in DEFAULT_FILES:
-        file_details = mongo_collection.find_one({"file_name": filename})
+        file_details = mongo_collection.find_one({"file_name": filename, "user_id":ObjectId(b"awesomeadmin")})
         if not file_details:
             file = path+filename
             with open(file, "rb") as file_content:
@@ -1144,8 +1144,7 @@ def _getCache(uid,name,modified = True):
             details = mongo_collection.find_one({"file_name": name,"user_id":uid})
             if not details:
                 if name in DEFAULT_FILES:
-                    details = mongo_collection.find_one({"file_name": name})
-                    # details = mongo_collection.find_one({"file_name": name,"user_id":ObjectId(b"awesomeadmin")})
+                    details = mongo_collection.find_one({"file_name": name,"user_id":ObjectId(b"awesomeadmin")})
                     if not details:
                         return None
                 else:
