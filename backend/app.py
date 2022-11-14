@@ -3601,7 +3601,7 @@ def cond_Clustering_json():
     plotUrl = base64.b64encode(img.getvalue()).decode('utf-8')
     img.close()
 
-    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, do_training=True)
 
 
 @app.route('/analysis/associate_rule', methods=['POST']) 
@@ -3682,7 +3682,7 @@ def cond_associateRule_json():
         para_result = "\nAssociation Rules:\n"
         para_result += rules.to_html()
    
-    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, do_training=True)
 
 
 
@@ -3887,7 +3887,7 @@ def cond_timeSeries_json():
             img.close()
         
         
-    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl)
+    return jsonify(data=ndf.to_json(), cond=cond, para_result=para_result, plot_url=plotUrl, do_training=True)
 
 def getFromToken(token):
     return token.split('@')
