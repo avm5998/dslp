@@ -29,7 +29,7 @@ export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmO
                 gridTemplateColumns:'10vw 1fr 10vw 1fr'
             }}>
                 <Label text='X Axis:'><InlineTip info={`*Required. Must be string or object type\nData will be grouped by the selected column. Each object/value in the selected column will have a distinct box of distribution.`} /></Label>
-                <DropDown zIndex={100} defaultText='Select X Axis' width='w-60' items={dataset.cate_cols} onSelect={e => result.x = e} />
+                <DropDown zIndex={100} defaultText='Select X Axis' width='w-60' items={dataset.num_cols} onSelect={e => result.x = e} />
                 <Label text='Y Axis:'><InlineTip info={`*Required. Must be int or float type\nThe distribution result of the selected columns.\nIf you select more than one numerical column, the columns you selected are better to have similar meanings and ranges`} /></Label>
                 <MultiSelect zIndex={99} defaultText='Select Y Axis' width='w-60' selections={dataset.num_cols} onSelect={e => result.y = e} />
             </div>

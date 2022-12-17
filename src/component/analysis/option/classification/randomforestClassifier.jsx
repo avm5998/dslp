@@ -39,10 +39,10 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                         }}/>
 
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect zIndex={29} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.cols} onSelect={e=>result.finalVar = e}/>
+                <MultiSelect zIndex={29} defaultValue={option.finalVar} customHeight={'h-10'} customWidth={'w-64'} defaultText='select one/multi-column' wrapSelection={false} defaultOpen={false} selections={dataset.tableData.columns.map(obj=>obj.Header)} onSelect={e=>result.finalVar = e}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
-                <DropDown zIndex={28} defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.cols} 
+                <DropDown zIndex={28} defaultValue={option.finalY} defaultText={'select one column'} showOnHover={false} customStyle={`w-64`} customUlStyle={`w-64`} items={dataset.tableData.columns.map(obj=>obj.Header)} 
                     onSelect={e => {
                         result.finalY = e
                     } 

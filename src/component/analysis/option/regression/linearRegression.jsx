@@ -31,7 +31,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                 gridTemplateColumns: '10vw 1fr 10vw 1fr'
                 }}>
                 <Label customStyle={``} text='Select Variable Columns:' ><InlineTip info="Select the independent columns"/></Label>
-                <MultiSelect zIndex={30} defaultValue={option.finalVar} width='w-64' defaultText='select one/multi-column' selections={dataset.cols} 
+                <MultiSelect zIndex={30} defaultValue={option.finalVar} width='w-64' defaultText='select one/multi-column' selections={dataset.tableData.columns.map(obj=>obj.Header)} 
                     onSelect={e=>{
                         result.finalVar = e
                         if(e.length>1){
@@ -42,7 +42,7 @@ export default function ({ dataset, result, submit, visibleTabs }) {
                     }}/>
 
                 <Label customStyle={``} text='Select Target Column:' ><InlineTip info="Select the dependent column"/></Label>
-                <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'}  width='w-64' items={dataset.cols} 
+                <DropDown zIndex={29} defaultValue={option.finalY} defaultText={'select one column'}  width='w-64' items={dataset.tableData.columns.map(obj=>obj.Header)} 
                     onSelect={e => {
                         result.finalY = e
                     } 
