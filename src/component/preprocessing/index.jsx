@@ -534,7 +534,7 @@ const Preprocessing = () => {
                 </div> : ''}
 
                 {option === 2 ? <div className='grid grid-cols-1'>
-                    <MultiSelect defaultOpen={false} selections={dataset.cols/*dataset.tableData.columns.map(obj=>obj.Header)*/} onSelect={(e) => {
+                    <MultiSelect defaultOpen={false} selections={/*dataset.cols*/dataset.tableData.columns.map(obj=>obj.Header)} onSelect={(e) => {
                         result2.cols = e
                     }} />
                 </div> : ''}
