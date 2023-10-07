@@ -77,8 +77,24 @@ export const config = {
             for (let k in plotOptions){
                 dfplotArgs.push(`${k}=${plotOptions[k]}`)
             }
+
+            function remove_title(str_val) {
+                if (str_val.startsWith("title=")){
+                    return str_val.replace("title=", "label=")
+                } else{
+                    return str_val
+                }
+              }
+            dfplotArgs = dfplotArgs.map(remove_title)
+
+            // let tmp_value = dfplotArgs["title"]
+            // delete dfplotArgs["title"]
+            // debugger;
+            // console.log(tmp_value, dfplotArgs, `plt.title(${dfplotArgs.join(',')})`)
+            // dfplotArgs.push(`label= 'fds'`)
             let arr = result.y.map(e => `"${e}"`)
-            mid = `df.boxplot(column=[${arr}], by='${result.x}', ${dfplotArgs.join(',')})`
+            mid = `df_plot = df.boxplot(column=[${arr}], by='${result.x}')`
+            postSteps.push(`df_plot.plot()`)
             postSteps.push(`plt.title(${dfplotArgs.join(',')})`)
             postSteps.push(`plt.show()`)
         }
