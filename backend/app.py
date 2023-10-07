@@ -1399,11 +1399,13 @@ def v_box():
     if 'figureTitle' in cond and cond['figureTitle']:
         option['figureTitle'] = cond['figureTitle']
     if 'figureSize' in option and 'figureTitle' in option:
-        df.boxplot(column=cond['y'], by=cond['x'], figsize=(option['figureSize'][0], option['figureSize'][1]), title=option['figureTitle'])
+        df.boxplot(column=cond['y'], by=cond['x'], figsize=(option['figureSize'][0], option['figureSize'][1]))
+        plt.title(option['figureTitle'])
     elif 'figureSize' in option:
         df.boxplot(column=cond['y'], by=cond['x'], figsize=(option['figureSize'][0], option['figureSize'][1]))
     elif 'figureTitle' in option:
-        df.boxplot(column=cond['y'], by=cond['x'], title=option['figureTitle'])
+        df.boxplot(column=cond['y'], by=cond['x'])
+        plt.title(option['figureTitle'])
     else:
         df.boxplot(column=cond['y'], by=cond['x'])
 

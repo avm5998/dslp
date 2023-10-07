@@ -79,6 +79,7 @@ export const config = {
             }
             let arr = result.y.map(e => `"${e}"`)
             mid = `df.boxplot(column=[${arr}], by='${result.x}', ${dfplotArgs.join(',')})`
+            postSteps.push(`plt.title(${dfplotArgs.join(',')})`)
             postSteps.push(`plt.show()`)
         }
 
