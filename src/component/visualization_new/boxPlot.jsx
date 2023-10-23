@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useState, useRef } from 'react'
 import { Label, Modal, Checkbox } from '../../util/ui'
 import { fetchByJSON } from '../../util/util'
 import { MultiSelect, DropDown, Button } from '../../util/ui_components' 
-import CommonOption, { setCommonCode, DEFAULT_RESUsetImageLT } from './commonOption'
+import CommonOption, { setCommonCode, DEFAULT_RESULT } from './commonOption'
 import { InlineTip } from '../common/tip'
 const defaultResult = { ...DEFAULT_RESULT, ...{} }
+// const defaultResult = {...{} }
 
 export const view = ({ aggregatedDataset, dataset, result, showOptions, confirmOption, setCode, setImage }) => {
     let [activeTab, setActiveTab] = useState(0)
