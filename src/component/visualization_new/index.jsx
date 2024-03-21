@@ -260,7 +260,7 @@ export default function ({ location }) {
                 }} hoverAnimation={false} />
             </div>
             <div className='w-72 px-1'>
-                <Button id="runButton" hasPadding={false} disabled={!code} text="Confirm" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
+                <Button id="runButton" hasPadding={false} disabled={!code} text="Run" overrideClass={`w-full rounded font-semibold border focus:outline-none h-10 text-black cursor-pointer ${!code
                     ? 'text-gray-400 cursor-default' : 'text-black cursor-pointer'}`} onClick={runCode} hoverAnimation={false} />
             </div>
         </div>
