@@ -192,6 +192,13 @@ pm2 logs
 pm2 logs
 ```
 
+### Thebe latest update makes framework collapse
+- Return to previous thebe version by changing below sentence in index.html in src folder.
+```
+<script src="https://unpkg.com/thebe@0.8.2/lib/index.js"></script>
+```
+
+
 ### Python Missing packages
 - Read the logs and identify missing packages. Install python packages as needed:
 ```
