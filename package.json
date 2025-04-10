@@ -63,7 +63,7 @@
       "redux-thunk": "^2.3.0",
       "refresh-fetch": "^0.7.0",
       "styled-components": "^5.2.1",
-      "tailwindcss": "^2.0.2",
+      "tailwindcss": "^1.9.6",
       "validator": "^13.5.2",
       "webpack-dev-server": "^3.11.2"
    },
